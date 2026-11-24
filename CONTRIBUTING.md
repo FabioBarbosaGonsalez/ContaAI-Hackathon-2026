@@ -31,6 +31,11 @@ cd backend && uv run pytest -m golden
 
 No Linux e no macOS, `make lint`, `make test` e `make golden` fazem o mesmo. No Windows sem `make`, use os comandos acima.
 
+## Mudou o contrato ou os dados de demonstração?
+
+- **Contrato** (`backend/app/contrato.py`): reexporte com `cd backend && uv run python scripts/exportar_openapi.py`. O teste `test_openapi_exportado_esta_atualizado` falha se o arquivo `docs/contrato/openapi.json` ficar para trás. Registre a mudança no [ADR 0003](docs/adr/0003-contrato-da-api.md).
+- **Dados de demonstração** (`data/demo/`): com os motores de pé, regere as notas (`scripts/gerar_notas_demo.py`) e os mocks (`scripts/gerar_mocks.py`), e revise a diferença. Os testes `golden` exigem que notas e mocks sejam reproduzíveis a partir dos motores: nenhum número dos mocks é digitado à mão.
+
 ## Trocar a versão de um motor
 
 1. Atualize `*_TAG` e `*_SHA` no Dockerfile do motor (o SHA é o commit para onde a tag aponta; o build falha se não bater).

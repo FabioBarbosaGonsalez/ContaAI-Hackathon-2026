@@ -1,0 +1,71 @@
+{
+  "simulado": true,
+  "avisoSimulacao": "Simulação de 2027 com CBS 8,8% assumida e alíquotas efetivas do Simples assumidas",
+  "premissas": [
+    {
+      "nome": "Alíquotas nominais de 2027",
+      "valor": "CBS 8,8% · IBS estadual 0,05% · IBS municipal 0,05%",
+      "fonte": "Entradas do exemplo oficial (docs/exemplos.md da calculadora RR 1.7.2). Não são alíquotas oficiais (P6)."
+    },
+    {
+      "nome": "Imposto Seletivo da cerveja",
+      "valor": "não incide na revenda (cClassTrib do IS 200007); alíquota exigida pelo motor: 10%",
+      "fonte": "Entrada do exemplo oficial. O motor RR exige a alíquota do IS para NCM sujeita ao IS mesmo na revenda (erro REG-035: 'ainda não foi definida em lei'). Na revenda (cClassTrib do IS 200007) o valor do IS sai zero."
+    },
+    {
+      "nome": "Alíquotas efetivas do Simples (anexo I)",
+      "valor": "CBS 1,1612% · IBS 0,0129%",
+      "fonte": "Valores de exemplo do esquema OpenAPI do motor SN 1.0.2 (AliquotasEfetivasInput). Não são alíquotas de nenhum contribuinte (P8)."
+    },
+    {
+      "nome": "Crédito das compras no Simples tradicional",
+      "valor": "não aproveitado: entra no custo",
+      "fonte": "Hipótese dos guias citados no plano (seção 11.2). Validar com o contador."
+    },
+    {
+      "nome": "Crédito das compras sem grupo IBSCBS na nota",
+      "valor": "calculado no motor RR sobre o custo",
+      "fonte": "Hipótese de fornecedor no regime regular (plano, E3)."
+    },
+    {
+      "nome": "ICMS",
+      "valor": "fora das contas",
+      "fonte": "Simplificação da demonstração. Em 2027 o ICMS ainda existe e é deduzido da base do IBS/CBS (docs/exemplos.md da calculadora RR)."
+    }
+  ],
+  "criterio": "mesmo_preco_total_ao_cliente",
+  "cliente": {
+    "nome": "Mercado Bom Preço Ltda (fictício)",
+    "regime": "regime_regular"
+  },
+  "valorVenda": "19901.00",
+  "tradicional": {
+    "precoCliente": "19901.00",
+    "tributo": "233.66",
+    "creditoCliente": "233.66",
+    "custoLiquidoCliente": "19667.34"
+  },
+  "hibrido": {
+    "precoCliente": "19901.03",
+    "valorProdutos": "19186.64",
+    "debito": "714.39",
+    "creditoCompras": "581.23",
+    "tributoLiquido": "133.16",
+    "creditoCliente": "714.39",
+    "custoLiquidoCliente": "19186.64"
+  },
+  "diferencaCaixa": "100.50",
+  "fonteTradicional": "motor",
+  "simplificacoes": [
+    "O restante do DAS (IRPJ, CSLL, CPP etc.) é tratado como igual nos dois regimes; só a parcela de CBS/IBS muda (plano, 11.2).",
+    "Mesmo preço total ao cliente nos dois regimes: no híbrido, a base é o valor que somado à CBS/IBS dá esse preço (pode diferir em centavos pelo arredondamento ao centavo de cada linha).",
+    "Crédito das compras proporcional às quantidades vendidas, pelo crédito por unidade da última nota de cada item.",
+    "No Simples tradicional o crédito das compras não é aproveitado (hipótese dos guias; validar com o contador).",
+    "ICMS fora das contas."
+  ],
+  "versoes": {
+    "motorRegimeRegular": "1.7.2",
+    "motorSimplesNacional": "1.0.2",
+    "banco": "V0073"
+  }
+}

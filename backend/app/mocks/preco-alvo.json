@@ -1,0 +1,104 @@
+{
+  "simples_tradicional": {
+    "simulado": true,
+    "avisoSimulacao": "Simulação de 2027 com alíquotas efetivas do Simples assumidas (CBS 1,1612%, IBS 0,0129%)",
+    "premissas": [
+      {
+        "nome": "Alíquotas nominais de 2027",
+        "valor": "CBS 8,8% · IBS estadual 0,05% · IBS municipal 0,05%",
+        "fonte": "Entradas do exemplo oficial (docs/exemplos.md da calculadora RR 1.7.2). Não são alíquotas oficiais (P6)."
+      },
+      {
+        "nome": "Imposto Seletivo da cerveja",
+        "valor": "não incide na revenda (cClassTrib do IS 200007); alíquota exigida pelo motor: 10%",
+        "fonte": "Entrada do exemplo oficial. O motor RR exige a alíquota do IS para NCM sujeita ao IS mesmo na revenda (erro REG-035: 'ainda não foi definida em lei'). Na revenda (cClassTrib do IS 200007) o valor do IS sai zero."
+      },
+      {
+        "nome": "Alíquotas efetivas do Simples (anexo I)",
+        "valor": "CBS 1,1612% · IBS 0,0129%",
+        "fonte": "Valores de exemplo do esquema OpenAPI do motor SN 1.0.2 (AliquotasEfetivasInput). Não são alíquotas de nenhum contribuinte (P8)."
+      },
+      {
+        "nome": "Crédito das compras no Simples tradicional",
+        "valor": "não aproveitado: entra no custo",
+        "fonte": "Hipótese dos guias citados no plano (seção 11.2). Validar com o contador."
+      },
+      {
+        "nome": "Crédito das compras sem grupo IBSCBS na nota",
+        "valor": "calculado no motor RR sobre o custo",
+        "fonte": "Hipótese de fornecedor no regime regular (plano, E3)."
+      },
+      {
+        "nome": "ICMS",
+        "valor": "fora das contas",
+        "fonte": "Simplificação da demonstração. Em 2027 o ICMS ainda existe e é deduzido da base do IBS/CBS (docs/exemplos.md da calculadora RR)."
+      }
+    ],
+    "regime": "simples_tradicional",
+    "itemId": "cerveja-lata",
+    "valorUnitario": "3.97",
+    "precoCliente": "3.97",
+    "tributosUnitarios": {
+      "cbs": "0.0461",
+      "ibs": "0.0005",
+      "impostoSeletivo": "0.0000"
+    },
+    "custoEfetivoUnitario": "3.3215",
+    "margemAlvoPct": "15",
+    "margemObtidaPct": "15.16",
+    "loteReferencia": 100,
+    "chamadas": 3,
+    "metodo": "afim",
+    "memoria": {
+      "cbs": "Receita bruta do Simples Nacional de R$ 397,00 (Receita bruta - interna). A base de cálculo utilizada é de R$ 397,00, com alíquota efetiva de 1,1612%. Valor devido de R$ 4,61 e pendente/suspenso de R$ 0,00.",
+      "ibs": "Receita bruta do Simples Nacional de R$ 397,00 (Receita bruta - interna). A base de cálculo utilizada é de R$ 397,00, com alíquota efetiva de 0,0129%. Valor devido de R$ 0,05 e pendente/suspenso de R$ 0,00."
+    }
+  },
+  "simples_hibrido": {
+    "simulado": true,
+    "avisoSimulacao": "Simulação de 2027 com CBS 8,8% assumida",
+    "premissas": [
+      {
+        "nome": "Alíquotas nominais de 2027",
+        "valor": "CBS 8,8% · IBS estadual 0,05% · IBS municipal 0,05%",
+        "fonte": "Entradas do exemplo oficial (docs/exemplos.md da calculadora RR 1.7.2). Não são alíquotas oficiais (P6)."
+      },
+      {
+        "nome": "Imposto Seletivo da cerveja",
+        "valor": "não incide na revenda (cClassTrib do IS 200007); alíquota exigida pelo motor: 10%",
+        "fonte": "Entrada do exemplo oficial. O motor RR exige a alíquota do IS para NCM sujeita ao IS mesmo na revenda (erro REG-035: 'ainda não foi definida em lei'). Na revenda (cClassTrib do IS 200007) o valor do IS sai zero."
+      },
+      {
+        "nome": "Crédito das compras sem grupo IBSCBS na nota",
+        "valor": "calculado no motor RR sobre o custo",
+        "fonte": "Hipótese de fornecedor no regime regular (plano, E3)."
+      },
+      {
+        "nome": "ICMS",
+        "valor": "fora das contas",
+        "fonte": "Simplificação da demonstração. Em 2027 o ICMS ainda existe e é deduzido da base do IBS/CBS (docs/exemplos.md da calculadora RR)."
+      }
+    ],
+    "regime": "simples_hibrido",
+    "itemId": "cerveja-lata",
+    "valorUnitario": "3.65",
+    "precoCliente": "3.9748",
+    "tributosUnitarios": {
+      "cbs": "0.3212",
+      "ibs": "0.0036",
+      "impostoSeletivo": "0.0000"
+    },
+    "custoEfetivoUnitario": "3.05",
+    "margemAlvoPct": "15",
+    "margemObtidaPct": "15.10",
+    "loteReferencia": 100,
+    "chamadas": 3,
+    "metodo": "afim",
+    "memoria": {
+      "cbs": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 365,00, com alíquota de 8,80%.",
+      "ibsUF": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 365,00, com alíquota de 0,05%.",
+      "ibsMun": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 365,00, com alíquota de 0,05%.",
+      "impostoSeletivo": "Operação de consumo sujeita à tributação pelo Imposto Seletivo, com enquadramento legal em Art. 410, tributada conforme Tributação pelo Imposto Seletivo - Sem Cálculo. A base de cálculo utilizada é de R$ 365,00, com alíquota ad valorem de 10,00%. A alíquota ad rem é de 0,00."
+    }
+  }
+}

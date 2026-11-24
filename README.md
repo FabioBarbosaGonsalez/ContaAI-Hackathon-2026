@@ -27,6 +27,16 @@ docker compose ps              # esperar motor-rr e motor-sn com status "healthy
 
 As portas só abrem em `127.0.0.1`, porque os motores não têm autenticação ([ADR 0002](docs/adr/0002-motores-em-containers.md)). Para parar: `docker compose down`.
 
+### API em modo mock (Etapa 0)
+
+```bash
+cd backend
+uv sync --extra dev
+uv run uvicorn app.main:app --reload   # documentação interativa em http://127.0.0.1:8000/docs
+```
+
+As rotas seguem o contrato ([docs/contrato/openapi.json](docs/contrato/openapi.json), [ADR 0003](docs/adr/0003-contrato-da-api.md)) e respondem com mocks gerados a partir dos motores oficiais, com o header `X-ContaAI-Mock: 1`. `GET /saude` é real e confere as versões dos motores. O CORS libera só `http://localhost:3000`; para outra origem, use `CONTAAI_CORS_ORIGENS='["http://..."]'`.
+
 ### Testes
 
 ```bash
@@ -36,7 +46,7 @@ uv run pytest              # testes que não precisam dos motores (os mesmos do 
 uv run pytest -m golden    # testes de referência contra os motores em execução
 ```
 
-No Linux e no macOS, o [Makefile](Makefile) tem atalhos para os mesmos comandos: `make motores`, `make test`, `make golden` e `make lint`.
+No Linux e no macOS, o [Makefile](Makefile) tem atalhos para os mesmos comandos: `make motores`, `make api`, `make test`, `make golden` e `make lint`.
 
 ## Arquitetura (resumo)
 
@@ -67,12 +77,16 @@ No Linux e no macOS, o [Makefile](Makefile) tem atalhos para os mesmos comandos:
 - [Como contribuir](CONTRIBUTING.md): fluxo de branches, PRs e revisão
 - [ADR 0001](docs/adr/0001-lado-tradicional-do-simples.md): lado "Simples tradicional" da decisão de regime
 - [ADR 0002](docs/adr/0002-motores-em-containers.md): motores em containers, segurança e custos
+- [ADR 0003](docs/adr/0003-contrato-da-api.md): contrato da API, fórmulas de preço, margem e regimes, e achados da investigação
+- [Contrato OpenAPI](docs/contrato/openapi.json): o que frontend e agente consomem
+- [Dados de demonstração](data/demo/README.md): distribuidora, cliente B2B e notas de compra fictícias
+- [Direção visual](.taste-skill/app/inventario.md): inventário, a pergunta de cada tela e o estilo sorteado pela skill design-taste-frontend
 - [Respostas de referência](backend/tests/golden/README.md): o que está gravado e quando regravar
 - [Validação com contadores](docs/validacao.md)
 
 ## Status
 
-Etapa 0 (fundação): motores oficiais em containers, testes de referência e decisão sobre o lado tradicional do Simples prontos. Faltam o contrato da API com mocks, os dados de demonstração e a direção visual.
+Etapa 0 (fundação) concluída: motores oficiais em containers, testes de referência, decisão sobre o lado tradicional do Simples, contrato da API com mocks, dados de demonstração e direção visual. Pendente fora do código: o envio da mensagem aos contadores (E0-08). Próxima: Etapa 1, núcleo de cálculo.
 
 ## Créditos e licenças
 

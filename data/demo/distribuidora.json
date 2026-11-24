@@ -1,0 +1,106 @@
+{
+  "_aviso": "Dados fictícios para demonstração (princípio P10). Empresa, CNPJ (com dígito verificador propositalmente inválido), preços, margens e quantidades não representam empresas nem preços reais. Classificações, descrições de NCM e premissas trazem a fonte ao lado.",
+  "empresa": {
+    "razaoSocial": "Distribuidora Serra Azul ME (fictícia)",
+    "cnpj": "36817420000113",
+    "regimeAtual": "simples_tradicional",
+    "uf": "RS",
+    "municipio": 4314902,
+    "municipioNome": "Porto Alegre",
+    "simples": {
+      "anexo": "I",
+      "cAtivSN": "01",
+      "descricaoAtividade": "Revenda de mercadorias, venda de mercadorias industrializadas pelo contribuinte",
+      "fonte": "GET /calculadora/simples-nacional/atividades?data=2027-03-15&anexos=I&tpDoc=55 (motor SN 1.0.2)"
+    }
+  },
+  "cenario": {
+    "descricao": "Simulação de março de 2027",
+    "data": "2027-03-16",
+    "aliquotasNominais": {
+      "cbs": "8.8",
+      "ibsEstadual": "0.05",
+      "ibsMunicipal": "0.05",
+      "fonte": "Entradas do exemplo oficial (docs/exemplos.md da calculadora RR 1.7.2). Não são alíquotas oficiais (P6)."
+    },
+    "impostoSeletivoAdValorem": {
+      "valor": "10.0",
+      "fonte": "Entrada do exemplo oficial. O motor RR exige a alíquota do IS para NCM sujeita ao IS mesmo na revenda (erro REG-035: 'ainda não foi definida em lei'). Na revenda (cClassTrib do IS 200007) o valor do IS sai zero."
+    },
+    "premissasDas": {
+      "anexo": "I",
+      "pCBSSN": "1.1612",
+      "pIBSSN": "0.0129",
+      "fonte": "Valores de exemplo do esquema OpenAPI do motor SN 1.0.2 (AliquotasEfetivasInput). Não são alíquotas de nenhum contribuinte (P8)."
+    },
+    "cargaAtualPct": null,
+    "cargaAtualNota": "Carga atual informada pelo usuário, só para comparação. Fica vazia até alguém informar."
+  },
+  "catalogo": [
+    {
+      "id": "arroz-5kg",
+      "descricao": "Arroz polido não parboilizado, pacote 5 kg",
+      "ncm": "10063021",
+      "ncmDescricaoOficial": "Arroz semibranqueado ou branqueado, mesmo polido ou brunido (glaciado*) - Não parboilizado - Polido ou brunido",
+      "cst": "200",
+      "cClassTrib": "200003",
+      "classificacaoFonte": "Exemplo oficial (docs/exemplos.md). Redução específica do produto confirmada nos dados abertos: Anexo I da LC 214/2025, redução de 100%.",
+      "impostoSeletivo": null,
+      "unidade": "UN",
+      "codigoFornecedor": "AE-ARZ-5",
+      "precoVenda": "27.90",
+      "margemAlvoPct": "15",
+      "papelNaDemo": "Item com redução de alíquota"
+    },
+    {
+      "id": "cerveja-lata",
+      "descricao": "Cerveja de malte, lata 350 ml",
+      "ncm": "22030000",
+      "ncmDescricaoOficial": "Cervejas de malte.",
+      "cst": "000",
+      "cClassTrib": "000001",
+      "classificacaoFonte": "Exemplo oficial (docs/exemplos.md); 000001 = tributação integral, com crédito para o adquirente (dados abertos).",
+      "impostoSeletivo": {
+        "cst": "200",
+        "cClassTrib": "200007",
+        "litrosPorUnidade": "0.35",
+        "motivo": "Revenda: o IS incide uma única vez sobre o bem (CF, art. 153, §6º, II, incluído pela EC 132/2023). Catálogo oficial do IS: 200007, 'Venda de bem ou serviço tributado pelo IS em operação anterior'."
+      },
+      "unidade": "UN",
+      "codigoFornecedor": "AE-CRV-350",
+      "precoVenda": "3.79",
+      "margemAlvoPct": "15",
+      "papelNaDemo": "Alerta de margem pela NF-e de compra 2"
+    },
+    {
+      "id": "chocolate-barra",
+      "descricao": "Chocolate não recheado, barra 90 g",
+      "ncm": "18063210",
+      "ncmDescricaoOficial": "Chocolate e outras preparações alimentícias que contenham cacau - Não recheados - Chocolate",
+      "cst": "000",
+      "cClassTrib": "000001",
+      "classificacaoFonte": "Nenhuma classificação com redução específica do produto nos dados abertos (comparação com NCM de máquina 84381000); tributação integral.",
+      "impostoSeletivo": null,
+      "unidade": "UN",
+      "codigoFornecedor": "AE-CHO-90",
+      "precoVenda": "5.99",
+      "margemAlvoPct": "20",
+      "papelNaDemo": "Referência de alíquota cheia"
+    },
+    {
+      "id": "carne-bovina-kg",
+      "descricao": "Carne bovina desossada, resfriada (kg)",
+      "ncm": "02013000",
+      "ncmDescricaoOficial": "Carnes de animais da espécie bovina, frescas ou refrigeradas - Desossadas",
+      "cst": "200",
+      "cClassTrib": "200035",
+      "classificacaoFonte": "Classificação errada de propósito, igual ao item 4 do exemplo oficial: provoca REG-011 no motor RR e VSN-047 no motor SN. Nos dados abertos, 200003 e 000001 são válidas para esta NCM; a escolha é do usuário (P3).",
+      "impostoSeletivo": null,
+      "unidade": "KG",
+      "codigoFornecedor": "AE-CRN-KG",
+      "precoVenda": "39.90",
+      "margemAlvoPct": "12",
+      "papelNaDemo": "Autocorreção do REG-011 ao vivo"
+    }
+  ]
+}
