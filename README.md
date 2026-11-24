@@ -8,8 +8,6 @@ O dono de uma ME do Simples conversa com o copiloto sobre o que vende. O ContaAI
 
 ## Documentos
 
-- [Plano de desenvolvimento (PDF)](docs/plano-de-desenvolvimento.pdf): escopo, arquitetura, etapas E0 a E6, backlog e roteiro da demo
-- [Pesquisa de base](wiki/research/2026-11-24-copiloto-tributario-pequenos-negocios.md): o que as APIs oficiais impõem e as fontes
 - [Como contribuir](CONTRIBUTING.md): fluxo de branches, PRs e revisão
 
 ## Arquitetura (resumo)

@@ -34,3 +34,8 @@ motores/**/src-receita/
 Thumbs.db
 .idea/
 .vscode/
+
+# Documentos internos de planejamento (ficam só na máquina, nunca no GitHub)
+docs/plano-de-desenvolvimento.pdf
+docs/gerar_plano.py
+wiki/research/
