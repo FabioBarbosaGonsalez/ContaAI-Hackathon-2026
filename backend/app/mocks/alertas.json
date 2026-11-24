@@ -1,0 +1,22 @@
+{
+  "alertas": [
+    {
+      "id": "alerta-cerveja-lata-nfe-1002",
+      "itemId": "cerveja-lata",
+      "descricaoItem": "Cerveja de malte, lata 350 ml",
+      "regime": "simples_tradicional",
+      "margemAntesPct": "24.12",
+      "margemDepoisPct": "11.19",
+      "margemAlvoPct": "15",
+      "precoAtual": "3.79",
+      "precoSugerido": "3.97",
+      "origem": {
+        "tipo": "nfe",
+        "numero": "1002",
+        "dataEmissao": "2027-03-16T09:00:00-03:00",
+        "emitente": "Atacado Exemplo Ltda (fictício)"
+      },
+      "criadoEm": "2027-03-16T09:00:00-03:00"
+    }
+  ]
+}

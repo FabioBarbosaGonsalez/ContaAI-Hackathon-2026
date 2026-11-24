@@ -1,0 +1,376 @@
+{
+  "arroz-5kg": {
+    "simples_tradicional": {
+      "itemId": "arroz-5kg",
+      "regime": "simples_tradicional",
+      "motor": "simples_nacional",
+      "estado": "CALCULADO",
+      "reducaoPct": null,
+      "memoria": {
+        "cbs": "Receita bruta do Simples Nacional de R$ 2.790,00 (Receita bruta - interna). A base de cálculo utilizada é de R$ 2.790,00, com alíquota efetiva de 1,1612%. Valor devido de R$ 32,40 e pendente/suspenso de R$ 0,00.",
+        "ibs": "Receita bruta do Simples Nacional de R$ 2.790,00 (Receita bruta - interna). A base de cálculo utilizada é de R$ 2.790,00, com alíquota efetiva de 0,0129%. Valor devido de R$ 0,36 e pendente/suspenso de R$ 0,00."
+      },
+      "erros": [],
+      "fundamentacoes": [
+        {
+          "cClassTrib": "200003",
+          "textoCurto": "Art. 125",
+          "texto": "Art. 125. Ficam reduzidas a zero as alíquotas do IBS e da CBS incidentes sobre as vendas de produtos destinados à alimentação humana relacionados no Anexo I desta Lei Complementar, com a especificação das respectivas classificações da NCM/SH, que compõem a Cesta Básica Nacional de Alimentos, criada nos termos do art. 8º da Emenda Constitucional nº 132, de 20 de dezembro de 2023.",
+          "referenciaNormativa": "LIVRO I\\n\\nDO IMPOSTO SOBRE BENS E SERVIÇOS (IBS) E DA CONTRIBUIÇÃO SOCIAL SOBRE BENS E SERVIÇOS (CBS) \\n\\nTÍTULO III \\n\\nDA DEVOLUÇÃO PERSONALIZADA DO IBS E DA CBS (CASHBACK) E DA CESTA BÁSICA NACIONAL DE ALIMENTOS \\n\\nCAPÍTULO II \\n\\nDA CESTA BÁSICA NACIONAL DE ALIMENTOS"
+        }
+      ],
+      "premissas": [
+        {
+          "nome": "Alíquotas nominais de 2027",
+          "valor": "CBS 8,8% · IBS estadual 0,05% · IBS municipal 0,05%",
+          "fonte": "Entradas do exemplo oficial (docs/exemplos.md da calculadora RR 1.7.2). Não são alíquotas oficiais (P6)."
+        },
+        {
+          "nome": "Alíquotas efetivas do Simples (anexo I)",
+          "valor": "CBS 1,1612% · IBS 0,0129%",
+          "fonte": "Valores de exemplo do esquema OpenAPI do motor SN 1.0.2 (AliquotasEfetivasInput). Não são alíquotas de nenhum contribuinte (P8)."
+        },
+        {
+          "nome": "Crédito das compras no Simples tradicional",
+          "valor": "não aproveitado: entra no custo",
+          "fonte": "Hipótese dos guias citados no plano (seção 11.2). Validar com o contador."
+        },
+        {
+          "nome": "Crédito das compras sem grupo IBSCBS na nota",
+          "valor": "calculado no motor RR sobre o custo",
+          "fonte": "Hipótese de fornecedor no regime regular (plano, E3)."
+        },
+        {
+          "nome": "ICMS",
+          "valor": "fora das contas",
+          "fonte": "Simplificação da demonstração. Em 2027 o ICMS ainda existe e é deduzido da base do IBS/CBS (docs/exemplos.md da calculadora RR)."
+        }
+      ],
+      "aviso": "Estimativa baseada nas calculadoras oficiais. Não é parecer fiscal e não substitui o contador."
+    },
+    "simples_hibrido": {
+      "itemId": "arroz-5kg",
+      "regime": "simples_hibrido",
+      "motor": "regime_regular",
+      "estado": "CALCULO_SIMULADO",
+      "reducaoPct": "100.00",
+      "memoria": {
+        "cbs": "Operação de consumo com enquadramento legal em Art. 125, tributada conforme Alíquota zero. A base de cálculo utilizada é de R$ 2.790,00, com alíquota de zero.",
+        "ibsUF": "Operação de consumo com enquadramento legal em Art. 125, tributada conforme Alíquota zero. A base de cálculo utilizada é de R$ 2.790,00, com alíquota de zero.",
+        "ibsMun": "Operação de consumo com enquadramento legal em Art. 125, tributada conforme Alíquota zero. A base de cálculo utilizada é de R$ 2.790,00, com alíquota de zero."
+      },
+      "erros": [],
+      "fundamentacoes": [
+        {
+          "cClassTrib": "200003",
+          "textoCurto": "Art. 125",
+          "texto": "Art. 125. Ficam reduzidas a zero as alíquotas do IBS e da CBS incidentes sobre as vendas de produtos destinados à alimentação humana relacionados no Anexo I desta Lei Complementar, com a especificação das respectivas classificações da NCM/SH, que compõem a Cesta Básica Nacional de Alimentos, criada nos termos do art. 8º da Emenda Constitucional nº 132, de 20 de dezembro de 2023.",
+          "referenciaNormativa": "LIVRO I\\n\\nDO IMPOSTO SOBRE BENS E SERVIÇOS (IBS) E DA CONTRIBUIÇÃO SOCIAL SOBRE BENS E SERVIÇOS (CBS) \\n\\nTÍTULO III \\n\\nDA DEVOLUÇÃO PERSONALIZADA DO IBS E DA CBS (CASHBACK) E DA CESTA BÁSICA NACIONAL DE ALIMENTOS \\n\\nCAPÍTULO II \\n\\nDA CESTA BÁSICA NACIONAL DE ALIMENTOS"
+        }
+      ],
+      "premissas": [
+        {
+          "nome": "Alíquotas nominais de 2027",
+          "valor": "CBS 8,8% · IBS estadual 0,05% · IBS municipal 0,05%",
+          "fonte": "Entradas do exemplo oficial (docs/exemplos.md da calculadora RR 1.7.2). Não são alíquotas oficiais (P6)."
+        },
+        {
+          "nome": "Crédito das compras sem grupo IBSCBS na nota",
+          "valor": "calculado no motor RR sobre o custo",
+          "fonte": "Hipótese de fornecedor no regime regular (plano, E3)."
+        },
+        {
+          "nome": "ICMS",
+          "valor": "fora das contas",
+          "fonte": "Simplificação da demonstração. Em 2027 o ICMS ainda existe e é deduzido da base do IBS/CBS (docs/exemplos.md da calculadora RR)."
+        }
+      ],
+      "aviso": "Estimativa baseada nas calculadoras oficiais. Não é parecer fiscal e não substitui o contador."
+    }
+  },
+  "cerveja-lata": {
+    "simples_tradicional": {
+      "itemId": "cerveja-lata",
+      "regime": "simples_tradicional",
+      "motor": "simples_nacional",
+      "estado": "CALCULADO",
+      "reducaoPct": null,
+      "memoria": {
+        "cbs": "Receita bruta do Simples Nacional de R$ 379,00 (Receita bruta - interna). A base de cálculo utilizada é de R$ 379,00, com alíquota efetiva de 1,1612%. Valor devido de R$ 4,40 e pendente/suspenso de R$ 0,00.",
+        "ibs": "Receita bruta do Simples Nacional de R$ 379,00 (Receita bruta - interna). A base de cálculo utilizada é de R$ 379,00, com alíquota efetiva de 0,0129%. Valor devido de R$ 0,05 e pendente/suspenso de R$ 0,00."
+      },
+      "erros": [],
+      "fundamentacoes": [
+        {
+          "cClassTrib": "000001",
+          "textoCurto": "LC 214/2025",
+          "texto": "Regra Geral",
+          "referenciaNormativa": "LIVRO I \\n\\nDO IMPOSTO SOBRE BENS E SERVIÇOS (IBS) E DA CONTRIBUIÇÃO SOCIAL SOBRE BENS E SERVIÇOS (CBS) \\n\\nTÍTULO I \\n\\nDAS NORMAS GERAIS DO IBS E DA CBS \\n\\nCAPÍTULO I \\n\\nDISPOSIÇÕES PRELIMINARES"
+        }
+      ],
+      "premissas": [
+        {
+          "nome": "Alíquotas nominais de 2027",
+          "valor": "CBS 8,8% · IBS estadual 0,05% · IBS municipal 0,05%",
+          "fonte": "Entradas do exemplo oficial (docs/exemplos.md da calculadora RR 1.7.2). Não são alíquotas oficiais (P6)."
+        },
+        {
+          "nome": "Imposto Seletivo da cerveja",
+          "valor": "não incide na revenda (cClassTrib do IS 200007); alíquota exigida pelo motor: 10%",
+          "fonte": "Entrada do exemplo oficial. O motor RR exige a alíquota do IS para NCM sujeita ao IS mesmo na revenda (erro REG-035: 'ainda não foi definida em lei'). Na revenda (cClassTrib do IS 200007) o valor do IS sai zero."
+        },
+        {
+          "nome": "Alíquotas efetivas do Simples (anexo I)",
+          "valor": "CBS 1,1612% · IBS 0,0129%",
+          "fonte": "Valores de exemplo do esquema OpenAPI do motor SN 1.0.2 (AliquotasEfetivasInput). Não são alíquotas de nenhum contribuinte (P8)."
+        },
+        {
+          "nome": "Crédito das compras no Simples tradicional",
+          "valor": "não aproveitado: entra no custo",
+          "fonte": "Hipótese dos guias citados no plano (seção 11.2). Validar com o contador."
+        },
+        {
+          "nome": "Crédito das compras sem grupo IBSCBS na nota",
+          "valor": "calculado no motor RR sobre o custo",
+          "fonte": "Hipótese de fornecedor no regime regular (plano, E3)."
+        },
+        {
+          "nome": "ICMS",
+          "valor": "fora das contas",
+          "fonte": "Simplificação da demonstração. Em 2027 o ICMS ainda existe e é deduzido da base do IBS/CBS (docs/exemplos.md da calculadora RR)."
+        }
+      ],
+      "aviso": "Estimativa baseada nas calculadoras oficiais. Não é parecer fiscal e não substitui o contador."
+    },
+    "simples_hibrido": {
+      "itemId": "cerveja-lata",
+      "regime": "simples_hibrido",
+      "motor": "regime_regular",
+      "estado": "CALCULO_SIMULADO",
+      "reducaoPct": "0.00",
+      "memoria": {
+        "cbs": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 379,00, com alíquota de 8,80%.",
+        "ibsUF": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 379,00, com alíquota de 0,05%.",
+        "ibsMun": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 379,00, com alíquota de 0,05%.",
+        "impostoSeletivo": "Operação de consumo sujeita à tributação pelo Imposto Seletivo, com enquadramento legal em Art. 410, tributada conforme Tributação pelo Imposto Seletivo - Sem Cálculo. A base de cálculo utilizada é de R$ 379,00, com alíquota ad valorem de 10,00%. A alíquota ad rem é de 0,00."
+      },
+      "erros": [],
+      "fundamentacoes": [
+        {
+          "cClassTrib": "000001",
+          "textoCurto": "LC 214/2025",
+          "texto": "Regra Geral",
+          "referenciaNormativa": "LIVRO I \\n\\nDO IMPOSTO SOBRE BENS E SERVIÇOS (IBS) E DA CONTRIBUIÇÃO SOCIAL SOBRE BENS E SERVIÇOS (CBS) \\n\\nTÍTULO I \\n\\nDAS NORMAS GERAIS DO IBS E DA CBS \\n\\nCAPÍTULO I \\n\\nDISPOSIÇÕES PRELIMINARES"
+        }
+      ],
+      "premissas": [
+        {
+          "nome": "Alíquotas nominais de 2027",
+          "valor": "CBS 8,8% · IBS estadual 0,05% · IBS municipal 0,05%",
+          "fonte": "Entradas do exemplo oficial (docs/exemplos.md da calculadora RR 1.7.2). Não são alíquotas oficiais (P6)."
+        },
+        {
+          "nome": "Imposto Seletivo da cerveja",
+          "valor": "não incide na revenda (cClassTrib do IS 200007); alíquota exigida pelo motor: 10%",
+          "fonte": "Entrada do exemplo oficial. O motor RR exige a alíquota do IS para NCM sujeita ao IS mesmo na revenda (erro REG-035: 'ainda não foi definida em lei'). Na revenda (cClassTrib do IS 200007) o valor do IS sai zero."
+        },
+        {
+          "nome": "Crédito das compras sem grupo IBSCBS na nota",
+          "valor": "calculado no motor RR sobre o custo",
+          "fonte": "Hipótese de fornecedor no regime regular (plano, E3)."
+        },
+        {
+          "nome": "ICMS",
+          "valor": "fora das contas",
+          "fonte": "Simplificação da demonstração. Em 2027 o ICMS ainda existe e é deduzido da base do IBS/CBS (docs/exemplos.md da calculadora RR)."
+        }
+      ],
+      "aviso": "Estimativa baseada nas calculadoras oficiais. Não é parecer fiscal e não substitui o contador."
+    }
+  },
+  "chocolate-barra": {
+    "simples_tradicional": {
+      "itemId": "chocolate-barra",
+      "regime": "simples_tradicional",
+      "motor": "simples_nacional",
+      "estado": "CALCULADO",
+      "reducaoPct": null,
+      "memoria": {
+        "cbs": "Receita bruta do Simples Nacional de R$ 599,00 (Receita bruta - interna). A base de cálculo utilizada é de R$ 599,00, com alíquota efetiva de 1,1612%. Valor devido de R$ 6,96 e pendente/suspenso de R$ 0,00.",
+        "ibs": "Receita bruta do Simples Nacional de R$ 599,00 (Receita bruta - interna). A base de cálculo utilizada é de R$ 599,00, com alíquota efetiva de 0,0129%. Valor devido de R$ 0,08 e pendente/suspenso de R$ 0,00."
+      },
+      "erros": [],
+      "fundamentacoes": [
+        {
+          "cClassTrib": "000001",
+          "textoCurto": "LC 214/2025",
+          "texto": "Regra Geral",
+          "referenciaNormativa": "LIVRO I \\n\\nDO IMPOSTO SOBRE BENS E SERVIÇOS (IBS) E DA CONTRIBUIÇÃO SOCIAL SOBRE BENS E SERVIÇOS (CBS) \\n\\nTÍTULO I \\n\\nDAS NORMAS GERAIS DO IBS E DA CBS \\n\\nCAPÍTULO I \\n\\nDISPOSIÇÕES PRELIMINARES"
+        }
+      ],
+      "premissas": [
+        {
+          "nome": "Alíquotas nominais de 2027",
+          "valor": "CBS 8,8% · IBS estadual 0,05% · IBS municipal 0,05%",
+          "fonte": "Entradas do exemplo oficial (docs/exemplos.md da calculadora RR 1.7.2). Não são alíquotas oficiais (P6)."
+        },
+        {
+          "nome": "Alíquotas efetivas do Simples (anexo I)",
+          "valor": "CBS 1,1612% · IBS 0,0129%",
+          "fonte": "Valores de exemplo do esquema OpenAPI do motor SN 1.0.2 (AliquotasEfetivasInput). Não são alíquotas de nenhum contribuinte (P8)."
+        },
+        {
+          "nome": "Crédito das compras no Simples tradicional",
+          "valor": "não aproveitado: entra no custo",
+          "fonte": "Hipótese dos guias citados no plano (seção 11.2). Validar com o contador."
+        },
+        {
+          "nome": "Crédito das compras sem grupo IBSCBS na nota",
+          "valor": "calculado no motor RR sobre o custo",
+          "fonte": "Hipótese de fornecedor no regime regular (plano, E3)."
+        },
+        {
+          "nome": "ICMS",
+          "valor": "fora das contas",
+          "fonte": "Simplificação da demonstração. Em 2027 o ICMS ainda existe e é deduzido da base do IBS/CBS (docs/exemplos.md da calculadora RR)."
+        }
+      ],
+      "aviso": "Estimativa baseada nas calculadoras oficiais. Não é parecer fiscal e não substitui o contador."
+    },
+    "simples_hibrido": {
+      "itemId": "chocolate-barra",
+      "regime": "simples_hibrido",
+      "motor": "regime_regular",
+      "estado": "CALCULO_SIMULADO",
+      "reducaoPct": "0.00",
+      "memoria": {
+        "cbs": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 599,00, com alíquota de 8,80%.",
+        "ibsUF": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 599,00, com alíquota de 0,05%.",
+        "ibsMun": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 599,00, com alíquota de 0,05%."
+      },
+      "erros": [],
+      "fundamentacoes": [
+        {
+          "cClassTrib": "000001",
+          "textoCurto": "LC 214/2025",
+          "texto": "Regra Geral",
+          "referenciaNormativa": "LIVRO I \\n\\nDO IMPOSTO SOBRE BENS E SERVIÇOS (IBS) E DA CONTRIBUIÇÃO SOCIAL SOBRE BENS E SERVIÇOS (CBS) \\n\\nTÍTULO I \\n\\nDAS NORMAS GERAIS DO IBS E DA CBS \\n\\nCAPÍTULO I \\n\\nDISPOSIÇÕES PRELIMINARES"
+        }
+      ],
+      "premissas": [
+        {
+          "nome": "Alíquotas nominais de 2027",
+          "valor": "CBS 8,8% · IBS estadual 0,05% · IBS municipal 0,05%",
+          "fonte": "Entradas do exemplo oficial (docs/exemplos.md da calculadora RR 1.7.2). Não são alíquotas oficiais (P6)."
+        },
+        {
+          "nome": "Crédito das compras sem grupo IBSCBS na nota",
+          "valor": "calculado no motor RR sobre o custo",
+          "fonte": "Hipótese de fornecedor no regime regular (plano, E3)."
+        },
+        {
+          "nome": "ICMS",
+          "valor": "fora das contas",
+          "fonte": "Simplificação da demonstração. Em 2027 o ICMS ainda existe e é deduzido da base do IBS/CBS (docs/exemplos.md da calculadora RR)."
+        }
+      ],
+      "aviso": "Estimativa baseada nas calculadoras oficiais. Não é parecer fiscal e não substitui o contador."
+    }
+  },
+  "carne-bovina-kg": {
+    "simples_tradicional": {
+      "itemId": "carne-bovina-kg",
+      "regime": "simples_tradicional",
+      "motor": "simples_nacional",
+      "estado": "INCONSISTENCIA_ENTRADA",
+      "reducaoPct": null,
+      "memoria": null,
+      "erros": [
+        {
+          "codigo": "VSN-047",
+          "titulo": "NCM não aplicável",
+          "campo": "#/itens/3/ncm",
+          "detalhe": "NCM de código 02013000 não vinculada à Classificação Tributária de código 200035 (CBS e IBS)"
+        }
+      ],
+      "fundamentacoes": [
+        {
+          "cClassTrib": "200035",
+          "textoCurto": "Art. 136",
+          "texto": "Art. 136. Ficam reduzidas em 60% (sessenta por cento) as alíquotas do IBS e da CBS incidentes sobre o fornecimento dos produtos de higiene pessoal e limpeza relacionados no Anexo VIII desta Lei Complementar, com a especificação das respectivas classificações da NCM/SH.",
+          "referenciaNormativa": "LIVRO I \\n\\nDO IMPOSTO SOBRE BENS E SERVIÇOS (IBS) E DA CONTRIBUIÇÃO SOCIAL SOBRE BENS E SERVIÇOS (CBS) \\n\\nTÍTULO IV\\n\\nDOS REGIMES DIFERENCIADOS DO IBS E DA CBS\\n\\nCAPÍTULO III\\n\\nDA REDUÇÃO EM SESSENTA POR CENTO DAS ALÍQUOTAS DO IBS E DA CBS\\n\\nSeção VIII\\n\\nDos Produtos de Higiene Pessoal e Limpeza Majoritariamente Consumidos por Famílias de Baixa Renda"
+        }
+      ],
+      "premissas": [
+        {
+          "nome": "Alíquotas nominais de 2027",
+          "valor": "CBS 8,8% · IBS estadual 0,05% · IBS municipal 0,05%",
+          "fonte": "Entradas do exemplo oficial (docs/exemplos.md da calculadora RR 1.7.2). Não são alíquotas oficiais (P6)."
+        },
+        {
+          "nome": "Alíquotas efetivas do Simples (anexo I)",
+          "valor": "CBS 1,1612% · IBS 0,0129%",
+          "fonte": "Valores de exemplo do esquema OpenAPI do motor SN 1.0.2 (AliquotasEfetivasInput). Não são alíquotas de nenhum contribuinte (P8)."
+        },
+        {
+          "nome": "Crédito das compras no Simples tradicional",
+          "valor": "não aproveitado: entra no custo",
+          "fonte": "Hipótese dos guias citados no plano (seção 11.2). Validar com o contador."
+        },
+        {
+          "nome": "Crédito das compras sem grupo IBSCBS na nota",
+          "valor": "calculado no motor RR sobre o custo",
+          "fonte": "Hipótese de fornecedor no regime regular (plano, E3)."
+        },
+        {
+          "nome": "ICMS",
+          "valor": "fora das contas",
+          "fonte": "Simplificação da demonstração. Em 2027 o ICMS ainda existe e é deduzido da base do IBS/CBS (docs/exemplos.md da calculadora RR)."
+        }
+      ],
+      "aviso": "Estimativa baseada nas calculadoras oficiais. Não é parecer fiscal e não substitui o contador."
+    },
+    "simples_hibrido": {
+      "itemId": "carne-bovina-kg",
+      "regime": "simples_hibrido",
+      "motor": "regime_regular",
+      "estado": "INCONSISTENCIA_ENTRADA",
+      "reducaoPct": null,
+      "memoria": null,
+      "erros": [
+        {
+          "codigo": "REG-011",
+          "titulo": "NCM não vinculada",
+          "campo": "#/itens/3/ncm",
+          "detalhe": "NCM de código 02013000 não vinculada à Classificação Tributária de código 200035 (CBS e IBS)"
+        }
+      ],
+      "fundamentacoes": [
+        {
+          "cClassTrib": "200035",
+          "textoCurto": "Art. 136",
+          "texto": "Art. 136. Ficam reduzidas em 60% (sessenta por cento) as alíquotas do IBS e da CBS incidentes sobre o fornecimento dos produtos de higiene pessoal e limpeza relacionados no Anexo VIII desta Lei Complementar, com a especificação das respectivas classificações da NCM/SH.",
+          "referenciaNormativa": "LIVRO I \\n\\nDO IMPOSTO SOBRE BENS E SERVIÇOS (IBS) E DA CONTRIBUIÇÃO SOCIAL SOBRE BENS E SERVIÇOS (CBS) \\n\\nTÍTULO IV\\n\\nDOS REGIMES DIFERENCIADOS DO IBS E DA CBS\\n\\nCAPÍTULO III\\n\\nDA REDUÇÃO EM SESSENTA POR CENTO DAS ALÍQUOTAS DO IBS E DA CBS\\n\\nSeção VIII\\n\\nDos Produtos de Higiene Pessoal e Limpeza Majoritariamente Consumidos por Famílias de Baixa Renda"
+        }
+      ],
+      "premissas": [
+        {
+          "nome": "Alíquotas nominais de 2027",
+          "valor": "CBS 8,8% · IBS estadual 0,05% · IBS municipal 0,05%",
+          "fonte": "Entradas do exemplo oficial (docs/exemplos.md da calculadora RR 1.7.2). Não são alíquotas oficiais (P6)."
+        },
+        {
+          "nome": "Crédito das compras sem grupo IBSCBS na nota",
+          "valor": "calculado no motor RR sobre o custo",
+          "fonte": "Hipótese de fornecedor no regime regular (plano, E3)."
+        },
+        {
+          "nome": "ICMS",
+          "valor": "fora das contas",
+          "fonte": "Simplificação da demonstração. Em 2027 o ICMS ainda existe e é deduzido da base do IBS/CBS (docs/exemplos.md da calculadora RR)."
+        }
+      ],
+      "aviso": "Estimativa baseada nas calculadoras oficiais. Não é parecer fiscal e não substitui o contador."
+    }
+  }
+}

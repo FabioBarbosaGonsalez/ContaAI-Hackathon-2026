@@ -1,0 +1,32 @@
+{
+  "REG-011": {
+    "codigo": "REG-011",
+    "titulo": "NCM não vinculada",
+    "descricao": "O código NCM informado não está vinculado a nenhuma classificação tributária vigente.",
+    "motor": "regime_regular"
+  },
+  "REG-013": {
+    "codigo": "REG-013",
+    "titulo": "Dados do Imposto Seletivo não informados",
+    "descricao": "Os dados do Imposto Seletivo são obrigatórios para a classificação tributária selecionada e não foram informados.",
+    "motor": "regime_regular"
+  },
+  "REG-035": {
+    "codigo": "REG-035",
+    "titulo": "Alíquota do Imposto Seletivo não informada",
+    "descricao": "A NCM/NBS possui incidência do Imposto Seletivo, mas a alíquota ainda não foi definida em lei e não foi informada pelo usuário.",
+    "motor": "regime_regular"
+  },
+  "VSN-039": {
+    "codigo": "VSN-039",
+    "titulo": "Alíquotas efetivas do contribuinte (aliquotasEfetivas) ausentes",
+    "descricao": "No cálculo não assistido, a linha de alíquotas efetivas do contribuinte no período (aliquotasEfetivas) é obrigatória, exceto quando o regime não calcula tributos (SOMENTE_RECEITA). A falha rejeita a operação inteira.",
+    "motor": "simples_nacional"
+  },
+  "VSN-047": {
+    "codigo": "VSN-047",
+    "titulo": "NCM não aplicável",
+    "descricao": "O NCM informado não está vinculado à classificação tributária.",
+    "motor": "simples_nacional"
+  }
+}

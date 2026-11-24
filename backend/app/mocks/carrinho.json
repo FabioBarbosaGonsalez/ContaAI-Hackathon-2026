@@ -1,0 +1,356 @@
+{
+  "simples_tradicional": {
+    "simulado": true,
+    "avisoSimulacao": "Simulação de 2027 com alíquotas efetivas do Simples assumidas (CBS 1,1612%, IBS 0,0129%)",
+    "premissas": [
+      {
+        "nome": "Alíquotas nominais de 2027",
+        "valor": "CBS 8,8% · IBS estadual 0,05% · IBS municipal 0,05%",
+        "fonte": "Entradas do exemplo oficial (docs/exemplos.md da calculadora RR 1.7.2). Não são alíquotas oficiais (P6)."
+      },
+      {
+        "nome": "Imposto Seletivo da cerveja",
+        "valor": "não incide na revenda (cClassTrib do IS 200007); alíquota exigida pelo motor: 10%",
+        "fonte": "Entrada do exemplo oficial. O motor RR exige a alíquota do IS para NCM sujeita ao IS mesmo na revenda (erro REG-035: 'ainda não foi definida em lei'). Na revenda (cClassTrib do IS 200007) o valor do IS sai zero."
+      },
+      {
+        "nome": "Alíquotas efetivas do Simples (anexo I)",
+        "valor": "CBS 1,1612% · IBS 0,0129%",
+        "fonte": "Valores de exemplo do esquema OpenAPI do motor SN 1.0.2 (AliquotasEfetivasInput). Não são alíquotas de nenhum contribuinte (P8)."
+      },
+      {
+        "nome": "Crédito das compras no Simples tradicional",
+        "valor": "não aproveitado: entra no custo",
+        "fonte": "Hipótese dos guias citados no plano (seção 11.2). Validar com o contador."
+      },
+      {
+        "nome": "Crédito das compras sem grupo IBSCBS na nota",
+        "valor": "calculado no motor RR sobre o custo",
+        "fonte": "Hipótese de fornecedor no regime regular (plano, E3)."
+      },
+      {
+        "nome": "ICMS",
+        "valor": "fora das contas",
+        "fonte": "Simplificação da demonstração. Em 2027 o ICMS ainda existe e é deduzido da base do IBS/CBS (docs/exemplos.md da calculadora RR)."
+      },
+      {
+        "nome": "Lote de referência",
+        "valor": "100 unidades por item",
+        "fonte": "Valores por unidade = linha ÷ 100."
+      }
+    ],
+    "regime": "simples_tradicional",
+    "data": "2027-03-16",
+    "itens": [
+      {
+        "id": "arroz-5kg",
+        "descricao": "Arroz polido não parboilizado, pacote 5 kg",
+        "motor": "simples_nacional",
+        "estado": "CALCULADO",
+        "motivoEstado": null,
+        "quantidade": "100",
+        "valorUnitario": "27.90",
+        "valorProdutos": "2790.00",
+        "tributos": {
+          "cbs": "32.40",
+          "ibs": "0.36",
+          "impostoSeletivo": "0.00"
+        },
+        "reducaoPct": null,
+        "aliquotaEfetiva": {
+          "cbs": "1.1612",
+          "ibsUF": null,
+          "ibsMun": null,
+          "ibs": "0.0129"
+        },
+        "precoCliente": "2790.00",
+        "custoEfetivo": "2150.00",
+        "margemPct": "21.76",
+        "memoria": {
+          "cbs": "Receita bruta do Simples Nacional de R$ 2.790,00 (Receita bruta - interna). A base de cálculo utilizada é de R$ 2.790,00, com alíquota efetiva de 1,1612%. Valor devido de R$ 32,40 e pendente/suspenso de R$ 0,00.",
+          "ibs": "Receita bruta do Simples Nacional de R$ 2.790,00 (Receita bruta - interna). A base de cálculo utilizada é de R$ 2.790,00, com alíquota efetiva de 0,0129%. Valor devido de R$ 0,36 e pendente/suspenso de R$ 0,00."
+        },
+        "erros": []
+      },
+      {
+        "id": "cerveja-lata",
+        "descricao": "Cerveja de malte, lata 350 ml",
+        "motor": "simples_nacional",
+        "estado": "CALCULADO",
+        "motivoEstado": null,
+        "quantidade": "100",
+        "valorUnitario": "3.79",
+        "valorProdutos": "379.00",
+        "tributos": {
+          "cbs": "4.40",
+          "ibs": "0.05",
+          "impostoSeletivo": "0.00"
+        },
+        "reducaoPct": null,
+        "aliquotaEfetiva": {
+          "cbs": "1.1612",
+          "ibsUF": null,
+          "ibsMun": null,
+          "ibs": "0.0129"
+        },
+        "precoCliente": "379.00",
+        "custoEfetivo": "332.15",
+        "margemPct": "11.19",
+        "memoria": {
+          "cbs": "Receita bruta do Simples Nacional de R$ 379,00 (Receita bruta - interna). A base de cálculo utilizada é de R$ 379,00, com alíquota efetiva de 1,1612%. Valor devido de R$ 4,40 e pendente/suspenso de R$ 0,00.",
+          "ibs": "Receita bruta do Simples Nacional de R$ 379,00 (Receita bruta - interna). A base de cálculo utilizada é de R$ 379,00, com alíquota efetiva de 0,0129%. Valor devido de R$ 0,05 e pendente/suspenso de R$ 0,00."
+        },
+        "erros": []
+      },
+      {
+        "id": "chocolate-barra",
+        "descricao": "Chocolate não recheado, barra 90 g",
+        "motor": "simples_nacional",
+        "estado": "CALCULADO",
+        "motivoEstado": null,
+        "quantidade": "100",
+        "valorUnitario": "5.99",
+        "valorProdutos": "599.00",
+        "tributos": {
+          "cbs": "6.96",
+          "ibs": "0.08",
+          "impostoSeletivo": "0.00"
+        },
+        "reducaoPct": null,
+        "aliquotaEfetiva": {
+          "cbs": "1.1612",
+          "ibsUF": null,
+          "ibsMun": null,
+          "ibs": "0.0129"
+        },
+        "precoCliente": "599.00",
+        "custoEfetivo": "446.49",
+        "margemPct": "24.29",
+        "memoria": {
+          "cbs": "Receita bruta do Simples Nacional de R$ 599,00 (Receita bruta - interna). A base de cálculo utilizada é de R$ 599,00, com alíquota efetiva de 1,1612%. Valor devido de R$ 6,96 e pendente/suspenso de R$ 0,00.",
+          "ibs": "Receita bruta do Simples Nacional de R$ 599,00 (Receita bruta - interna). A base de cálculo utilizada é de R$ 599,00, com alíquota efetiva de 0,0129%. Valor devido de R$ 0,08 e pendente/suspenso de R$ 0,00."
+        },
+        "erros": []
+      },
+      {
+        "id": "carne-bovina-kg",
+        "descricao": "Carne bovina desossada, resfriada (kg)",
+        "motor": "simples_nacional",
+        "estado": "INCONSISTENCIA_ENTRADA",
+        "motivoEstado": null,
+        "quantidade": "100",
+        "valorUnitario": "39.90",
+        "valorProdutos": "3990.00",
+        "tributos": {
+          "cbs": null,
+          "ibs": null,
+          "impostoSeletivo": null
+        },
+        "reducaoPct": null,
+        "aliquotaEfetiva": null,
+        "precoCliente": null,
+        "custoEfetivo": null,
+        "margemPct": null,
+        "memoria": null,
+        "erros": [
+          {
+            "codigo": "VSN-047",
+            "titulo": "NCM não aplicável",
+            "campo": "#/itens/3/ncm",
+            "detalhe": "NCM de código 02013000 não vinculada à Classificação Tributária de código 200035 (CBS e IBS)"
+          }
+        ]
+      }
+    ],
+    "totais": {
+      "valorProdutos": "3768.00",
+      "tributos": {
+        "cbs": "43.76",
+        "ibs": "0.49",
+        "impostoSeletivo": "0.00"
+      },
+      "precoCliente": "3768.00",
+      "itensCalculados": 3,
+      "itensComErro": 1
+    },
+    "versoes": {
+      "motorRegimeRegular": "1.7.2",
+      "motorSimplesNacional": "1.0.2",
+      "banco": "V0073"
+    }
+  },
+  "simples_hibrido": {
+    "simulado": true,
+    "avisoSimulacao": "Simulação de 2027 com CBS 8,8% assumida",
+    "premissas": [
+      {
+        "nome": "Alíquotas nominais de 2027",
+        "valor": "CBS 8,8% · IBS estadual 0,05% · IBS municipal 0,05%",
+        "fonte": "Entradas do exemplo oficial (docs/exemplos.md da calculadora RR 1.7.2). Não são alíquotas oficiais (P6)."
+      },
+      {
+        "nome": "Imposto Seletivo da cerveja",
+        "valor": "não incide na revenda (cClassTrib do IS 200007); alíquota exigida pelo motor: 10%",
+        "fonte": "Entrada do exemplo oficial. O motor RR exige a alíquota do IS para NCM sujeita ao IS mesmo na revenda (erro REG-035: 'ainda não foi definida em lei'). Na revenda (cClassTrib do IS 200007) o valor do IS sai zero."
+      },
+      {
+        "nome": "Crédito das compras sem grupo IBSCBS na nota",
+        "valor": "calculado no motor RR sobre o custo",
+        "fonte": "Hipótese de fornecedor no regime regular (plano, E3)."
+      },
+      {
+        "nome": "ICMS",
+        "valor": "fora das contas",
+        "fonte": "Simplificação da demonstração. Em 2027 o ICMS ainda existe e é deduzido da base do IBS/CBS (docs/exemplos.md da calculadora RR)."
+      },
+      {
+        "nome": "Lote de referência",
+        "valor": "100 unidades por item",
+        "fonte": "Valores por unidade = linha ÷ 100."
+      }
+    ],
+    "regime": "simples_hibrido",
+    "data": "2027-03-16",
+    "itens": [
+      {
+        "id": "arroz-5kg",
+        "descricao": "Arroz polido não parboilizado, pacote 5 kg",
+        "motor": "regime_regular",
+        "estado": "CALCULO_SIMULADO",
+        "motivoEstado": null,
+        "quantidade": "100",
+        "valorUnitario": "27.90",
+        "valorProdutos": "2790.00",
+        "tributos": {
+          "cbs": "0.00",
+          "ibs": "0.00",
+          "impostoSeletivo": null
+        },
+        "reducaoPct": "100.00",
+        "aliquotaEfetiva": {
+          "cbs": "0.00",
+          "ibsUF": "0.00",
+          "ibsMun": "0.00",
+          "ibs": null
+        },
+        "precoCliente": "2790.00",
+        "custoEfetivo": "2150.00",
+        "margemPct": "22.94",
+        "memoria": {
+          "cbs": "Operação de consumo com enquadramento legal em Art. 125, tributada conforme Alíquota zero. A base de cálculo utilizada é de R$ 2.790,00, com alíquota de zero.",
+          "ibsUF": "Operação de consumo com enquadramento legal em Art. 125, tributada conforme Alíquota zero. A base de cálculo utilizada é de R$ 2.790,00, com alíquota de zero.",
+          "ibsMun": "Operação de consumo com enquadramento legal em Art. 125, tributada conforme Alíquota zero. A base de cálculo utilizada é de R$ 2.790,00, com alíquota de zero."
+        },
+        "erros": []
+      },
+      {
+        "id": "cerveja-lata",
+        "descricao": "Cerveja de malte, lata 350 ml",
+        "motor": "regime_regular",
+        "estado": "CALCULO_SIMULADO",
+        "motivoEstado": null,
+        "quantidade": "100",
+        "valorUnitario": "3.79",
+        "valorProdutos": "379.00",
+        "tributos": {
+          "cbs": "33.35",
+          "ibs": "0.38",
+          "impostoSeletivo": "0.00"
+        },
+        "reducaoPct": "0.00",
+        "aliquotaEfetiva": {
+          "cbs": "8.80",
+          "ibsUF": "0.05",
+          "ibsMun": "0.05",
+          "ibs": null
+        },
+        "precoCliente": "412.73",
+        "custoEfetivo": "305.00",
+        "margemPct": "17.93",
+        "memoria": {
+          "cbs": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 379,00, com alíquota de 8,80%.",
+          "ibsUF": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 379,00, com alíquota de 0,05%.",
+          "ibsMun": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 379,00, com alíquota de 0,05%.",
+          "impostoSeletivo": "Operação de consumo sujeita à tributação pelo Imposto Seletivo, com enquadramento legal em Art. 410, tributada conforme Tributação pelo Imposto Seletivo - Sem Cálculo. A base de cálculo utilizada é de R$ 379,00, com alíquota ad valorem de 10,00%. A alíquota ad rem é de 0,00."
+        },
+        "erros": []
+      },
+      {
+        "id": "chocolate-barra",
+        "descricao": "Chocolate não recheado, barra 90 g",
+        "motor": "regime_regular",
+        "estado": "CALCULO_SIMULADO",
+        "motivoEstado": null,
+        "quantidade": "100",
+        "valorUnitario": "5.99",
+        "valorProdutos": "599.00",
+        "tributos": {
+          "cbs": "52.71",
+          "ibs": "0.60",
+          "impostoSeletivo": null
+        },
+        "reducaoPct": "0.00",
+        "aliquotaEfetiva": {
+          "cbs": "8.80",
+          "ibsUF": "0.05",
+          "ibsMun": "0.05",
+          "ibs": null
+        },
+        "precoCliente": "652.31",
+        "custoEfetivo": "410.00",
+        "margemPct": "28.97",
+        "memoria": {
+          "cbs": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 599,00, com alíquota de 8,80%.",
+          "ibsUF": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 599,00, com alíquota de 0,05%.",
+          "ibsMun": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 599,00, com alíquota de 0,05%."
+        },
+        "erros": []
+      },
+      {
+        "id": "carne-bovina-kg",
+        "descricao": "Carne bovina desossada, resfriada (kg)",
+        "motor": "regime_regular",
+        "estado": "INCONSISTENCIA_ENTRADA",
+        "motivoEstado": null,
+        "quantidade": "100",
+        "valorUnitario": "39.90",
+        "valorProdutos": "3990.00",
+        "tributos": {
+          "cbs": null,
+          "ibs": null,
+          "impostoSeletivo": null
+        },
+        "reducaoPct": null,
+        "aliquotaEfetiva": null,
+        "precoCliente": null,
+        "custoEfetivo": null,
+        "margemPct": null,
+        "memoria": null,
+        "erros": [
+          {
+            "codigo": "REG-011",
+            "titulo": "NCM não vinculada",
+            "campo": "#/itens/3/ncm",
+            "detalhe": "NCM de código 02013000 não vinculada à Classificação Tributária de código 200035 (CBS e IBS)"
+          }
+        ]
+      }
+    ],
+    "totais": {
+      "valorProdutos": "3768.00",
+      "tributos": {
+        "cbs": "86.06",
+        "ibs": "0.98",
+        "impostoSeletivo": "0.00"
+      },
+      "precoCliente": "3855.04",
+      "itensCalculados": 3,
+      "itensComErro": 1
+    },
+    "versoes": {
+      "motorRegimeRegular": "1.7.2",
+      "motorSimplesNacional": "1.0.2",
+      "banco": "V0073"
+    }
+  }
+}

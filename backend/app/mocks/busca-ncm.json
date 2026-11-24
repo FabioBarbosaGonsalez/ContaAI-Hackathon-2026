@@ -1,0 +1,122 @@
+{
+  "arroz": {
+    "consulta": "arroz",
+    "candidatos": [
+      {
+        "ncm": "10063021",
+        "nbs": null,
+        "descricao": "Arroz - Arroz semibranqueado ou branqueado, mesmo polido ou brunido (glaciado*) - Não parboilizado - Polido ou brunido",
+        "tributadoPeloImpostoSeletivo": false,
+        "classificacoes": [
+          {
+            "cClassTrib": "000001",
+            "cst": "000",
+            "descricao": "Situações tributadas integralmente pelo IBS e CBS.",
+            "reducaoPct": "0.00",
+            "especificaDoProduto": false,
+            "fundamentacao": "LC 214/2025"
+          },
+          {
+            "cClassTrib": "200003",
+            "cst": "200",
+            "descricao": "Vendas de produtos destinados à alimentação humana (Anexo I)",
+            "reducaoPct": "100.00",
+            "especificaDoProduto": true,
+            "fundamentacao": "Art. 125"
+          },
+          {
+            "cClassTrib": "200038",
+            "cst": "200",
+            "descricao": "Fornecimento dos insumos agropecuários e aquícolas (Anexo IX)",
+            "reducaoPct": "60.00",
+            "especificaDoProduto": true,
+            "fundamentacao": "Art. 138"
+          },
+          {
+            "cClassTrib": "515001",
+            "cst": "515",
+            "descricao": "Operações, sujeitas a diferimento, com insumos agropecuários e aquícolas (Anexo IX)",
+            "reducaoPct": "60.00",
+            "especificaDoProduto": true,
+            "fundamentacao": "Art. 138, § 2º"
+          }
+        ]
+      }
+    ],
+    "aviso": "Candidatos para o usuário confirmar. A classificação fiscal é decisão do usuário ou do contador (P3)."
+  },
+  "cerveja": {
+    "consulta": "cerveja",
+    "candidatos": [
+      {
+        "ncm": "22030000",
+        "nbs": null,
+        "descricao": "Cervejas de malte",
+        "tributadoPeloImpostoSeletivo": true,
+        "classificacoes": [
+          {
+            "cClassTrib": "000001",
+            "cst": "000",
+            "descricao": "Situações tributadas integralmente pelo IBS e CBS.",
+            "reducaoPct": "0.00",
+            "especificaDoProduto": false,
+            "fundamentacao": "LC 214/2025"
+          }
+        ]
+      }
+    ],
+    "aviso": "Candidatos para o usuário confirmar. A classificação fiscal é decisão do usuário ou do contador (P3)."
+  },
+  "chocolate": {
+    "consulta": "chocolate",
+    "candidatos": [
+      {
+        "ncm": "18063210",
+        "nbs": null,
+        "descricao": "Chocolate e outras preparações alimentícias que contenham cacau - Não recheados - Chocolate",
+        "tributadoPeloImpostoSeletivo": false,
+        "classificacoes": [
+          {
+            "cClassTrib": "000001",
+            "cst": "000",
+            "descricao": "Situações tributadas integralmente pelo IBS e CBS.",
+            "reducaoPct": "0.00",
+            "especificaDoProduto": false,
+            "fundamentacao": "LC 214/2025"
+          }
+        ]
+      }
+    ],
+    "aviso": "Candidatos para o usuário confirmar. A classificação fiscal é decisão do usuário ou do contador (P3)."
+  },
+  "carne": {
+    "consulta": "carne",
+    "candidatos": [
+      {
+        "ncm": "02013000",
+        "nbs": null,
+        "descricao": "Carnes de animais da espécie bovina, frescas ou refrigeradas - Desossadas",
+        "tributadoPeloImpostoSeletivo": false,
+        "classificacoes": [
+          {
+            "cClassTrib": "000001",
+            "cst": "000",
+            "descricao": "Situações tributadas integralmente pelo IBS e CBS.",
+            "reducaoPct": "0.00",
+            "especificaDoProduto": false,
+            "fundamentacao": "LC 214/2025"
+          },
+          {
+            "cClassTrib": "200003",
+            "cst": "200",
+            "descricao": "Vendas de produtos destinados à alimentação humana (Anexo I)",
+            "reducaoPct": "100.00",
+            "especificaDoProduto": true,
+            "fundamentacao": "Art. 125"
+          }
+        ]
+      }
+    ],
+    "aviso": "Candidatos para o usuário confirmar. A classificação fiscal é decisão do usuário ou do contador (P3)."
+  }
+}

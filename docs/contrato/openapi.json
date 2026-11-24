@@ -1,0 +1,2605 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "ContaAI",
+    "description": "Copiloto de preço e margem na reforma tributária. Toda conta vem das calculadoras oficiais da Receita Federal; a IA só interpreta e explica. Estimativa baseada nas calculadoras oficiais. Não é parecer fiscal e não substitui o contador.",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/carrinho/calcular": {
+      "post": {
+        "tags": [
+          "cálculo"
+        ],
+        "summary": "Carrinho Calcular",
+        "operationId": "carrinho_calcular_carrinho_calcular_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CarrinhoRequisicao"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CarrinhoResposta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/item/preco-alvo": {
+      "post": {
+        "tags": [
+          "cálculo"
+        ],
+        "summary": "Preco Alvo",
+        "operationId": "preco_alvo_item_preco_alvo_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrecoAlvoRequisicao"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrecoAlvoResposta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/regime/comparar": {
+      "post": {
+        "tags": [
+          "cálculo"
+        ],
+        "summary": "Regime Comparar",
+        "operationId": "regime_comparar_regime_comparar_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegimeCompararRequisicao"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegimeCompararResposta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/nfe/importar": {
+      "post": {
+        "tags": [
+          "notas"
+        ],
+        "summary": "Nfe Importar",
+        "operationId": "nfe_importar_nfe_importar_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_nfe_importar_nfe_importar_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NfeImportarResposta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/alertas": {
+      "get": {
+        "tags": [
+          "notas"
+        ],
+        "summary": "Alertas",
+        "operationId": "alertas_alertas_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertasResposta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/busca/ncm": {
+      "get": {
+        "tags": [
+          "classificação"
+        ],
+        "summary": "Busca Ncm",
+        "operationId": "busca_ncm_busca_ncm_get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 60,
+              "title": "Q"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BuscaNcmResposta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/explicar/{item_id}": {
+      "get": {
+        "tags": [
+          "explicação"
+        ],
+        "summary": "Explicar",
+        "operationId": "explicar_explicar__item_id__get",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 64,
+              "title": "Item Id"
+            }
+          },
+          {
+            "name": "regime",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Regime",
+              "default": "simples_tradicional"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExplicarResposta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/erros/{codigo}": {
+      "get": {
+        "tags": [
+          "explicação"
+        ],
+        "summary": "Erro",
+        "operationId": "erro_erros__codigo__get",
+        "parameters": [
+          {
+            "name": "codigo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(REG|VSN)-\\d{3}$",
+              "title": "Codigo"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErroDescricao"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chat": {
+      "post": {
+        "tags": [
+          "agente"
+        ],
+        "summary": "Chat",
+        "operationId": "chat_chat_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequisicao"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatResposta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/saude": {
+      "get": {
+        "tags": [
+          "operação"
+        ],
+        "summary": "Saude",
+        "description": "Estado dos dois motores e versão em execução × fixada (P5). Usa as rotas locais de versão.",
+        "operationId": "saude_saude_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaudeResposta"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AcaoConfirmarClassificacao": {
+        "properties": {
+          "tipo": {
+            "type": "string",
+            "const": "confirmar_classificacao",
+            "title": "Tipo"
+          },
+          "itemDescricao": {
+            "type": "string",
+            "title": "Itemdescricao"
+          },
+          "candidatos": {
+            "items": {
+              "$ref": "#/components/schemas/CandidatoNcm"
+            },
+            "type": "array",
+            "title": "Candidatos"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "tipo",
+          "itemDescricao",
+          "candidatos"
+        ],
+        "title": "AcaoConfirmarClassificacao",
+        "description": "O cálculo só acontece depois que o usuário confirma (P3)."
+      },
+      "Alerta": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "itemId": {
+            "type": "string",
+            "title": "Itemid"
+          },
+          "descricaoItem": {
+            "type": "string",
+            "title": "Descricaoitem"
+          },
+          "regime": {
+            "$ref": "#/components/schemas/Regime"
+          },
+          "margemAntesPct": {
+            "type": "string",
+            "title": "Margemantespct"
+          },
+          "margemDepoisPct": {
+            "type": "string",
+            "title": "Margemdepoispct"
+          },
+          "margemAlvoPct": {
+            "type": "string",
+            "title": "Margemalvopct"
+          },
+          "precoAtual": {
+            "type": "string",
+            "title": "Precoatual"
+          },
+          "precoSugerido": {
+            "type": "string",
+            "title": "Precosugerido"
+          },
+          "origem": {
+            "$ref": "#/components/schemas/OrigemAlerta"
+          },
+          "criadoEm": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Criadoem"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "itemId",
+          "descricaoItem",
+          "regime",
+          "margemAntesPct",
+          "margemDepoisPct",
+          "margemAlvoPct",
+          "precoAtual",
+          "precoSugerido",
+          "origem",
+          "criadoEm"
+        ],
+        "title": "Alerta"
+      },
+      "AlertasResposta": {
+        "properties": {
+          "alertas": {
+            "items": {
+              "$ref": "#/components/schemas/Alerta"
+            },
+            "type": "array",
+            "title": "Alertas"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "alertas"
+        ],
+        "title": "AlertasResposta"
+      },
+      "AliquotaEfetiva": {
+        "properties": {
+          "cbs": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cbs"
+          },
+          "ibsUF": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ibsuf"
+          },
+          "ibsMun": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ibsmun"
+          },
+          "ibs": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ibs"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "AliquotaEfetiva",
+        "description": "Como o motor devolve: RR separa IBS estadual e municipal; SN traz o IBS inteiro."
+      },
+      "AliquotasNominais": {
+        "properties": {
+          "cbs": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMaximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Cbs"
+          },
+          "ibsEstadual": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMaximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Ibsestadual"
+          },
+          "ibsMunicipal": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMaximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Ibsmunicipal"
+          },
+          "impostoSeletivoAdValorem": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Impostoseletivoadvalorem",
+            "description": "Exigida pelo motor para NCM sujeita ao IS, mesmo na revenda (REG-035)."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cbs",
+          "ibsEstadual",
+          "ibsMunicipal"
+        ],
+        "title": "AliquotasNominais",
+        "description": "Premissas de alíquota do usuário. Obrigatórias a partir de 2027 e proibidas antes (P6)."
+      },
+      "Body_nfe_importar_nfe_importar_post": {
+        "properties": {
+          "arquivo": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "Arquivo",
+            "description": "XML da NF-e de compra"
+          }
+        },
+        "type": "object",
+        "required": [
+          "arquivo"
+        ],
+        "title": "Body_nfe_importar_nfe_importar_post"
+      },
+      "BuscaNcmResposta": {
+        "properties": {
+          "consulta": {
+            "type": "string",
+            "title": "Consulta"
+          },
+          "candidatos": {
+            "items": {
+              "$ref": "#/components/schemas/CandidatoNcm"
+            },
+            "type": "array",
+            "title": "Candidatos"
+          },
+          "aviso": {
+            "type": "string",
+            "title": "Aviso",
+            "description": "A IA propõe; o usuário confirma (P3)."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "consulta",
+          "candidatos",
+          "aviso"
+        ],
+        "title": "BuscaNcmResposta"
+      },
+      "CandidatoNcm": {
+        "properties": {
+          "ncm": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ncm"
+          },
+          "nbs": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nbs"
+          },
+          "descricao": {
+            "type": "string",
+            "title": "Descricao",
+            "description": "Hierarquia oficial dos dados abertos."
+          },
+          "tributadoPeloImpostoSeletivo": {
+            "type": "boolean",
+            "title": "Tributadopeloimpostoseletivo"
+          },
+          "classificacoes": {
+            "items": {
+              "$ref": "#/components/schemas/ClassificacaoCandidata"
+            },
+            "type": "array",
+            "title": "Classificacoes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "descricao",
+          "tributadoPeloImpostoSeletivo",
+          "classificacoes"
+        ],
+        "title": "CandidatoNcm"
+      },
+      "CarrinhoRequisicao": {
+        "properties": {
+          "data": {
+            "type": "string",
+            "format": "date",
+            "title": "Data",
+            "description": "Data do fato gerador. Rege as vigências nos dois motores."
+          },
+          "uf": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$",
+            "title": "Uf"
+          },
+          "municipio": {
+            "type": "integer",
+            "title": "Municipio",
+            "description": "Código IBGE do município."
+          },
+          "aliquotasNominais": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AliquotasNominais"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "premissasDas": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PremissasDas"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "regime": {
+            "$ref": "#/components/schemas/Regime"
+          },
+          "itens": {
+            "items": {
+              "$ref": "#/components/schemas/ItemEntrada"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Itens"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "data",
+          "uf",
+          "municipio",
+          "regime",
+          "itens"
+        ],
+        "title": "CarrinhoRequisicao"
+      },
+      "CarrinhoResposta": {
+        "properties": {
+          "simulado": {
+            "type": "boolean",
+            "title": "Simulado",
+            "description": "Verdadeiro quando há alíquota premissa (2027 em diante ou DAS informado)."
+          },
+          "avisoSimulacao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avisosimulacao",
+            "description": "Frase de estado para o título da tela."
+          },
+          "premissas": {
+            "items": {
+              "$ref": "#/components/schemas/Premissa"
+            },
+            "type": "array",
+            "title": "Premissas"
+          },
+          "regime": {
+            "$ref": "#/components/schemas/Regime"
+          },
+          "data": {
+            "type": "string",
+            "format": "date",
+            "title": "Data"
+          },
+          "itens": {
+            "items": {
+              "$ref": "#/components/schemas/ItemCalculado"
+            },
+            "type": "array",
+            "title": "Itens"
+          },
+          "totais": {
+            "$ref": "#/components/schemas/Totais"
+          },
+          "versoes": {
+            "$ref": "#/components/schemas/Versoes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "simulado",
+          "premissas",
+          "regime",
+          "data",
+          "itens",
+          "totais",
+          "versoes"
+        ],
+        "title": "CarrinhoResposta"
+      },
+      "ChatRequisicao": {
+        "properties": {
+          "mensagens": {
+            "items": {
+              "$ref": "#/components/schemas/MensagemChat"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Mensagens"
+          },
+          "regime": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Regime"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "mensagens"
+        ],
+        "title": "ChatRequisicao"
+      },
+      "ChatResposta": {
+        "properties": {
+          "resposta": {
+            "type": "string",
+            "title": "Resposta"
+          },
+          "acoesPropostas": {
+            "items": {
+              "$ref": "#/components/schemas/AcaoConfirmarClassificacao"
+            },
+            "type": "array",
+            "title": "Acoespropostas"
+          },
+          "ferramentasChamadas": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Ferramentaschamadas"
+          },
+          "aviso": {
+            "type": "string",
+            "title": "Aviso"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "resposta",
+          "acoesPropostas",
+          "ferramentasChamadas",
+          "aviso"
+        ],
+        "title": "ChatResposta"
+      },
+      "ClassificacaoCandidata": {
+        "properties": {
+          "cClassTrib": {
+            "type": "string",
+            "title": "Cclasstrib"
+          },
+          "cst": {
+            "type": "string",
+            "title": "Cst"
+          },
+          "descricao": {
+            "type": "string",
+            "title": "Descricao"
+          },
+          "reducaoPct": {
+            "type": "string",
+            "title": "Reducaopct"
+          },
+          "especificaDoProduto": {
+            "type": "boolean",
+            "title": "Especificadoproduto",
+            "description": "Válida para esta NCM e inválida para uma NCM sem benefício (método do ADR 0003)."
+          },
+          "fundamentacao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fundamentacao"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cClassTrib",
+          "cst",
+          "descricao",
+          "reducaoPct",
+          "especificaDoProduto"
+        ],
+        "title": "ClassificacaoCandidata"
+      },
+      "ClienteB2B": {
+        "properties": {
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "regime": {
+            "type": "string",
+            "const": "regime_regular",
+            "title": "Regime"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "nome",
+          "regime"
+        ],
+        "title": "ClienteB2B"
+      },
+      "Emitente": {
+        "properties": {
+          "cnpj": {
+            "type": "string",
+            "title": "Cnpj"
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cnpj",
+          "nome"
+        ],
+        "title": "Emitente"
+      },
+      "ErroDescricao": {
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "title": "Codigo"
+          },
+          "titulo": {
+            "type": "string",
+            "title": "Titulo"
+          },
+          "descricao": {
+            "type": "string",
+            "title": "Descricao"
+          },
+          "motor": {
+            "$ref": "#/components/schemas/Motor"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "codigo",
+          "titulo",
+          "descricao",
+          "motor"
+        ],
+        "title": "ErroDescricao"
+      },
+      "ErroMotor": {
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "title": "Codigo",
+            "description": "Ex.: REG-011, VSN-047."
+          },
+          "titulo": {
+            "type": "string",
+            "title": "Titulo"
+          },
+          "campo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Campo",
+            "description": "JSON Pointer do campo com problema."
+          },
+          "detalhe": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detalhe"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "codigo",
+          "titulo"
+        ],
+        "title": "ErroMotor"
+      },
+      "EstadoItem": {
+        "type": "string",
+        "enum": [
+          "CALCULADO",
+          "CALCULO_SIMULADO",
+          "NAO_CALCULADO",
+          "INCONSISTENCIA_ENTRADA",
+          "NAO_IMPLEMENTADO",
+          "FALHA_TECNICA"
+        ],
+        "title": "EstadoItem",
+        "description": "União dos estados dos dois motores (RR tem CALCULO_SIMULADO; SN tem NAO_CALCULADO)."
+      },
+      "ExplicarResposta": {
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "title": "Itemid"
+          },
+          "regime": {
+            "$ref": "#/components/schemas/Regime"
+          },
+          "motor": {
+            "$ref": "#/components/schemas/Motor"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoItem"
+          },
+          "reducaoPct": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reducaopct"
+          },
+          "memoria": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Memoria"
+          },
+          "erros": {
+            "items": {
+              "$ref": "#/components/schemas/ErroMotor"
+            },
+            "type": "array",
+            "title": "Erros",
+            "default": []
+          },
+          "fundamentacoes": {
+            "items": {
+              "$ref": "#/components/schemas/Fundamentacao"
+            },
+            "type": "array",
+            "title": "Fundamentacoes"
+          },
+          "premissas": {
+            "items": {
+              "$ref": "#/components/schemas/Premissa"
+            },
+            "type": "array",
+            "title": "Premissas"
+          },
+          "aviso": {
+            "type": "string",
+            "title": "Aviso"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "itemId",
+          "regime",
+          "motor",
+          "estado",
+          "fundamentacoes",
+          "premissas",
+          "aviso"
+        ],
+        "title": "ExplicarResposta"
+      },
+      "Fundamentacao": {
+        "properties": {
+          "cClassTrib": {
+            "type": "string",
+            "title": "Cclasstrib"
+          },
+          "textoCurto": {
+            "type": "string",
+            "title": "Textocurto"
+          },
+          "texto": {
+            "type": "string",
+            "title": "Texto"
+          },
+          "referenciaNormativa": {
+            "type": "string",
+            "title": "Referencianormativa"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cClassTrib",
+          "textoCurto",
+          "texto",
+          "referenciaNormativa"
+        ],
+        "title": "Fundamentacao"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "ImpostoSeletivoEntrada": {
+        "properties": {
+          "cst": {
+            "type": "string",
+            "pattern": "^\\d{3}$",
+            "title": "Cst"
+          },
+          "cClassTrib": {
+            "type": "string",
+            "pattern": "^\\d{6}$",
+            "title": "Cclasstrib"
+          },
+          "litrosPorUnidade": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Litrosporunidade"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cst",
+          "cClassTrib"
+        ],
+        "title": "ImpostoSeletivoEntrada"
+      },
+      "ItemBase": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Id"
+          },
+          "descricao": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Descricao"
+          },
+          "ncm": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{8}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ncm"
+          },
+          "nbs": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{9}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nbs"
+          },
+          "cst": {
+            "type": "string",
+            "pattern": "^\\d{3}$",
+            "title": "Cst"
+          },
+          "cClassTrib": {
+            "type": "string",
+            "pattern": "^\\d{6}$",
+            "title": "Cclasstrib"
+          },
+          "impostoSeletivo": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ImpostoSeletivoEntrada"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "unidade": {
+            "type": "string",
+            "maxLength": 6,
+            "minLength": 1,
+            "title": "Unidade"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "descricao",
+          "cst",
+          "cClassTrib",
+          "unidade"
+        ],
+        "title": "ItemBase",
+        "description": "Produto já classificado e confirmado pelo usuário (P3)."
+      },
+      "ItemCalculado": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "descricao": {
+            "type": "string",
+            "title": "Descricao"
+          },
+          "motor": {
+            "$ref": "#/components/schemas/Motor"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoItem"
+          },
+          "motivoEstado": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivoestado"
+          },
+          "quantidade": {
+            "type": "string",
+            "title": "Quantidade"
+          },
+          "valorUnitario": {
+            "type": "string",
+            "title": "Valorunitario"
+          },
+          "valorProdutos": {
+            "type": "string",
+            "title": "Valorprodutos",
+            "description": "quantidade × valorUnitario."
+          },
+          "tributos": {
+            "$ref": "#/components/schemas/Tributos"
+          },
+          "reducaoPct": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reducaopct"
+          },
+          "aliquotaEfetiva": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AliquotaEfetiva"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "precoCliente": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Precocliente",
+            "description": "Total pago pelo cliente na linha: valorProdutos no tradicional; mais CBS/IBS no híbrido."
+          },
+          "custoEfetivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Custoefetivo",
+            "description": "Custo da linha: com o crédito da compra no tradicional; sem ele no híbrido."
+          },
+          "margemPct": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Margempct"
+          },
+          "memoria": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Memoria"
+          },
+          "erros": {
+            "items": {
+              "$ref": "#/components/schemas/ErroMotor"
+            },
+            "type": "array",
+            "title": "Erros",
+            "default": []
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "descricao",
+          "motor",
+          "estado",
+          "quantidade",
+          "valorUnitario",
+          "valorProdutos",
+          "tributos"
+        ],
+        "title": "ItemCalculado"
+      },
+      "ItemEntrada": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Id"
+          },
+          "descricao": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Descricao"
+          },
+          "ncm": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{8}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ncm"
+          },
+          "nbs": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{9}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nbs"
+          },
+          "cst": {
+            "type": "string",
+            "pattern": "^\\d{3}$",
+            "title": "Cst"
+          },
+          "cClassTrib": {
+            "type": "string",
+            "pattern": "^\\d{6}$",
+            "title": "Cclasstrib"
+          },
+          "impostoSeletivo": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ImpostoSeletivoEntrada"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "unidade": {
+            "type": "string",
+            "maxLength": 6,
+            "minLength": 1,
+            "title": "Unidade"
+          },
+          "quantidade": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Quantidade"
+          },
+          "valorUnitario": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Valorunitario",
+            "description": "Valor do produto por unidade (vUnCom)."
+          },
+          "custoUnitario": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Custounitario",
+            "description": "Valor pago ao fornecedor por unidade, sem CBS/IBS por fora (vUnCom da compra)."
+          },
+          "creditoCompraUnitario": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Creditocompraunitario",
+            "description": "CBS + IBS da compra por unidade, lida do grupo IBSCBS da NF-e. Ausente: o backend calcula no motor RR sobre o custo, com a hipótese exibida de fornecedor no regime regular."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "descricao",
+          "cst",
+          "cClassTrib",
+          "unidade",
+          "quantidade",
+          "valorUnitario"
+        ],
+        "title": "ItemEntrada"
+      },
+      "ItemNotaCasado": {
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "title": "Itemid"
+          },
+          "codigoFornecedor": {
+            "type": "string",
+            "title": "Codigofornecedor"
+          },
+          "ncm": {
+            "type": "string",
+            "title": "Ncm"
+          },
+          "descricaoNota": {
+            "type": "string",
+            "title": "Descricaonota"
+          },
+          "quantidade": {
+            "type": "string",
+            "title": "Quantidade"
+          },
+          "custoAnterior": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Custoanterior"
+          },
+          "custoNovo": {
+            "type": "string",
+            "title": "Custonovo"
+          },
+          "variacaoPct": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Variacaopct"
+          },
+          "creditoCompraUnitario": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Creditocompraunitario"
+          },
+          "fonteCredito": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "nfe",
+                  "motor"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fontecredito"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "itemId",
+          "codigoFornecedor",
+          "ncm",
+          "descricaoNota",
+          "quantidade",
+          "custoAnterior",
+          "custoNovo",
+          "variacaoPct",
+          "creditoCompraUnitario",
+          "fonteCredito"
+        ],
+        "title": "ItemNotaCasado"
+      },
+      "ItemNotaSemPar": {
+        "properties": {
+          "codigoFornecedor": {
+            "type": "string",
+            "title": "Codigofornecedor"
+          },
+          "ncm": {
+            "type": "string",
+            "title": "Ncm"
+          },
+          "descricaoNota": {
+            "type": "string",
+            "title": "Descricaonota"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "codigoFornecedor",
+          "ncm",
+          "descricaoNota"
+        ],
+        "title": "ItemNotaSemPar",
+        "description": "Item que não casou com o catálogo: vira pergunta ao usuário (plano 11.3)."
+      },
+      "LadoHibrido": {
+        "properties": {
+          "precoCliente": {
+            "type": "string",
+            "title": "Precocliente"
+          },
+          "valorProdutos": {
+            "type": "string",
+            "title": "Valorprodutos",
+            "description": "Base tal que valorProdutos + débito = preço total ao cliente."
+          },
+          "debito": {
+            "type": "string",
+            "title": "Debito",
+            "description": "CBS + IBS por fora sobre a venda (motor RR)."
+          },
+          "creditoCompras": {
+            "type": "string",
+            "title": "Creditocompras",
+            "description": "CBS + IBS das compras dos itens vendidos (NF-e ou motor RR)."
+          },
+          "tributoLiquido": {
+            "type": "string",
+            "title": "Tributoliquido",
+            "description": "debito − creditoCompras."
+          },
+          "creditoCliente": {
+            "type": "string",
+            "title": "Creditocliente",
+            "description": "Igual ao débito (crédito integral)."
+          },
+          "custoLiquidoCliente": {
+            "type": "string",
+            "title": "Custoliquidocliente"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "precoCliente",
+          "valorProdutos",
+          "debito",
+          "creditoCompras",
+          "tributoLiquido",
+          "creditoCliente",
+          "custoLiquidoCliente"
+        ],
+        "title": "LadoHibrido"
+      },
+      "LadoTradicional": {
+        "properties": {
+          "precoCliente": {
+            "type": "string",
+            "title": "Precocliente"
+          },
+          "tributo": {
+            "type": "string",
+            "title": "Tributo",
+            "description": "CBS + IBS dentro do DAS sobre a venda (motor SN)."
+          },
+          "creditoCliente": {
+            "type": "string",
+            "title": "Creditocliente",
+            "description": "Igual ao tributo pago no Simples (LC 214/2025, art. 47, §9, II)."
+          },
+          "custoLiquidoCliente": {
+            "type": "string",
+            "title": "Custoliquidocliente"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "precoCliente",
+          "tributo",
+          "creditoCliente",
+          "custoLiquidoCliente"
+        ],
+        "title": "LadoTradicional"
+      },
+      "MensagemChat": {
+        "properties": {
+          "papel": {
+            "type": "string",
+            "enum": [
+              "usuario",
+              "assistente"
+            ],
+            "title": "Papel"
+          },
+          "texto": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Texto"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "papel",
+          "texto"
+        ],
+        "title": "MensagemChat"
+      },
+      "Motor": {
+        "type": "string",
+        "enum": [
+          "regime_regular",
+          "simples_nacional"
+        ],
+        "title": "Motor"
+      },
+      "NfeImportarResposta": {
+        "properties": {
+          "nota": {
+            "$ref": "#/components/schemas/NotaResumo"
+          },
+          "itensCasados": {
+            "items": {
+              "$ref": "#/components/schemas/ItemNotaCasado"
+            },
+            "type": "array",
+            "title": "Itenscasados"
+          },
+          "itensSemPar": {
+            "items": {
+              "$ref": "#/components/schemas/ItemNotaSemPar"
+            },
+            "type": "array",
+            "title": "Itenssempar"
+          },
+          "alertas": {
+            "items": {
+              "$ref": "#/components/schemas/Alerta"
+            },
+            "type": "array",
+            "title": "Alertas"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "nota",
+          "itensCasados",
+          "itensSemPar",
+          "alertas"
+        ],
+        "title": "NfeImportarResposta"
+      },
+      "NotaResumo": {
+        "properties": {
+          "numero": {
+            "type": "string",
+            "title": "Numero"
+          },
+          "dataEmissao": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Dataemissao"
+          },
+          "emitente": {
+            "$ref": "#/components/schemas/Emitente"
+          },
+          "temGrupoIbsCbs": {
+            "type": "boolean",
+            "title": "Temgrupoibscbs"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "numero",
+          "dataEmissao",
+          "emitente",
+          "temGrupoIbsCbs"
+        ],
+        "title": "NotaResumo"
+      },
+      "OrigemAlerta": {
+        "properties": {
+          "tipo": {
+            "type": "string",
+            "const": "nfe",
+            "title": "Tipo"
+          },
+          "numero": {
+            "type": "string",
+            "title": "Numero"
+          },
+          "dataEmissao": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Dataemissao"
+          },
+          "emitente": {
+            "type": "string",
+            "title": "Emitente"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "tipo",
+          "numero",
+          "dataEmissao",
+          "emitente"
+        ],
+        "title": "OrigemAlerta"
+      },
+      "PrecoAlvoRequisicao": {
+        "properties": {
+          "data": {
+            "type": "string",
+            "format": "date",
+            "title": "Data",
+            "description": "Data do fato gerador. Rege as vigências nos dois motores."
+          },
+          "uf": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$",
+            "title": "Uf"
+          },
+          "municipio": {
+            "type": "integer",
+            "title": "Municipio",
+            "description": "Código IBGE do município."
+          },
+          "aliquotasNominais": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AliquotasNominais"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "premissasDas": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PremissasDas"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "regime": {
+            "$ref": "#/components/schemas/Regime"
+          },
+          "item": {
+            "$ref": "#/components/schemas/ItemBase"
+          },
+          "custoUnitario": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Custounitario"
+          },
+          "creditoCompraUnitario": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Creditocompraunitario"
+          },
+          "margemAlvoPct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMaximum": 100.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Margemalvopct"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "data",
+          "uf",
+          "municipio",
+          "regime",
+          "item",
+          "custoUnitario",
+          "margemAlvoPct"
+        ],
+        "title": "PrecoAlvoRequisicao"
+      },
+      "PrecoAlvoResposta": {
+        "properties": {
+          "simulado": {
+            "type": "boolean",
+            "title": "Simulado",
+            "description": "Verdadeiro quando há alíquota premissa (2027 em diante ou DAS informado)."
+          },
+          "avisoSimulacao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avisosimulacao",
+            "description": "Frase de estado para o título da tela."
+          },
+          "premissas": {
+            "items": {
+              "$ref": "#/components/schemas/Premissa"
+            },
+            "type": "array",
+            "title": "Premissas"
+          },
+          "regime": {
+            "$ref": "#/components/schemas/Regime"
+          },
+          "itemId": {
+            "type": "string",
+            "title": "Itemid"
+          },
+          "valorUnitario": {
+            "type": "string",
+            "title": "Valorunitario",
+            "description": "Valor do produto por unidade a cobrar (vUnCom), arredondado ao centavo acima."
+          },
+          "precoCliente": {
+            "type": "string",
+            "title": "Precocliente",
+            "description": "Total pago pelo cliente por unidade (igual ao valorUnitario no tradicional)."
+          },
+          "tributosUnitarios": {
+            "$ref": "#/components/schemas/Tributos"
+          },
+          "custoEfetivoUnitario": {
+            "type": "string",
+            "title": "Custoefetivounitario"
+          },
+          "margemAlvoPct": {
+            "type": "string",
+            "title": "Margemalvopct"
+          },
+          "margemObtidaPct": {
+            "type": "string",
+            "title": "Margemobtidapct"
+          },
+          "loteReferencia": {
+            "type": "integer",
+            "title": "Lotereferencia",
+            "description": "Quantidade usada nas chamadas ao motor, para reduzir o efeito do arredondamento."
+          },
+          "chamadas": {
+            "type": "integer",
+            "title": "Chamadas"
+          },
+          "metodo": {
+            "type": "string",
+            "enum": [
+              "afim",
+              "bissecao"
+            ],
+            "title": "Metodo"
+          },
+          "memoria": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Memoria"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "simulado",
+          "premissas",
+          "regime",
+          "itemId",
+          "valorUnitario",
+          "precoCliente",
+          "tributosUnitarios",
+          "custoEfetivoUnitario",
+          "margemAlvoPct",
+          "margemObtidaPct",
+          "loteReferencia",
+          "chamadas",
+          "metodo"
+        ],
+        "title": "PrecoAlvoResposta"
+      },
+      "Premissa": {
+        "properties": {
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "valor": {
+            "type": "string",
+            "title": "Valor"
+          },
+          "fonte": {
+            "type": "string",
+            "title": "Fonte"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "nome",
+          "valor",
+          "fonte"
+        ],
+        "title": "Premissa",
+        "description": "Toda premissa aparece impressa junto do resultado (P6, P7, P8)."
+      },
+      "PremissasDas": {
+        "properties": {
+          "anexo": {
+            "type": "string",
+            "enum": [
+              "I",
+              "II",
+              "III",
+              "IV",
+              "V"
+            ],
+            "title": "Anexo"
+          },
+          "cAtivSN": {
+            "type": "string",
+            "pattern": "^\\d{2}$",
+            "title": "Cativsn",
+            "description": "Código de atividade do Simples (ex.: 01, revenda)."
+          },
+          "pCBSSN": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMaximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Pcbssn"
+          },
+          "pIBSSN": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMaximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Pibssn"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "anexo",
+          "cAtivSN",
+          "pCBSSN",
+          "pIBSSN"
+        ],
+        "title": "PremissasDas",
+        "description": "Linha de alíquotas efetivas do Simples do contribuinte (premissa rotulada, P8 e ADR 0001)."
+      },
+      "Regime": {
+        "type": "string",
+        "enum": [
+          "simples_tradicional",
+          "simples_hibrido"
+        ],
+        "title": "Regime"
+      },
+      "RegimeCompararRequisicao": {
+        "properties": {
+          "data": {
+            "type": "string",
+            "format": "date",
+            "title": "Data",
+            "description": "Data do fato gerador. Rege as vigências nos dois motores."
+          },
+          "uf": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$",
+            "title": "Uf"
+          },
+          "municipio": {
+            "type": "integer",
+            "title": "Municipio",
+            "description": "Código IBGE do município."
+          },
+          "aliquotasNominais": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AliquotasNominais"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "premissasDas": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PremissasDas"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cliente": {
+            "$ref": "#/components/schemas/ClienteB2B"
+          },
+          "itens": {
+            "items": {
+              "$ref": "#/components/schemas/ItemEntrada"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Itens",
+            "description": "A venda. valorUnitario é o preço total cobrado do cliente (igual nos dois regimes)."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "data",
+          "uf",
+          "municipio",
+          "cliente",
+          "itens"
+        ],
+        "title": "RegimeCompararRequisicao"
+      },
+      "RegimeCompararResposta": {
+        "properties": {
+          "simulado": {
+            "type": "boolean",
+            "title": "Simulado",
+            "description": "Verdadeiro quando há alíquota premissa (2027 em diante ou DAS informado)."
+          },
+          "avisoSimulacao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avisosimulacao",
+            "description": "Frase de estado para o título da tela."
+          },
+          "premissas": {
+            "items": {
+              "$ref": "#/components/schemas/Premissa"
+            },
+            "type": "array",
+            "title": "Premissas"
+          },
+          "criterio": {
+            "type": "string",
+            "const": "mesmo_preco_total_ao_cliente",
+            "title": "Criterio"
+          },
+          "cliente": {
+            "$ref": "#/components/schemas/ClienteB2B"
+          },
+          "valorVenda": {
+            "type": "string",
+            "title": "Valorvenda"
+          },
+          "tradicional": {
+            "$ref": "#/components/schemas/LadoTradicional"
+          },
+          "hibrido": {
+            "$ref": "#/components/schemas/LadoHibrido"
+          },
+          "diferencaCaixa": {
+            "type": "string",
+            "title": "Diferencacaixa",
+            "description": "Caixa no híbrido − caixa no tradicional = tributo tradicional − tributo líquido híbrido. Positivo: o híbrido deixa mais dinheiro com a empresa."
+          },
+          "fonteTradicional": {
+            "type": "string",
+            "const": "motor",
+            "title": "Fontetradicional",
+            "description": "Sempre o motor SN (ADR 0001); a premissa fica em premissas."
+          },
+          "simplificacoes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Simplificacoes"
+          },
+          "versoes": {
+            "$ref": "#/components/schemas/Versoes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "simulado",
+          "premissas",
+          "criterio",
+          "cliente",
+          "valorVenda",
+          "tradicional",
+          "hibrido",
+          "diferencaCaixa",
+          "fonteTradicional",
+          "simplificacoes",
+          "versoes"
+        ],
+        "title": "RegimeCompararResposta"
+      },
+      "SaudeMotor": {
+        "properties": {
+          "motor": {
+            "$ref": "#/components/schemas/Motor"
+          },
+          "ok": {
+            "type": "boolean",
+            "title": "Ok"
+          },
+          "versaoFixada": {
+            "type": "string",
+            "title": "Versaofixada"
+          },
+          "versaoEmExecucao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Versaoemexecucao"
+          },
+          "banco": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Banco"
+          },
+          "coerente": {
+            "type": "boolean",
+            "title": "Coerente",
+            "description": "Versão em execução igual à fixada nos Dockerfiles (P5)."
+          },
+          "detalhe": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detalhe"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "motor",
+          "ok",
+          "versaoFixada",
+          "coerente"
+        ],
+        "title": "SaudeMotor"
+      },
+      "SaudeResposta": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "degradado"
+            ],
+            "title": "Status"
+          },
+          "modo": {
+            "type": "string",
+            "enum": [
+              "mock",
+              "real"
+            ],
+            "title": "Modo"
+          },
+          "motores": {
+            "items": {
+              "$ref": "#/components/schemas/SaudeMotor"
+            },
+            "type": "array",
+            "title": "Motores"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status",
+          "modo",
+          "motores"
+        ],
+        "title": "SaudeResposta"
+      },
+      "Totais": {
+        "properties": {
+          "valorProdutos": {
+            "type": "string",
+            "title": "Valorprodutos"
+          },
+          "tributos": {
+            "$ref": "#/components/schemas/Tributos"
+          },
+          "precoCliente": {
+            "type": "string",
+            "title": "Precocliente"
+          },
+          "itensCalculados": {
+            "type": "integer",
+            "title": "Itenscalculados"
+          },
+          "itensComErro": {
+            "type": "integer",
+            "title": "Itenscomerro"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "valorProdutos",
+          "tributos",
+          "precoCliente",
+          "itensCalculados",
+          "itensComErro"
+        ],
+        "title": "Totais",
+        "description": "Somam só os itens calculados, como os motores."
+      },
+      "Tributos": {
+        "properties": {
+          "cbs": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cbs"
+          },
+          "ibs": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ibs"
+          },
+          "impostoSeletivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Impostoseletivo"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "Tributos"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "Versoes": {
+        "properties": {
+          "motorRegimeRegular": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motorregimeregular"
+          },
+          "motorSimplesNacional": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motorsimplesnacional"
+          },
+          "banco": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Banco"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "Versoes"
+      }
+    }
+  }
+}
