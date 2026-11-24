@@ -196,7 +196,10 @@ def main() -> None:
             arvore = montar_nota(cli, demo, nota, cuf)
             if nota["grupoTributacao"]:
                 validar_grupos(cli, arvore)
-            arvore.write(destino / nota["arquivo"], encoding="UTF-8", xml_declaration=True)
+            # Bytes, não texto: no Windows o modo texto grava CRLF e o repositório guarda LF (.gitattributes).
+            (destino / nota["arquivo"]).write_bytes(
+                ET.tostring(arvore.getroot(), encoding="UTF-8", xml_declaration=True)
+            )
             print(
                 f"{nota['arquivo']}: {len(nota['itens'])} itens"
                 + (", grupos IS/IBSCBS validados no XSD" if nota["grupoTributacao"] else "")

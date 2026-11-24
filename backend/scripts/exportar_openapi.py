@@ -25,7 +25,7 @@ def gerar() -> str:
 
 def main() -> None:
     DESTINO.parent.mkdir(parents=True, exist_ok=True)
-    DESTINO.write_text(gerar(), encoding="utf-8")
+    DESTINO.write_text(gerar(), encoding="utf-8", newline="\n")
     print(f"Contrato exportado em {DESTINO.relative_to(RAIZ)}")
 
 
