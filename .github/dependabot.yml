@@ -1,9 +1,29 @@
-# Atualizações de dependências. Adicionar os blocos de pip, npm e docker
-# quando backend/, frontend/ e motores/ existirem (Etapa 0).
+# Atualizações de dependências. Adicionar o bloco de npm quando frontend/ existir.
 version: 2
 updates:
   - package-ecosystem: github-actions
     directory: /
+    schedule:
+      interval: weekly
+    labels: [dependencias]
+
+  # Backend Python (pyproject.toml + uv.lock)
+  - package-ecosystem: uv
+    directory: /backend
+    schedule:
+      interval: weekly
+    labels: [dependencias]
+
+  # Imagens base dos motores (eclipse-temurin). A versão dos motores da Receita é fixada
+  # por tag + SHA nos Dockerfiles e só muda em PR próprio com make golden verde (P5).
+  - package-ecosystem: docker
+    directory: /motores/regime-regular
+    schedule:
+      interval: weekly
+    labels: [dependencias]
+
+  - package-ecosystem: docker
+    directory: /motores/simples-nacional
     schedule:
       interval: weekly
     labels: [dependencias]

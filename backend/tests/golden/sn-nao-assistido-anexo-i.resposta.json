@@ -1,0 +1,132 @@
+{
+  "caso": "sn-nao-assistido-anexo-i",
+  "rota": "/calculadora/observabilidade/simples-nacional/nao-assistido",
+  "versaoFixada": "1.0.2",
+  "gravadoEm": "2026-11-24",
+  "status": 200,
+  "headers": {
+    "x-calc-app-version": "1.0.2",
+    "x-calc-db-version": "V0073"
+  },
+  "corpo": {
+    "oper": {
+      "data": "2027-03-15",
+      "tpDoc": "55",
+      "CRT": "1",
+      "regimeApuracao": "SN_PLENO"
+    },
+    "resolucaoAliquotas": {
+      "fatorR": null,
+      "indSublimite": false,
+      "itens": [
+        {
+          "numero": 1,
+          "cAtivSN": "01",
+          "anexoAplicado": "I",
+          "tipoAliquota": "PAR_UNICO",
+          "regraAliquota": "ANEXO_SEM_ISS",
+          "pIBSSN": "0.0129",
+          "pCBSSN": "1.1612",
+          "motivo": "RESOLVIDA",
+          "avisos": []
+        },
+        {
+          "numero": 2,
+          "cAtivSN": "01",
+          "anexoAplicado": "I",
+          "tipoAliquota": "PAR_UNICO",
+          "regraAliquota": "ANEXO_SEM_ISS",
+          "pIBSSN": "0.0129",
+          "pCBSSN": "1.1612",
+          "motivo": "RESOLVIDA",
+          "avisos": []
+        },
+        {
+          "numero": 3,
+          "cAtivSN": "01",
+          "anexoAplicado": "I",
+          "tipoAliquota": "PAR_UNICO",
+          "regraAliquota": "ANEXO_SEM_ISS",
+          "pIBSSN": "0.0129",
+          "pCBSSN": "1.1612",
+          "motivo": "RESOLVIDA",
+          "avisos": []
+        }
+      ],
+      "avisos": []
+    },
+    "objetos": [
+      {
+        "nObj": 1,
+        "estadoItem": "CALCULADO",
+        "tribCalc": {
+          "vRBSNitem": "100.00",
+          "tpRBSN": 1,
+          "tpRBSNDescricao": "Receita bruta - interna",
+          "vBC": "100.00",
+          "pIBSSN": "0.0129",
+          "vIBSSN": "0.01",
+          "vIBSPendSusp": "0.00",
+          "pCBSSN": "1.1612",
+          "vCBSSN": "1.16",
+          "vCBSPendSusp": "0.00",
+          "IS": {
+            "valor": "0.00"
+          },
+          "totalItem": "1.17",
+          "memoriaCalculo": {
+            "cbs": "Receita bruta do Simples Nacional de R$ 100,00 (Receita bruta - interna). A base de cálculo utilizada é de R$ 100,00, com alíquota efetiva de 1,1612%. Valor devido de R$ 1,16 e pendente/suspenso de R$ 0,00.",
+            "ibs": "Receita bruta do Simples Nacional de R$ 100,00 (Receita bruta - interna). A base de cálculo utilizada é de R$ 100,00, com alíquota efetiva de 0,0129%. Valor devido de R$ 0,01 e pendente/suspenso de R$ 0,00."
+          }
+        }
+      },
+      {
+        "nObj": 2,
+        "estadoItem": "CALCULADO",
+        "tribCalc": {
+          "vRBSNitem": "150.00",
+          "tpRBSN": 1,
+          "tpRBSNDescricao": "Receita bruta - interna",
+          "vBC": "150.00",
+          "pIBSSN": "0.0129",
+          "vIBSSN": "0.02",
+          "vIBSPendSusp": "0.00",
+          "pCBSSN": "1.1612",
+          "vCBSSN": "1.74",
+          "vCBSPendSusp": "0.00",
+          "IS": {
+            "valor": "15.00"
+          },
+          "totalItem": "16.76",
+          "memoriaCalculo": {
+            "cbs": "Receita bruta do Simples Nacional de R$ 150,00 (Receita bruta - interna). A base de cálculo utilizada é de R$ 150,00, com alíquota efetiva de 1,1612%. Valor devido de R$ 1,74 e pendente/suspenso de R$ 0,00.",
+            "ibs": "Receita bruta do Simples Nacional de R$ 150,00 (Receita bruta - interna). A base de cálculo utilizada é de R$ 150,00, com alíquota efetiva de 0,0129%. Valor devido de R$ 0,02 e pendente/suspenso de R$ 0,00."
+          }
+        }
+      },
+      {
+        "nObj": 3,
+        "estadoItem": "INCONSISTENCIA_ENTRADA",
+        "erros": [
+          {
+            "type": "http://127.0.0.1/calculadora/observabilidade/simples-nacional/erros?codigo=VSN-047",
+            "title": "NCM não aplicável",
+            "code": "VSN-047",
+            "pointer": "#/itens/2/ncm",
+            "detail": "NCM de código 02013000 não vinculada à Classificação Tributária de código 200035 (CBS e IBS)"
+          }
+        ]
+      }
+    ],
+    "total": {
+      "vRBSNtot": "250.00",
+      "vBC": "250.00",
+      "vIBSSNtot": "0.03",
+      "vIBSSNtotPendSusp": "0.00",
+      "vCBSSNtot": "2.90",
+      "vCBSSNtotPendSusp": "0.00",
+      "totalIs": "15.00",
+      "totalTributos": "17.93"
+    }
+  }
+}

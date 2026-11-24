@@ -1,0 +1,26 @@
+# ContaAI: motores oficiais da Receita (Etapa 0). Backend e frontend entram na Etapa 1.
+#
+#   docker compose up -d --build     # primeira vez: ~5 a 10 min (Maven + banco do Flyway)
+#   docker compose ps                # aguardar os dois motores "healthy"
+#
+# Segurança: as portas são publicadas só em 127.0.0.1. Os motores não têm autenticação
+# e não devem ficar acessíveis pela rede; no deploy, só o backend fala com eles pela rede interna.
+
+name: contaai
+
+services:
+  motor-rr:
+    build:
+      context: ./motores/regime-regular
+    image: contaai/motor-rr:1.7.2
+    ports:
+      - "127.0.0.1:8080:8080"   # API: /api/calculadora · Swagger: /api/swagger-ui.html
+    restart: unless-stopped
+
+  motor-sn:
+    build:
+      context: ./motores/simples-nacional
+    image: contaai/motor-sn:1.0.2
+    ports:
+      - "127.0.0.1:8082:8082"   # API: /api/calculadora · Swagger: /api/swagger-ui.html
+    restart: unless-stopped
