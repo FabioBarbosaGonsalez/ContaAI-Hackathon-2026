@@ -1,0 +1,8 @@
+# Normaliza quebras de linha no repositório (LF), independente do sistema de cada integrante.
+* text=auto eol=lf
+*.pdf binary
+*.png binary
+*.jpg binary
+*.db  binary
+*.bat text eol=crlf
+*.cmd text eol=crlf
