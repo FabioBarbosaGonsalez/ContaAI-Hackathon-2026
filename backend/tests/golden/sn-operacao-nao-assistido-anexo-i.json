@@ -1,0 +1,24 @@
+{
+  "id": "contaai-golden-sn-1",
+  "versao": "3.0.0",
+  "data": "2027-03-15",
+  "tpDoc": "55",
+  "CRT": "1",
+  "aliquotasEfetivas": {
+    "anexoI": { "pCBSSN": "1.1612", "pIBSSN": "0.0129" }
+  },
+  "itens": [
+    {
+      "numero": 1, "cAtivSN": "01", "cClassTrib": "200003", "ncm": "10063021",
+      "baseCalculo": "100.00", "valorImpostoSeletivo": "0.00"
+    },
+    {
+      "numero": 2, "cAtivSN": "01", "cClassTrib": "000001", "ncm": "22030000",
+      "baseCalculo": "150.00", "valorImpostoSeletivo": "15.00"
+    },
+    {
+      "numero": 3, "cAtivSN": "01", "cClassTrib": "200035", "ncm": "02013000",
+      "baseCalculo": "80.00", "valorImpostoSeletivo": "0.00"
+    }
+  ]
+}
