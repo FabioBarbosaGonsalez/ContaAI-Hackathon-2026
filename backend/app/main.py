@@ -1,7 +1,9 @@
 """API do ContaAI.
 
-Etapa 0: as rotas seguem o contrato (app/contrato.py) e respondem com os mocks gerados a partir
-dos motores oficiais (CONTAAI_MODO=mock, padrão). O cálculo real entra a partir da Etapa 1.
+Modo mock (CONTAAI_MODO=mock, padrão): as rotas seguem o contrato (app/contrato.py) e respondem com
+os mocks gerados a partir dos motores oficiais, com o header X-ContaAI-Mock: 1.
+Modo real: as rotas já implementadas calculam pelos motores (E1: POST /carrinho/calcular); as
+demais respondem 501 até a sua etapa, para nunca devolver número de mock como se fosse cálculo.
 GET /saude é real nos dois modos.
 
 Rodar: cd backend && uv run uvicorn app.main:app --reload   (documentação em /docs)
@@ -9,14 +11,18 @@ Rodar: cd backend && uv run uvicorn app.main:app --reload   (documentação em /
 
 from __future__ import annotations
 
+import asyncio
 import unicodedata
-from typing import Annotated
+from collections.abc import AsyncIterator, Awaitable, Callable
+from typing import Annotated, Any
 
 import httpx
-from fastapi import Depends, FastAPI, File, HTTPException, Path, Query, Response, UploadFile
+from fastapi import Depends, FastAPI, File, HTTPException, Path, Query, Request, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app import mocks
+from app.cenarios.presets import presets
 from app.config import Configuracao, configuracao
 from app.contrato import (
     AVISO_LEGAL,
@@ -28,16 +34,23 @@ from app.contrato import (
     ChatResposta,
     ErroDescricao,
     ExplicarResposta,
+    FalhaMotorResposta,
     Motor,
     NfeImportarResposta,
     PrecoAlvoRequisicao,
     PrecoAlvoResposta,
+    PresetsResposta,
+    RecusaCalculo,
     Regime,
     RegimeCompararRequisicao,
     RegimeCompararResposta,
     SaudeMotor,
     SaudeResposta,
 )
+from app.motores.cache import CacheRespostas
+from app.motores.cliente import ClienteMotores, FalhaMotor, MotorIndisponivel, OperacaoRecusada
+from app.precificacao.carrinho import calcular_carrinho
+from app.precificacao.preco_alvo import CalculoRecusado, calcular_preco_alvo
 
 app = FastAPI(
     title="ContaAI",
@@ -55,11 +68,67 @@ app.add_middleware(
 
 Cfg = Annotated[Configuracao, Depends(configuracao)]
 
+# Folga para o envelope multipart (boundary e cabeçalhos da parte) acima do tamanho do XML.
+FOLGA_MULTIPART = 16 * 1024
+
+
+def _cfg_atual() -> Configuracao:
+    """A configuração em vigor, respeitando a troca feita pelos testes (dependency_overrides)."""
+    return app.dependency_overrides.get(configuracao, configuracao)()
+
+
+@app.middleware("http")
+async def limitar_upload_nfe(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+    """Recusa o upload grande antes de o corpo ser lido e gravado em disco pelo parser multipart.
+
+    O Starlette não limita o tamanho de uma parte de arquivo: sem esta checagem, o arquivo inteiro
+    seria recebido antes da validação na rota. O uvicorn recusa corpo maior que o Content-Length.
+    """
+    if request.method == "POST" and request.url.path == "/nfe/importar":
+        declarado = request.headers.get("content-length")
+        if declarado is None or not declarado.isdigit():
+            return JSONResponse(status_code=411, content={"detail": "Envie o tamanho do arquivo (Content-Length)."})
+        if int(declarado) > _cfg_atual().tamanho_max_nfe_bytes + FOLGA_MULTIPART:
+            return JSONResponse(status_code=413, content={"detail": "Arquivo maior que o limite para uma NF-e."})
+    return await call_next(request)
+
+
+@app.exception_handler(FalhaMotor)
+async def falha_motor(_: Request, exc: FalhaMotor) -> JSONResponse:
+    """Falhas dos motores sem expor URL, host ou corpo do motor (ver app/motores/cliente.py)."""
+    if isinstance(exc, OperacaoRecusada):
+        status, erros = 422, exc.erros
+    elif isinstance(exc, MotorIndisponivel):
+        status, erros = 503, []
+    else:
+        status, erros = 502, []
+    corpo = FalhaMotorResposta(detail=exc.mensagem, motor=exc.motor, erros=erros)
+    return JSONResponse(status_code=status, content=corpo.model_dump(mode="json"))
+
+
+@app.exception_handler(CalculoRecusado)
+async def calculo_recusado(_: Request, exc: CalculoRecusado) -> JSONResponse:
+    corpo = RecusaCalculo(detail=exc.detalhe, erros=exc.erros)
+    return JSONResponse(status_code=422, content=corpo.model_dump(mode="json"))
+
+
+RESPOSTAS_MOTOR: dict[int | str, dict[str, Any]] = {
+    422: {
+        "model": FalhaMotorResposta,
+        "description": "O motor recusou a operação (erros do motor, ex.: VSN-015). A validação de entrada do "
+        "ContaAI também responde 422, no formato padrão do FastAPI (detail como lista).",
+    },
+    502: {"model": FalhaMotorResposta, "description": "O motor devolveu uma resposta que o ContaAI não reconhece."},
+    503: {"model": FalhaMotorResposta, "description": "Motor indisponível."},
+}
+
 
 def responder_mock(cfg: Cfg, response: Response) -> mocks.Mocks:
-    """Na Etapa 0 só o modo mock existe; o header deixa claro que não é cálculo real."""
+    """Rotas que ainda não calculam: mock no modo mock, 501 no modo real."""
     if cfg.modo != "mock":
-        raise HTTPException(status_code=501, detail="Cálculo real a partir da Etapa 1. Use CONTAAI_MODO=mock.")
+        raise HTTPException(
+            status_code=501, detail="Rota ainda sem cálculo real (próximas etapas). Use CONTAAI_MODO=mock."
+        )
     response.headers["X-ContaAI-Mock"] = "1"
     return mocks.carregar()
 
@@ -67,19 +136,57 @@ def responder_mock(cfg: Cfg, response: Response) -> mocks.Mocks:
 Mock = Annotated[mocks.Mocks, Depends(responder_mock)]
 
 
+# Um cache por processo, compartilhado entre as requisições (app/motores/cache.py).
+CACHE_MOTORES = CacheRespostas(configuracao().cache_motores_itens)
+
+
+async def cliente_motores(cfg: Cfg) -> AsyncIterator[ClienteMotores]:
+    # trust_env=False: as chamadas aos motores nunca passam por proxy configurado no ambiente.
+    async with httpx.AsyncClient(timeout=cfg.timeout_calculo_s, trust_env=False) as http:
+        yield ClienteMotores(http, cfg.motor_rr_url, cfg.motor_sn_url, CACHE_MOTORES)
+
+
+Motores = Annotated[ClienteMotores, Depends(cliente_motores)]
+
+
 def _normalizar(texto: str) -> str:
     sem_acento = unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode()
     return sem_acento.lower().strip()
 
 
-@app.post("/carrinho/calcular", response_model=CarrinhoResposta, tags=["cálculo"])
-def carrinho_calcular(req: CarrinhoRequisicao, m: Mock) -> CarrinhoResposta:
-    return m.carrinho[req.regime]
+@app.post("/carrinho/calcular", response_model=CarrinhoResposta, tags=["cálculo"], responses=RESPOSTAS_MOTOR)
+async def carrinho_calcular(
+    req: CarrinhoRequisicao, cfg: Cfg, response: Response, motores: Motores
+) -> CarrinhoResposta:
+    if cfg.modo == "mock":
+        response.headers["X-ContaAI-Mock"] = "1"
+        return mocks.carregar().carrinho[req.regime]
+    return await calcular_carrinho(req, motores)
 
 
-@app.post("/item/preco-alvo", response_model=PrecoAlvoResposta, tags=["cálculo"])
-def preco_alvo(req: PrecoAlvoRequisicao, m: Mock) -> PrecoAlvoResposta:
-    return m.preco_alvo[req.regime]
+RESPOSTAS_PRECO_ALVO: dict[int | str, dict[str, Any]] = {
+    **RESPOSTAS_MOTOR,
+    422: {
+        "model": RecusaCalculo | FalhaMotorResposta,
+        "description": "Sem preço possível (RecusaCalculo: margem impossível, item que o motor não calcula, "
+        "sem convergência) ou recusa do motor (FalhaMotorResposta). A validação de entrada também usa 422, no "
+        "formato padrão do FastAPI.",
+    },
+}
+
+
+@app.post("/item/preco-alvo", response_model=PrecoAlvoResposta, tags=["cálculo"], responses=RESPOSTAS_PRECO_ALVO)
+async def preco_alvo(req: PrecoAlvoRequisicao, cfg: Cfg, response: Response, motores: Motores) -> PrecoAlvoResposta:
+    if cfg.modo == "mock":
+        response.headers["X-ContaAI-Mock"] = "1"
+        return mocks.carregar().preco_alvo[req.regime]
+    return await calcular_preco_alvo(req, motores)
+
+
+@app.get("/cenarios/presets", response_model=PresetsResposta, tags=["cenários"])
+def cenarios_presets() -> PresetsResposta:
+    """Presets de alíquota para 2027, só com valores de fonte verificada (ADR 0005). Igual nos dois modos."""
+    return presets()
 
 
 @app.post("/regime/comparar", response_model=RegimeCompararResposta, tags=["cálculo"])
@@ -88,10 +195,12 @@ def regime_comparar(req: RegimeCompararRequisicao, m: Mock) -> RegimeCompararRes
 
 
 @app.post("/nfe/importar", response_model=NfeImportarResposta, tags=["notas"])
-def nfe_importar(
+async def nfe_importar(
     cfg: Cfg, m: Mock, arquivo: Annotated[UploadFile, File(description="XML da NF-e de compra")]
 ) -> NfeImportarResposta:
-    if arquivo.size is not None and arquivo.size > cfg.tamanho_max_nfe_bytes:
+    # Lê no máximo o limite + 1 byte: não depende de UploadFile.size nem carrega mais que isso em memória.
+    conteudo = await arquivo.read(cfg.tamanho_max_nfe_bytes + 1)
+    if len(conteudo) > cfg.tamanho_max_nfe_bytes:
         raise HTTPException(status_code=413, detail="Arquivo maior que o limite para uma NF-e.")
     return m.nfe_importar
 
@@ -152,12 +261,14 @@ async def _checar(cli: httpx.AsyncClient, motor: Motor, url: str, fixada: str) -
 @app.get("/saude", response_model=SaudeResposta, tags=["operação"])
 async def saude(cfg: Cfg) -> SaudeResposta:
     """Estado dos dois motores e versão em execução × fixada (P5). Usa as rotas locais de versão."""
-    async with httpx.AsyncClient(timeout=cfg.timeout_motores_s) as cli:
-        motores = [
-            await _checar(
-                cli, Motor.REGIME_REGULAR, f"{cfg.motor_rr_url}/calculadora/dados-abertos/versao", cfg.versao_rr
-            ),
-            await _checar(cli, Motor.SIMPLES_NACIONAL, f"{cfg.motor_sn_url}/versao", cfg.versao_sn),
-        ]
+    async with httpx.AsyncClient(timeout=cfg.timeout_motores_s, trust_env=False) as cli:
+        motores = list(
+            await asyncio.gather(
+                _checar(
+                    cli, Motor.REGIME_REGULAR, f"{cfg.motor_rr_url}/calculadora/dados-abertos/versao", cfg.versao_rr
+                ),
+                _checar(cli, Motor.SIMPLES_NACIONAL, f"{cfg.motor_sn_url}/versao", cfg.versao_sn),
+            )
+        )
     status = "ok" if all(m.ok and m.coerente for m in motores) else "degradado"
     return SaudeResposta(status=status, modo=cfg.modo, motores=motores)

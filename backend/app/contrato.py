@@ -64,6 +64,11 @@ class AliquotasNominais(_Modelo):
     impostoSeletivoAdValorem: Porcentagem | None = Field(
         default=None, ge=0, description="Exigida pelo motor para NCM sujeita ao IS, mesmo na revenda (REG-035)."
     )
+    fonte: str | None = Field(
+        default=None,
+        max_length=200,
+        description="De onde veio a premissa (ex.: o rótulo do preset escolhido). Sai impressa nas premissas.",
+    )
 
 
 class PremissasDas(_Modelo):
@@ -73,6 +78,11 @@ class PremissasDas(_Modelo):
     cAtivSN: str = Field(pattern=r"^\d{2}$", description="Código de atividade do Simples (ex.: 01, revenda).")
     pCBSSN: Porcentagem = Field(ge=0, lt=100)
     pIBSSN: Porcentagem = Field(ge=0, lt=100)
+    fonte: str | None = Field(
+        default=None,
+        max_length=200,
+        description="De onde veio a premissa (ex.: o rótulo do preset escolhido). Sai impressa nas premissas.",
+    )
 
 
 class ImpostoSeletivoEntrada(_Modelo):
@@ -104,14 +114,32 @@ class ItemEntrada(ItemBase):
     quantidade: Decimal = Field(gt=0)
     valorUnitario: Decimal = Field(gt=0, description="Valor do produto por unidade (vUnCom).")
     custoUnitario: Decimal | None = Field(
-        default=None, ge=0, description="Valor pago ao fornecedor por unidade, sem CBS/IBS por fora (vUnCom da compra)."
+        default=None,
+        ge=0,
+        description="Valor pago ao fornecedor por unidade, sem CBS/IBS por fora (vUnCom da compra). Ausente: sem margem.",
     )
     creditoCompraUnitario: Decimal | None = Field(
         default=None,
         ge=0,
-        description="CBS + IBS da compra por unidade, lida do grupo IBSCBS da NF-e. Ausente: o backend calcula no "
-        "motor RR sobre o custo, com a hipótese exibida de fornecedor no regime regular.",
+        description="CBS + IBS da compra por unidade, lida do grupo IBSCBS da NF-e. Só é usada no Simples tradicional, "
+        "onde entra no custo. Ausente: o backend calcula no motor RR sobre o custo, na data e com as alíquotas da "
+        "operação, com a hipótese exibida de fornecedor no regime regular.",
     )
+
+
+def validar_itens_do_tradicional(itens: list[ItemEntrada] | list[ItemBase]) -> None:
+    """Casos que o lado tradicional ainda não trata (ADR 0004): recusa clara em vez de número errado."""
+    for item in itens:
+        if item.nbs is not None:
+            raise ValueError(
+                f"Item {item.id}: serviço (NBS) no Simples tradicional ainda não é suportado. O ContaAI envia ao "
+                "motor do Simples uma NF-e de mercadorias (tpDoc 55)."
+            )
+        if item.impostoSeletivo is not None and item.impostoSeletivo.cst != "200":
+            raise ValueError(
+                f"Item {item.id}: Imposto Seletivo com incidência (CST do IS {item.impostoSeletivo.cst}) no Simples "
+                "tradicional ainda não é suportado. Só o IS sem nova incidência (CST 200, ex.: revenda 200007)."
+            )
 
 
 class _Operacao(_Modelo):
@@ -183,11 +211,23 @@ class _Simulacao(_Modelo):
 class CarrinhoRequisicao(_Operacao):
     regime: Regime
     itens: list[ItemEntrada] = Field(min_length=1, max_length=200)
+    cargaAtualPct: Porcentagem | None = Field(
+        default=None,
+        ge=0,
+        lt=100,
+        description="Carga de tributos que o usuário diz pagar hoje, em % do preço. Só para comparação: volta "
+        "impressa, sem entrar em nenhuma conta.",
+    )
 
     @model_validator(mode="after")
     def validar_das_no_tradicional(self) -> CarrinhoRequisicao:
-        if self.regime == Regime.SIMPLES_TRADICIONAL and self.premissasDas is None:
-            raise ValueError("No Simples tradicional informe premissasDas (alíquotas efetivas do anexo).")
+        ids = [i.id for i in self.itens]
+        if len(set(ids)) != len(ids):
+            raise ValueError("Os itens do carrinho precisam ter id único.")
+        if self.regime == Regime.SIMPLES_TRADICIONAL:
+            if self.premissasDas is None:
+                raise ValueError("No Simples tradicional informe premissasDas (alíquotas efetivas do anexo).")
+            validar_itens_do_tradicional(self.itens)
         return self
 
 
@@ -230,6 +270,9 @@ class CarrinhoResposta(_Simulacao):
     data: date
     itens: list[ItemCalculado]
     totais: Totais
+    cargaAtualPct: Porcentagem | None = Field(
+        default=None, description="A carga atual informada pelo usuário, devolvida para comparação."
+    )
     versoes: Versoes
 
 
@@ -241,8 +284,21 @@ class PrecoAlvoRequisicao(_Operacao):
     regime: Regime
     item: ItemBase
     custoUnitario: Decimal = Field(ge=0)
-    creditoCompraUnitario: Decimal | None = Field(default=None, ge=0)
+    creditoCompraUnitario: Decimal | None = Field(
+        default=None,
+        ge=0,
+        description="CBS + IBS da compra por unidade (grupo IBSCBS da NF-e). Só usada no Simples tradicional; "
+        "ausente, vem do motor RR sobre o custo, com a hipótese exibida.",
+    )
     margemAlvoPct: Porcentagem = Field(gt=0, lt=100)
+
+    @model_validator(mode="after")
+    def validar_das_no_tradicional(self) -> PrecoAlvoRequisicao:
+        if self.regime == Regime.SIMPLES_TRADICIONAL:
+            if self.premissasDas is None:
+                raise ValueError("No Simples tradicional informe premissasDas (alíquotas efetivas do anexo).")
+            validar_itens_do_tradicional([self.item])
+        return self
 
 
 class PrecoAlvoResposta(_Simulacao):
@@ -261,7 +317,9 @@ class PrecoAlvoResposta(_Simulacao):
     loteReferencia: int = Field(
         description="Quantidade usada nas chamadas ao motor, para reduzir o efeito do arredondamento."
     )
-    chamadas: int
+    chamadas: int = Field(
+        description="Avaliações do motor usadas pelo método (as respondidas pelo cache contam): 3 no ajuste afim."
+    )
     metodo: Literal["afim", "bissecao"]
     memoria: dict[str, str] | None = None
 
@@ -475,6 +533,56 @@ class ChatResposta(_Modelo):
     resposta: str
     acoesPropostas: list[AcaoConfirmarClassificacao]
     ferramentasChamadas: list[str]
+    aviso: str
+
+
+# ---------------------------------------------------------------------------
+# Falhas dos motores (modo real)
+
+
+class FalhaMotorResposta(_Modelo):
+    """Corpo das respostas 422 (o motor recusou a operação), 502 e 503 vindas dos motores.
+
+    Os erros de validação do próprio ContaAI também usam 422, no formato padrão do FastAPI
+    (detail como lista). Nunca traz URL, host ou corpo do motor.
+    """
+
+    detail: str
+    motor: Motor
+    erros: list[ErroMotor] = []
+
+
+class RecusaCalculo(_Modelo):
+    """422 quando o cálculo pedido não tem resposta: margem impossível, item que o motor não calcula ou
+    preço-alvo que não converge. Traz os erros do motor quando eles explicam a recusa."""
+
+    detail: str
+    erros: list[ErroMotor] = []
+
+
+# ---------------------------------------------------------------------------
+# GET /cenarios/presets
+
+
+class PresetAliquotas(_Modelo):
+    """Valores prontos para os campos de alíquota de 2027, cada um com a sua fonte (plano 11.5, P6).
+
+    Os campos de alíquota da tela começam vazios; o preset só preenche o que tem fonte. O que vier
+    vazio (null) o usuário informa.
+    """
+
+    id: str
+    rotulo: str = Field(description="Texto curto para a tela; vai em aliquotasNominais.fonte quando escolhido.")
+    cbs: Porcentagem
+    ibsEstadual: Porcentagem | None = None
+    ibsMunicipal: Porcentagem | None = None
+    impostoSeletivoAdValorem: Porcentagem | None = None
+    fonte: str
+    ressalva: str
+
+
+class PresetsResposta(_Modelo):
+    presets: list[PresetAliquotas]
     aviso: str
 
 
