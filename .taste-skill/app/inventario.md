@@ -25,7 +25,7 @@ Roteiro de telas de app da skill design-taste-frontend (`references/app-screens.
   1. Aplicar o preço sugerido depois de uma nota.
   2. Importar a nota de compra.
   3. Confirmar ou corrigir a classificação de um item (REG-011 ou VSN-047).
-  4. Decidir o regime para vender a um cliente empresa (semestral; a próxima janela de opção abre em março de 2027, segundo a nota de pesquisa).
+  4. Decidir o regime para vender a um cliente empresa (opção semestral, em setembro e março, LC 123 art. 13 §10; a janela de 1º a 31 de março de 2027 vale para o semestre de julho a dezembro, segundo o Portal do Simples; ver ADR 0003).
   5. Levar a decisão ao contador.
 - **Coisas do próprio produto:**
   - nome e marca ContaAI no topo;
