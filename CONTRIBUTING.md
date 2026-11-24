@@ -17,17 +17,33 @@
 ## Antes de abrir o PR
 
 ```bash
-ruff check .            # lint Python
-make golden             # testes de referência contra os motores (quando existirem)
-cd frontend && npm run lint && npm test   # quando o frontend existir
+ruff check . && ruff format --check .      # lint e formatação do Python (na raiz)
+cd backend && uv run pytest                # testes sem os motores (os mesmos do CI)
+cd frontend && npm run lint && npm test    # quando o frontend existir
 ```
+
+Se mexeu na integração com os motores, rode também os testes de referência com os motores de pé:
+
+```bash
+docker compose up -d
+cd backend && uv run pytest -m golden
+```
+
+No Linux e no macOS, `make lint`, `make test` e `make golden` fazem o mesmo. No Windows sem `make`, use os comandos acima.
+
+## Trocar a versão de um motor
+
+1. Atualize `*_TAG` e `*_SHA` no Dockerfile do motor (o SHA é o commit para onde a tag aponta; o build falha se não bater).
+2. Suba com `docker compose up -d --build` e regrave as respostas: `cd backend && uv run python scripts/gravar_golden.py`.
+3. Revise a diferença dos arquivos em `backend/tests/golden/` e abra um PR só com essa troca (P5).
 
 ## Princípios que a revisão cobra
 
 - Nenhum código nosso calcula alíquota, base ou tributo: os valores vêm dos motores oficiais (P1).
 - A IA não faz aritmética e não decide classificação fiscal sozinha (P2, P3).
 - Resultados de 2027 em diante mostram as premissas e o aviso de simulação (P6).
-- Nada de segredos no código: chaves ficam no `.env`, que está no `.gitignore`. Só dados fictícios (P10).
+- Versões dos motores só mudam em PR próprio, com os testes de referência verdes (P5).
+- Nada de segredos no repositório, que é público: chaves de API (inclusive a do LLM) ficam só no `.env`, que está no `.gitignore`, e nunca vão para código, issue, PR ou captura de tela. Só dados fictícios (P10).
 
 ## Labels
 
