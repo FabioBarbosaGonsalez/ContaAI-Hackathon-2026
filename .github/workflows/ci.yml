@@ -21,10 +21,11 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      - name: Lint (ruff)
+      - name: Lint e formatação (ruff)
         run: |
           pip install ruff
           ruff check .
+          ruff format --check .
       - name: Testes do backend
         if: hashFiles('backend/pyproject.toml') != ''
         working-directory: backend

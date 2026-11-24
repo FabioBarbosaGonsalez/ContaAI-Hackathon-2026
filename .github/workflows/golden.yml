@@ -1,0 +1,59 @@
+name: Golden
+
+# Testes de referência contra os motores oficiais em execução (P5): sobe os dois motores com o
+# docker-compose.yml e roda "pytest -m golden" (motor × respostas gravadas, mocks e notas
+# reproduzíveis, carrinho real × referência).
+#
+# Não é exigido pela proteção da main: o build dos motores leva de 5 a 10 minutos. Roda à mão
+# (Actions → Golden → Run workflow) e sozinho nos PRs que mexem nos motores, nas respostas
+# gravadas, no cliente dos motores, nos geradores ou nos dados de demonstração.
+#
+# Custo: runners padrão do GitHub são gratuitos em repositório público (docs.github.com, Billing →
+# GitHub Actions). Sem cache do Actions, para não ocupar a franquia de armazenamento.
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "motores/**"
+      - "docker-compose.yml"
+      - "backend/tests/golden/**"
+      - "backend/app/motores/**"
+      - "backend/app/precificacao/**"
+      - "backend/app/cenarios/**"
+      - "backend/scripts/**"
+      - "data/demo/**"
+      - ".github/workflows/golden.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: golden-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  golden:
+    name: Testes de referência (motores em execução)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Subir os motores (build das tags oficiais)
+        run: docker compose up -d --build --wait --wait-timeout 900
+      - name: Testes de referência
+        working-directory: backend
+        run: |
+          pip install -e ".[dev]"
+          pytest -q -m golden
+      - name: Estado dos motores em caso de falha
+        if: failure()
+        run: |
+          docker compose ps
+          docker compose logs --tail 80
+      - name: Derrubar os motores
+        if: always()
+        run: docker compose down
