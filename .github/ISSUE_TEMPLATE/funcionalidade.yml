@@ -1,0 +1,21 @@
+name: Ideia ou funcionalidade
+description: Proposta fora do backlog atual
+labels: ["tipo:funcionalidade"]
+body:
+  - type: textarea
+    id: problema
+    attributes:
+      label: Que problema do empresário ou do contador isso resolve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposta
+    attributes:
+      label: Proposta
+    validations:
+      required: true
+  - type: dropdown
+    id: escopo
+    attributes:
+      label: Onde entra no escopo
+      options: [MVP, Desejável, Só pitch, Não sei]

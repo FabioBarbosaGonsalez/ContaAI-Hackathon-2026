@@ -1,0 +1,29 @@
+name: Tarefa do backlog
+description: Uma tarefa do plano de desenvolvimento (E0 a E6)
+labels: ["tipo:tarefa"]
+body:
+  - type: input
+    id: id
+    attributes:
+      label: ID no plano
+      placeholder: "E1-03"
+  - type: dropdown
+    id: frente
+    attributes:
+      label: Frente
+      options: [F1 Motores e infra, F2 Backend, F3 Agente, F4 Interface, F5 Pitch e dados]
+    validations:
+      required: true
+  - type: textarea
+    id: descricao
+    attributes:
+      label: O que fazer
+    validations:
+      required: true
+  - type: textarea
+    id: aceite
+    attributes:
+      label: Critério de aceite
+      placeholder: "Converge em até 3 chamadas nos itens lineares"
+    validations:
+      required: true

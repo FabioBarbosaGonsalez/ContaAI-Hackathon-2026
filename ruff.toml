@@ -1,0 +1,10 @@
+# Linter Python do projeto (backend e scripts). Rodar: ruff check . && ruff format --check .
+line-length = 120
+target-version = "py312"
+
+[lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["E501"]   # linhas longas de texto em scripts de documento
+
+[lint.per-file-ignores]
+"docs/gerar_plano.py" = ["E402"]

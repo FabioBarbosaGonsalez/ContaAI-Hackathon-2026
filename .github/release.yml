@@ -1,0 +1,15 @@
+# Categorias das notas de release geradas automaticamente (por label do PR).
+changelog:
+  exclude:
+    labels: [ignorar-release]
+  categories:
+    - title: Funcionalidades
+      labels: [tipo:funcionalidade]
+    - title: Correções
+      labels: [tipo:bug]
+    - title: Documentação
+      labels: [tipo:docs]
+    - title: Infraestrutura e CI
+      labels: [tipo:infra]
+    - title: Outras mudanças
+      labels: ["*"]

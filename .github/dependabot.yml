@@ -1,0 +1,9 @@
+# Atualizações de dependências. Adicionar os blocos de pip, npm e docker
+# quando backend/, frontend/ e motores/ existirem (Etapa 0).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    labels: [dependencias]

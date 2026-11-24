@@ -1,0 +1,36 @@
+# Segredos
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+
+# Java / Maven (motores clonados no build)
+target/
+motores/**/src-receita/
+
+# Bancos gerados pelo Flyway dos motores
+*.db
+
+# Saídas da skill design-taste-frontend (capturas); a folha de direção fica versionada
+.taste-skill/inspect/
+.taste-skill/before/
+.taste-skill/after/
+
+# Sistema e editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

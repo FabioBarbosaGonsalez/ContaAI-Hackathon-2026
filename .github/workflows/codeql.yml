@@ -1,0 +1,39 @@
+name: CodeQL
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "23 6 * * 1"
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  python:
+    name: CodeQL Python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        if: hashFiles('**/*.py') != ''
+        with:
+          languages: python
+      - uses: github/codeql-action/analyze@v3
+        if: hashFiles('**/*.py') != ''
+
+  javascript:
+    name: CodeQL JavaScript/TypeScript
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        if: hashFiles('frontend/package.json') != ''
+        with:
+          languages: javascript-typescript
+      - uses: github/codeql-action/analyze@v3
+        if: hashFiles('frontend/package.json') != ''
+
