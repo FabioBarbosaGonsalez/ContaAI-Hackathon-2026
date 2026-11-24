@@ -62,6 +62,14 @@ class DasPremissa:
     pIBSSN: Decimal
 
 
+# IS sem nova incidência (ex.: revenda 200007). A partir de 2027 o motor RR exige uma alíquota de IS
+# para a NCM sujeita ao IS mesmo nesse caso (REG-035). Conferido no motor RR 1.7.2 (cerveja 22030000,
+# 200007, 2027-03-16): com 0% e com 10% o vIS sai 0,00 e a CBS é a mesma. Então, quando o usuário não
+# informa, o backend envia 0% e a premissa sai impressa (ADR 0006).
+CST_IS_SEM_INCIDENCIA = "200"
+IS_REVENDA_PREMISSA = Decimal(0)
+
+
 def _numero(valor: Decimal) -> float:
     # O motor RR recebe números JSON; os valores têm no máximo 4 casas, sem perda na conversão.
     return float(valor)
@@ -111,8 +119,12 @@ def operacao_rr(
                 "quantidade": _numero(qtd_is),
                 "unidade": unidade_is,
             }
-            if nominais is not None and aliquotas is not None and aliquotas.impostoSeletivoAdValorem is not None:
-                nominais["impostoSeletivo"] = {"adValorem": _numero(aliquotas.impostoSeletivoAdValorem)}
+            if nominais is not None and aliquotas is not None:
+                ad_valorem = aliquotas.impostoSeletivoAdValorem
+                if ad_valorem is None and item.impostoSeletivo.cst == CST_IS_SEM_INCIDENCIA:
+                    ad_valorem = IS_REVENDA_PREMISSA  # premissa rotulada (ADR 0006); sem ela, REG-035
+                if ad_valorem is not None:
+                    nominais["impostoSeletivo"] = {"adValorem": _numero(ad_valorem)}
         if nominais is not None:
             entrada["aliquotasNominais"] = nominais
         itens.append(entrada)

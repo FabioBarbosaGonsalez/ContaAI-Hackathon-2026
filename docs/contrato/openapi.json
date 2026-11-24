@@ -267,6 +267,7 @@
           "classificação"
         ],
         "summary": "Busca Ncm",
+        "description": "Candidatos de NCM e cClassTrib pelo nome do produto, para o usuário confirmar (P3).",
         "operationId": "busca_ncm_busca_ncm_get",
         "parameters": [
           {
@@ -279,6 +280,25 @@
               "maxLength": 60,
               "title": "Q"
             }
+          },
+          {
+            "name": "data",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Data da vigência das classificações (padrão: hoje).",
+              "title": "Data"
+            },
+            "description": "Data da vigência das classificações (padrão: hoje)."
           }
         ],
         "responses": {
@@ -293,11 +313,31 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "O motor recusou a operação (erros do motor, ex.: VSN-015). A validação de entrada do ContaAI também responde 422, no formato padrão do FastAPI (detail como lista).",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "O motor devolveu uma resposta que o ContaAI não reconhece.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Motor indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FalhaMotorResposta"
                 }
               }
             }
@@ -311,6 +351,7 @@
           "explicação"
         ],
         "summary": "Explicar",
+        "description": "Só o catálogo de demonstração (uma unidade pelo preço de venda da demo). Para outro item, POST /explicar.",
         "operationId": "explicar_explicar__item_id__get",
         "parameters": [
           {
@@ -345,11 +386,93 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "O motor recusou a operação (erros do motor, ex.: VSN-015). A validação de entrada do ContaAI também responde 422, no formato padrão do FastAPI (detail como lista).",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "O motor devolveu uma resposta que o ContaAI não reconhece.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Motor indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/explicar": {
+      "post": {
+        "tags": [
+          "explicação"
+        ],
+        "summary": "Explicar Post",
+        "description": "Memória de cálculo, fundamentação e premissas de qualquer item. Não tem mock: 501 no modo mock.",
+        "operationId": "explicar_post_explicar_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExplicarRequisicao"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExplicarResposta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "O motor recusou a operação (erros do motor, ex.: VSN-015). A validação de entrada do ContaAI também responde 422, no formato padrão do FastAPI (detail como lista).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "O motor devolveu uma resposta que o ContaAI não reconhece.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Motor indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FalhaMotorResposta"
                 }
               }
             }
@@ -388,11 +511,31 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "O motor recusou a operação (erros do motor, ex.: VSN-015). A validação de entrada do ContaAI também responde 422, no formato padrão do FastAPI (detail como lista).",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "O motor devolveu uma resposta que o ContaAI não reconhece.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Motor indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FalhaMotorResposta"
                 }
               }
             }
@@ -406,16 +549,35 @@
           "agente"
         ],
         "summary": "Chat",
+        "description": "Agente com tool use (E2). As ações voltam como propostas: nada é aplicado sem o clique do usuário.",
         "operationId": "chat_chat_post",
+        "parameters": [
+          {
+            "name": "X-ContaAI-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Contaai-Token"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ChatRequisicao"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -429,14 +591,33 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "O motor recusou a operação (erros do motor, ex.: VSN-015). A validação de entrada do ContaAI também responde 422, no formato padrão do FastAPI (detail como lista).",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/FalhaMotorResposta"
                 }
               }
             }
+          },
+          "502": {
+            "description": "O motor devolveu uma resposta que o ContaAI não reconhece.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Motor ou provedor de IA indisponível."
+          },
+          "401": {
+            "description": "Token da demo ausente ou errado (header X-ContaAI-Token)."
+          },
+          "429": {
+            "description": "Limite de mensagens por minuto atingido (header Retry-After)."
           }
         }
       }
@@ -466,6 +647,59 @@
   },
   "components": {
     "schemas": {
+      "AcaoAplicarPreco": {
+        "properties": {
+          "tipo": {
+            "type": "string",
+            "const": "aplicar_preco",
+            "title": "Tipo"
+          },
+          "itemId": {
+            "type": "string",
+            "title": "Itemid"
+          },
+          "valorUnitarioAtual": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valorunitarioatual"
+          },
+          "valorUnitarioSugerido": {
+            "type": "string",
+            "title": "Valorunitariosugerido"
+          },
+          "precoCliente": {
+            "type": "string",
+            "title": "Precocliente"
+          },
+          "margemAlvoPct": {
+            "type": "string",
+            "title": "Margemalvopct"
+          },
+          "margemObtidaPct": {
+            "type": "string",
+            "title": "Margemobtidapct"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "tipo",
+          "itemId",
+          "valorUnitarioAtual",
+          "valorUnitarioSugerido",
+          "precoCliente",
+          "margemAlvoPct",
+          "margemObtidaPct"
+        ],
+        "title": "AcaoAplicarPreco",
+        "description": "Preço-alvo calculado: a tela aplica no item se o usuário confirmar."
+      },
       "AcaoConfirmarClassificacao": {
         "properties": {
           "tipo": {
@@ -494,6 +728,45 @@
         ],
         "title": "AcaoConfirmarClassificacao",
         "description": "O cálculo só acontece depois que o usuário confirma (P3)."
+      },
+      "AcaoCorrigirClassificacao": {
+        "properties": {
+          "tipo": {
+            "type": "string",
+            "const": "corrigir_classificacao",
+            "title": "Tipo"
+          },
+          "itemId": {
+            "type": "string",
+            "title": "Itemid"
+          },
+          "erro": {
+            "$ref": "#/components/schemas/ErroMotor"
+          },
+          "ncm": {
+            "type": "string",
+            "title": "Ncm"
+          },
+          "candidatas": {
+            "items": {
+              "$ref": "#/components/schemas/ClassificacaoCandidata"
+            },
+            "type": "array",
+            "maxItems": 3,
+            "title": "Candidatas"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "tipo",
+          "itemId",
+          "erro",
+          "ncm",
+          "candidatas"
+        ],
+        "title": "AcaoCorrigirClassificacao",
+        "description": "Item que voltou com erro de classificação (REG-011, VSN-047): o usuário escolhe a nova (P3, plano 11.4)."
       },
       "Alerta": {
         "properties": {
@@ -740,6 +1013,18 @@
             "type": "string",
             "title": "Aviso",
             "description": "A IA propõe; o usuário confirma (P3)."
+          },
+          "fonte": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fonte",
+            "description": "De onde vieram os candidatos (índice local dos dados abertos e versão do motor)."
           }
         },
         "additionalProperties": false,
@@ -964,15 +1249,16 @@
             "minItems": 1,
             "title": "Mensagens"
           },
-          "regime": {
+          "contexto": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/Regime"
+                "$ref": "#/components/schemas/ContextoChat"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "description": "Sem contexto, o agente só busca classificações e explica erros (não calcula)."
           }
         },
         "additionalProperties": false,
@@ -990,10 +1276,29 @@
           },
           "acoesPropostas": {
             "items": {
-              "$ref": "#/components/schemas/AcaoConfirmarClassificacao"
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/AcaoConfirmarClassificacao"
+                },
+                {
+                  "$ref": "#/components/schemas/AcaoCorrigirClassificacao"
+                },
+                {
+                  "$ref": "#/components/schemas/AcaoAplicarPreco"
+                }
+              ],
+              "discriminator": {
+                "propertyName": "tipo",
+                "mapping": {
+                  "aplicar_preco": "#/components/schemas/AcaoAplicarPreco",
+                  "confirmar_classificacao": "#/components/schemas/AcaoConfirmarClassificacao",
+                  "corrigir_classificacao": "#/components/schemas/AcaoCorrigirClassificacao"
+                }
+              }
             },
             "type": "array",
-            "title": "Acoespropostas"
+            "title": "Acoespropostas",
+            "description": "Montadas pelo backend a partir dos resultados das ferramentas, nunca do texto da IA. Nada é aplicado sem o clique do usuário."
           },
           "ferramentasChamadas": {
             "items": {
@@ -1001,6 +1306,45 @@
             },
             "type": "array",
             "title": "Ferramentaschamadas"
+          },
+          "provedor": {
+            "type": "string",
+            "title": "Provedor",
+            "description": "Quem escreveu a resposta: 'roteiro' (sem IA) ou o provedor de IA configurado."
+          },
+          "verificacao": {
+            "type": "string",
+            "enum": [
+              "aprovada",
+              "resposta_segura"
+            ],
+            "title": "Verificacao",
+            "description": "aprovada: todo R$ e % da resposta existe nos resultados das ferramentas ou na mensagem do usuário (P2). resposta_segura: a IA citou número sem fonte duas vezes e a resposta foi trocada."
+          },
+          "simulado": {
+            "type": "boolean",
+            "title": "Simulado",
+            "description": "Algum resultado usado na resposta é simulação (P6)."
+          },
+          "avisoSimulacao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avisosimulacao"
+          },
+          "premissas": {
+            "items": {
+              "$ref": "#/components/schemas/Premissa"
+            },
+            "type": "array",
+            "title": "Premissas",
+            "description": "Premissas dos resultados usados, sem repetição.",
+            "default": []
           },
           "aviso": {
             "type": "string",
@@ -1013,6 +1357,9 @@
           "resposta",
           "acoesPropostas",
           "ferramentasChamadas",
+          "provedor",
+          "verificacao",
+          "simulado",
           "aviso"
         ],
         "title": "ChatResposta"
@@ -1082,6 +1429,68 @@
           "regime"
         ],
         "title": "ClienteB2B"
+      },
+      "ContextoChat": {
+        "properties": {
+          "data": {
+            "type": "string",
+            "format": "date",
+            "title": "Data",
+            "description": "Data do fato gerador. Rege as vigências nos dois motores."
+          },
+          "uf": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$",
+            "title": "Uf"
+          },
+          "municipio": {
+            "type": "integer",
+            "title": "Municipio",
+            "description": "Código IBGE do município."
+          },
+          "aliquotasNominais": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AliquotasNominais"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "premissasDas": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PremissasDas"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "regime": {
+            "$ref": "#/components/schemas/Regime"
+          },
+          "itens": {
+            "items": {
+              "$ref": "#/components/schemas/ItemEntrada"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "title": "Itens",
+            "default": []
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "data",
+          "uf",
+          "municipio",
+          "regime"
+        ],
+        "title": "ContextoChat",
+        "description": "O que a tela já sabe: a operação, o regime e os itens que o usuário já confirmou (P3).\n\nO backend não guarda estado: a cada mensagem a tela manda o contexto. O agente só calcula os\nitens daqui, pelo id; um item que só aparece no texto da conversa precisa ser confirmado antes."
       },
       "Emitente": {
         "properties": {
@@ -1185,6 +1594,63 @@
         ],
         "title": "EstadoItem",
         "description": "União dos estados dos dois motores (RR tem CALCULO_SIMULADO; SN tem NAO_CALCULADO)."
+      },
+      "ExplicarRequisicao": {
+        "properties": {
+          "data": {
+            "type": "string",
+            "format": "date",
+            "title": "Data",
+            "description": "Data do fato gerador. Rege as vigências nos dois motores."
+          },
+          "uf": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$",
+            "title": "Uf"
+          },
+          "municipio": {
+            "type": "integer",
+            "title": "Municipio",
+            "description": "Código IBGE do município."
+          },
+          "aliquotasNominais": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AliquotasNominais"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "premissasDas": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PremissasDas"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "regime": {
+            "$ref": "#/components/schemas/Regime"
+          },
+          "item": {
+            "$ref": "#/components/schemas/ItemEntrada"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "data",
+          "uf",
+          "municipio",
+          "regime",
+          "item"
+        ],
+        "title": "ExplicarRequisicao",
+        "description": "Explicação de um item qualquer (o GET /explicar/{itemId} conhece só o catálogo de demonstração)."
       },
       "ExplicarResposta": {
         "properties": {

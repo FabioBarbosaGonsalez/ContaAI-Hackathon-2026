@@ -4,5 +4,6 @@
 *.png binary
 *.jpg binary
 *.db  binary
+*.gz  binary
 *.bat text eol=crlf
 *.cmd text eol=crlf

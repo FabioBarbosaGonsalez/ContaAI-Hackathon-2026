@@ -16,7 +16,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from decimal import Decimal
 from enum import StrEnum
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -478,6 +478,9 @@ class BuscaNcmResposta(_Modelo):
     consulta: str
     candidatos: list[CandidatoNcm]
     aviso: str = Field(description="A IA propõe; o usuário confirma (P3).")
+    fonte: str | None = Field(
+        default=None, description="De onde vieram os candidatos (índice local dos dados abertos e versão do motor)."
+    )
 
 
 class Fundamentacao(_Modelo):
@@ -485,6 +488,21 @@ class Fundamentacao(_Modelo):
     textoCurto: str
     texto: str
     referenciaNormativa: str
+
+
+class ExplicarRequisicao(_Operacao):
+    """Explicação de um item qualquer (o GET /explicar/{itemId} conhece só o catálogo de demonstração)."""
+
+    regime: Regime
+    item: ItemEntrada
+
+    @model_validator(mode="after")
+    def validar_das_no_tradicional(self) -> ExplicarRequisicao:
+        if self.regime == Regime.SIMPLES_TRADICIONAL:
+            if self.premissasDas is None:
+                raise ValueError("No Simples tradicional informe premissasDas (alíquotas efetivas do anexo).")
+            validar_itens_do_tradicional([self.item])
+        return self
 
 
 class ExplicarResposta(_Modelo):
@@ -516,9 +534,39 @@ class MensagemChat(_Modelo):
     texto: str = Field(min_length=1, max_length=4000)
 
 
+class ContextoChat(_Operacao):
+    """O que a tela já sabe: a operação, o regime e os itens que o usuário já confirmou (P3).
+
+    O backend não guarda estado: a cada mensagem a tela manda o contexto. O agente só calcula os
+    itens daqui, pelo id; um item que só aparece no texto da conversa precisa ser confirmado antes.
+    """
+
+    regime: Regime
+    itens: list[ItemEntrada] = Field(default=[], max_length=200)
+
+    @model_validator(mode="after")
+    def validar_contexto(self) -> ContextoChat:
+        ids = [i.id for i in self.itens]
+        if len(set(ids)) != len(ids):
+            raise ValueError("Os itens do contexto precisam ter id único.")
+        if self.regime == Regime.SIMPLES_TRADICIONAL:
+            if self.premissasDas is None:
+                raise ValueError("No Simples tradicional informe premissasDas (alíquotas efetivas do anexo).")
+            validar_itens_do_tradicional(self.itens)
+        return self
+
+
 class ChatRequisicao(_Modelo):
     mensagens: list[MensagemChat] = Field(min_length=1, max_length=50)
-    regime: Regime | None = None
+    contexto: ContextoChat | None = Field(
+        default=None, description="Sem contexto, o agente só busca classificações e explica erros (não calcula)."
+    )
+
+    @model_validator(mode="after")
+    def validar_ultima(self) -> ChatRequisicao:
+        if self.mensagens[-1].papel != "usuario":
+            raise ValueError("A última mensagem precisa ser do usuário.")
+        return self
 
 
 class AcaoConfirmarClassificacao(_Modelo):
@@ -529,10 +577,48 @@ class AcaoConfirmarClassificacao(_Modelo):
     candidatos: list[CandidatoNcm]
 
 
+class AcaoCorrigirClassificacao(_Modelo):
+    """Item que voltou com erro de classificação (REG-011, VSN-047): o usuário escolhe a nova (P3, plano 11.4)."""
+
+    tipo: Literal["corrigir_classificacao"]
+    itemId: str
+    erro: ErroMotor
+    ncm: str
+    candidatas: list[ClassificacaoCandidata] = Field(max_length=3)
+
+
+class AcaoAplicarPreco(_Modelo):
+    """Preço-alvo calculado: a tela aplica no item se o usuário confirmar."""
+
+    tipo: Literal["aplicar_preco"]
+    itemId: str
+    valorUnitarioAtual: Decimal | None
+    valorUnitarioSugerido: Decimal
+    precoCliente: Decimal
+    margemAlvoPct: Porcentagem
+    margemObtidaPct: Porcentagem
+
+
+AcaoProposta = Annotated[
+    AcaoConfirmarClassificacao | AcaoCorrigirClassificacao | AcaoAplicarPreco, Field(discriminator="tipo")
+]
+
+
 class ChatResposta(_Modelo):
     resposta: str
-    acoesPropostas: list[AcaoConfirmarClassificacao]
+    acoesPropostas: list[AcaoProposta] = Field(
+        description="Montadas pelo backend a partir dos resultados das ferramentas, nunca do texto da IA. "
+        "Nada é aplicado sem o clique do usuário."
+    )
     ferramentasChamadas: list[str]
+    provedor: str = Field(description="Quem escreveu a resposta: 'roteiro' (sem IA) ou o provedor de IA configurado.")
+    verificacao: Literal["aprovada", "resposta_segura"] = Field(
+        description="aprovada: todo R$ e % da resposta existe nos resultados das ferramentas ou na mensagem do "
+        "usuário (P2). resposta_segura: a IA citou número sem fonte duas vezes e a resposta foi trocada."
+    )
+    simulado: bool = Field(description="Algum resultado usado na resposta é simulação (P6).")
+    avisoSimulacao: str | None = None
+    premissas: list[Premissa] = Field(default=[], description="Premissas dos resultados usados, sem repetição.")
     aviso: str
 
 

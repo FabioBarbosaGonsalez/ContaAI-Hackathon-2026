@@ -31,7 +31,9 @@ packages = ["app"]
 testpaths = ["tests"]
 # Os testes "golden" falam com os motores rodando (docker compose up). Ficam fora do
 # pytest padrão (e do CI) e rodam com: make golden  ou  uv run pytest -m golden
-addopts = "-m 'not golden' --strict-markers"
+# Os testes "llm" chamam o provedor de IA de verdade e gastam crédito: uv run pytest -m llm
+addopts = "-m 'not golden and not llm' --strict-markers"
 markers = [
     "golden: testes de referência contra os motores oficiais em execução (exigem docker compose up)",
+    "llm: perguntas ao provedor de IA configurado no backend/.env (GASTAM crédito; rodar à mão)",
 ]

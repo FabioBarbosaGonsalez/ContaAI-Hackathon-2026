@@ -38,9 +38,11 @@ uv run uvicorn app.main:app --reload   # documentação interativa em http://127
 As rotas seguem o contrato ([docs/contrato/openapi.json](docs/contrato/openapi.json), [ADR 0003](docs/adr/0003-contrato-da-api.md)). Há dois modos:
 
 - **mock** (padrão): todas as rotas respondem com mocks gerados a partir dos motores oficiais, com o header `X-ContaAI-Mock: 1`.
-- **real** (`CONTAAI_MODO=real`, motores de pé): `POST /carrinho/calcular` e `POST /item/preco-alvo` calculam pelos motores ([ADR 0004](docs/adr/0004-nucleo-de-calculo.md), [ADR 0005](docs/adr/0005-preco-alvo-e-premissas.md)). As rotas que ainda não calculam respondem 501 nesse modo. Falhas dos motores voltam como 422 (operação recusada, com os erros do motor), 502 ou 503, sem expor endereço interno.
+- **real** (`CONTAAI_MODO=real`, motores de pé): `POST /carrinho/calcular` e `POST /item/preco-alvo` calculam pelos motores ([ADR 0004](docs/adr/0004-nucleo-de-calculo.md), [ADR 0005](docs/adr/0005-preco-alvo-e-premissas.md)); `GET /busca/ncm`, `GET`/`POST /explicar`, `GET /erros/{codigo}` e `POST /chat` também ([ADR 0006](docs/adr/0006-agente.md)). As rotas que ainda não calculam (regimes, NF-e e alertas) respondem 501 nesse modo. Falhas dos motores voltam como 422 (operação recusada, com os erros do motor), 502 ou 503, sem expor endereço interno.
 
 `GET /cenarios/presets` (valores de 2027 com fonte) e `GET /saude` (estado e versões dos motores) são reais nos dois modos. O CORS libera só `http://localhost:3000`; para outra origem, use `CONTAAI_CORS_ORIGENS='["http://..."]'`.
+
+**Agente.** O padrão é o provedor `roteiro`: responde às frases do roteiro da demo sem IA, sem chave e sem custo. Para ligar uma IA, escreva o adaptador em `backend/app/agente/provedores/` e configure no `backend/.env` (fora do git) `CONTAAI_LLM_PROVEDOR`, `CONTAAI_LLM_MODELO` e `CONTAAI_LLM_CHAVE` ([ADR 0006](docs/adr/0006-agente.md)). Na demo pública, defina `CONTAAI_TOKEN_DEMO`: o `/chat` passa a exigir o header `X-ContaAI-Token`. Há limite de requisições por IP (`CONTAAI_LIMITE_CHAT_POR_MINUTO`, `CONTAAI_LIMITE_GERAL_POR_MINUTO`, `CONTAAI_LIMITE_BUSCA_POR_MINUTO`).
 
 ### Testes
 
@@ -49,11 +51,12 @@ cd backend
 uv sync --extra dev        # dependências (alternativa: pip install -e ".[dev]")
 uv run pytest              # testes que não precisam dos motores (os mesmos do CI)
 uv run pytest -m golden    # testes de referência contra os motores em execução
+uv run pytest -m llm       # as 20 perguntas com o provedor de IA do .env (GASTA crédito)
 ```
 
 No GitHub, o workflow **Golden** sobe os motores e roda os testes de referência: à mão (Actions → Golden → Run workflow) e sozinho nos PRs que mexem nos motores, no cliente, nos geradores ou nos dados de demonstração.
 
-No Linux e no macOS, o [Makefile](Makefile) tem atalhos para os mesmos comandos: `make motores`, `make api`, `make test`, `make golden` e `make lint`.
+No Linux e no macOS, o [Makefile](Makefile) tem atalhos para os mesmos comandos: `make motores`, `make api`, `make test`, `make golden`, `make llm`, `make indice` e `make lint`.
 
 ## Arquitetura (resumo)
 
@@ -62,7 +65,7 @@ No Linux e no macOS, o [Makefile](Makefile) tem atalhos para os mesmos comandos:
 | Motor Regime Regular 1.7.2 (Receita, Java 25) | CBS e IBS por item, dados abertos e memória de cálculo. O IS sai de valor ou alíquota informados: as regras de cálculo do IS estão previstas para a Release 16 do motor |
 | Motor Simples Nacional 1.0.2 (Receita, Java 25) | Lado "Simples tradicional" da decisão de regime: CBS e IBS por item a partir das alíquotas efetivas informadas ([ADR 0001](docs/adr/0001-lado-tradicional-do-simples.md)) |
 | Backend (FastAPI) | Orquestra, preço-alvo, comparação de regimes, leitura de NF-e e alertas |
-| Agente (LLM com ferramentas) | Só chama as ferramentas do backend; não faz conta |
+| Agente (tool use, provedor de IA trocável) | Só chama as ferramentas do backend; não faz conta. Toda resposta passa pelo verificador de números |
 | Frontend (Next.js) | Telas construídas com a skill design-taste-frontend |
 
 ## Princípios
@@ -87,6 +90,7 @@ No Linux e no macOS, o [Makefile](Makefile) tem atalhos para os mesmos comandos:
 - [ADR 0003](docs/adr/0003-contrato-da-api.md): contrato da API, fórmulas de preço, margem e regimes, e achados da investigação
 - [ADR 0004](docs/adr/0004-nucleo-de-calculo.md): clientes dos motores, carrinho real, comportamento verificado dos motores e revisão da arquitetura
 - [ADR 0005](docs/adr/0005-preco-alvo-e-premissas.md): preço-alvo (afim + bisseção), cache e premissas de 2027 com presets de fonte verificada
+- [ADR 0006](docs/adr/0006-agente.md): agente com IA trocável, ferramentas, verificador anti-alucinação, busca de NCM e proteção da demo
 - [Contrato OpenAPI](docs/contrato/openapi.json): o que frontend e agente consomem
 - [Dados de demonstração](data/demo/README.md): distribuidora, cliente B2B e notas de compra fictícias
 - [Direção visual](.taste-skill/app/inventario.md): inventário, a pergunta de cada tela e o estilo sorteado pela skill design-taste-frontend
@@ -97,7 +101,9 @@ No Linux e no macOS, o [Makefile](Makefile) tem atalhos para os mesmos comandos:
 
 Etapa 0 (fundação) concluída: motores oficiais em containers, testes de referência, decisão sobre o lado tradicional do Simples, contrato da API com mocks, dados de demonstração e direção visual. Pendente fora do código: o envio da mensagem aos contadores (E0-08).
 
-Etapa 1 (núcleo de cálculo) concluída: clientes tipados dos motores, carrinho real, preço-alvo em 3 chamadas com bisseção de reserva e cache, e premissas de 2027 com presets de fonte verificada. Próxima: Etapa 2, agente.
+Etapa 1 (núcleo de cálculo) concluída: clientes tipados dos motores, carrinho real, preço-alvo em 3 chamadas com bisseção de reserva e cache, e premissas de 2027 com presets de fonte verificada.
+
+Etapa 2 (agente) concluída: loop de tool use independente do provedor, provedor `roteiro` sem IA, cadastro por chat com confirmação, correção do REG-011 e do VSN-047, explicação pela memória de cálculo e pela lei, busca de NCM nos dados abertos e verificador anti-alucinação (20 perguntas, 0 número fora do JSON). Pendente: escolher o provedor de IA e escrever o adaptador. Próxima: Etapa 3, diferencial B2B.
 
 ## Créditos e licenças
 
