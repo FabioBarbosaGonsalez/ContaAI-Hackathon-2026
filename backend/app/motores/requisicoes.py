@@ -19,6 +19,8 @@ class ImpostoSeletivoItem(Protocol):
 
 
 class ItemClassificado(Protocol):
+    """ncm ou nbs (o catálogo de demonstração só tem ncm; ver _nbs)."""
+
     ncm: str | None
     cst: str
     cClassTrib: str
@@ -65,6 +67,10 @@ def _numero(valor: Decimal) -> float:
     return float(valor)
 
 
+def _nbs(item: ItemClassificado) -> str | None:
+    return getattr(item, "nbs", None)
+
+
 def operacao_rr(
     linhas: list[Linha], data_fato: date, uf: str, municipio: int, aliquotas: AliquotasPremissa | None
 ) -> dict[str, Any]:
@@ -73,13 +79,17 @@ def operacao_rr(
         item = linha.item
         entrada: dict[str, Any] = {
             "numero": numero,
-            "ncm": item.ncm,
             "cst": item.cst,
             "cClassTrib": item.cClassTrib,
             "baseCalculo": _numero(linha.base),
             "quantidade": _numero(linha.quantidade),
             "unidade": item.unidade,
         }
+        # Serviço vai com nbs, mercadoria com ncm (formato do exemplo oficial, docs/exemplos.md).
+        if _nbs(item) is not None:
+            entrada["nbs"] = _nbs(item)
+        else:
+            entrada["ncm"] = item.ncm
         nominais: dict[str, Any] | None = None
         if aliquotas is not None:
             nominais = {

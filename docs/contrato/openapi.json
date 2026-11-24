@@ -35,11 +35,31 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "O motor recusou a operação (erros do motor, ex.: VSN-015). A validação de entrada do ContaAI também responde 422, no formato padrão do FastAPI (detail como lista).",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "O motor devolveu uma resposta que o ContaAI não reconhece.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Motor indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FalhaMotorResposta"
                 }
               }
             }
@@ -76,11 +96,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Sem preço possível (RecusaCalculo: margem impossível, item que o motor não calcula, sem convergência) ou recusa do motor (FalhaMotorResposta). A validação de entrada também usa 422, no formato padrão do FastAPI.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/RecusaCalculo"
+                    },
+                    {
+                      "$ref": "#/components/schemas/FalhaMotorResposta"
+                    }
+                  ],
+                  "title": "Response 422 Preco Alvo Item Preco Alvo Post"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "O motor devolveu uma resposta que o ContaAI não reconhece.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Motor indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cenarios/presets": {
+      "get": {
+        "tags": [
+          "cenários"
+        ],
+        "summary": "Cenarios Presets",
+        "description": "Presets de alíquota para 2027, só com valores de fonte verificada (ADR 0005). Igual nos dois modos.",
+        "operationId": "cenarios_presets_cenarios_presets_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PresetsResposta"
                 }
               }
             }
@@ -613,6 +683,19 @@
             ],
             "title": "Impostoseletivoadvalorem",
             "description": "Exigida pelo motor para NCM sujeita ao IS, mesmo na revenda (REG-035)."
+          },
+          "fonte": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fonte",
+            "description": "De onde veio a premissa (ex.: o rótulo do preset escolhido). Sai impressa nas premissas."
           }
         },
         "additionalProperties": false,
@@ -767,6 +850,23 @@
             "maxItems": 200,
             "minItems": 1,
             "title": "Itens"
+          },
+          "cargaAtualPct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMaximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cargaatualpct",
+            "description": "Carga de tributos que o usuário diz pagar hoje, em % do preço. Só para comparação: volta impressa, sem entrar em nenhuma conta."
           }
         },
         "additionalProperties": false,
@@ -823,6 +923,18 @@
           },
           "totais": {
             "$ref": "#/components/schemas/Totais"
+          },
+          "cargaAtualPct": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cargaatualpct",
+            "description": "A carga atual informada pelo usuário, devolvida para comparação."
           },
           "versoes": {
             "$ref": "#/components/schemas/Versoes"
@@ -1153,6 +1265,33 @@
           "aviso"
         ],
         "title": "ExplicarResposta"
+      },
+      "FalhaMotorResposta": {
+        "properties": {
+          "detail": {
+            "type": "string",
+            "title": "Detail"
+          },
+          "motor": {
+            "$ref": "#/components/schemas/Motor"
+          },
+          "erros": {
+            "items": {
+              "$ref": "#/components/schemas/ErroMotor"
+            },
+            "type": "array",
+            "title": "Erros",
+            "default": []
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "detail",
+          "motor"
+        ],
+        "title": "FalhaMotorResposta",
+        "description": "Corpo das respostas 422 (o motor recusou a operação), 502 e 503 vindas dos motores.\n\nOs erros de validação do próprio ContaAI também usam 422, no formato padrão do FastAPI\n(detail como lista). Nunca traz URL, host ou corpo do motor."
       },
       "Fundamentacao": {
         "properties": {
@@ -1548,7 +1687,7 @@
               }
             ],
             "title": "Custounitario",
-            "description": "Valor pago ao fornecedor por unidade, sem CBS/IBS por fora (vUnCom da compra)."
+            "description": "Valor pago ao fornecedor por unidade, sem CBS/IBS por fora (vUnCom da compra). Ausente: sem margem."
           },
           "creditoCompraUnitario": {
             "anyOf": [
@@ -1564,7 +1703,7 @@
               }
             ],
             "title": "Creditocompraunitario",
-            "description": "CBS + IBS da compra por unidade, lida do grupo IBSCBS da NF-e. Ausente: o backend calcula no motor RR sobre o custo, com a hipótese exibida de fornecedor no regime regular."
+            "description": "CBS + IBS da compra por unidade, lida do grupo IBSCBS da NF-e. Só é usada no Simples tradicional, onde entra no custo. Ausente: o backend calcula no motor RR sobre o custo, na data e com as alíquotas da operação, com a hipótese exibida de fornecedor no regime regular."
           }
         },
         "additionalProperties": false,
@@ -1975,7 +2114,8 @@
                 "type": "null"
               }
             ],
-            "title": "Creditocompraunitario"
+            "title": "Creditocompraunitario",
+            "description": "CBS + IBS da compra por unidade (grupo IBSCBS da NF-e). Só usada no Simples tradicional; ausente, vem do motor RR sobre o custo, com a hipótese exibida."
           },
           "margemAlvoPct": {
             "anyOf": [
@@ -2069,7 +2209,8 @@
           },
           "chamadas": {
             "type": "integer",
-            "title": "Chamadas"
+            "title": "Chamadas",
+            "description": "Avaliações do motor usadas pelo método (as respondidas pelo cache contam): 3 no ajuste afim."
           },
           "metodo": {
             "type": "string",
@@ -2182,6 +2323,19 @@
               }
             ],
             "title": "Pibssn"
+          },
+          "fonte": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fonte",
+            "description": "De onde veio a premissa (ex.: o rótulo do preset escolhido). Sai impressa nas premissas."
           }
         },
         "additionalProperties": false,
@@ -2194,6 +2348,120 @@
         ],
         "title": "PremissasDas",
         "description": "Linha de alíquotas efetivas do Simples do contribuinte (premissa rotulada, P8 e ADR 0001)."
+      },
+      "PresetAliquotas": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "rotulo": {
+            "type": "string",
+            "title": "Rotulo",
+            "description": "Texto curto para a tela; vai em aliquotasNominais.fonte quando escolhido."
+          },
+          "cbs": {
+            "type": "string",
+            "title": "Cbs"
+          },
+          "ibsEstadual": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ibsestadual"
+          },
+          "ibsMunicipal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ibsmunicipal"
+          },
+          "impostoSeletivoAdValorem": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Impostoseletivoadvalorem"
+          },
+          "fonte": {
+            "type": "string",
+            "title": "Fonte"
+          },
+          "ressalva": {
+            "type": "string",
+            "title": "Ressalva"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "rotulo",
+          "cbs",
+          "fonte",
+          "ressalva"
+        ],
+        "title": "PresetAliquotas",
+        "description": "Valores prontos para os campos de alíquota de 2027, cada um com a sua fonte (plano 11.5, P6).\n\nOs campos de alíquota da tela começam vazios; o preset só preenche o que tem fonte. O que vier\nvazio (null) o usuário informa."
+      },
+      "PresetsResposta": {
+        "properties": {
+          "presets": {
+            "items": {
+              "$ref": "#/components/schemas/PresetAliquotas"
+            },
+            "type": "array",
+            "title": "Presets"
+          },
+          "aviso": {
+            "type": "string",
+            "title": "Aviso"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "presets",
+          "aviso"
+        ],
+        "title": "PresetsResposta"
+      },
+      "RecusaCalculo": {
+        "properties": {
+          "detail": {
+            "type": "string",
+            "title": "Detail"
+          },
+          "erros": {
+            "items": {
+              "$ref": "#/components/schemas/ErroMotor"
+            },
+            "type": "array",
+            "title": "Erros",
+            "default": []
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "detail"
+        ],
+        "title": "RecusaCalculo",
+        "description": "422 quando o cálculo pedido não tem resposta: margem impossível, item que o motor não calcula ou\npreço-alvo que não converge. Traz os erros do motor quando eles explicam a recusa."
       },
       "Regime": {
         "type": "string",

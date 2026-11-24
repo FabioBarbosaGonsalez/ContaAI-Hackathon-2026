@@ -1,4 +1,4 @@
-"""Lê as respostas dos motores e devolve os campos do contrato. Não calcula tributo (P1).
+"""Lê as respostas tipadas dos motores e devolve os campos do contrato. Não calcula tributo (P1).
 
 As alíquotas efetivas saem como o motor publica: o RR separa IBS estadual e municipal, o SN traz
 o IBS inteiro. Somar alíquotas seria calcular alíquota, o que o backend não faz.
@@ -12,6 +12,16 @@ from decimal import Decimal
 from typing import Any
 
 from app.contrato import AliquotaEfetiva, ErroMotor, EstadoItem, Motor, Tributos, Versoes
+from app.motores.modelos import (
+    HEADER_VERSAO_APP,
+    HEADER_VERSAO_BANCO,
+    ErroDoMotor,
+    ObjetoRR,
+    ObjetoSN,
+    Reducao,
+    RespostaRR,
+    RespostaSN,
+)
 
 
 @dataclass(frozen=True)
@@ -35,93 +45,96 @@ class LeituraItem:
         return (self.tributos.cbs or Decimal(0)) + (self.tributos.ibs or Decimal(0))
 
 
-def _dec(valor: Any) -> Decimal | None:
-    return None if valor is None else Decimal(str(valor))
+def erro_do_contrato(e: ErroDoMotor) -> ErroMotor:
+    return ErroMotor(codigo=e.code, titulo=e.title, campo=e.pointer, detalhe=e.detail)
 
 
-def ler_erros(objeto: Mapping[str, Any]) -> list[ErroMotor]:
-    return [
-        ErroMotor(codigo=e.get("code", ""), titulo=e.get("title", ""), campo=e.get("pointer"), detalhe=e.get("detail"))
-        for e in objeto.get("erros") or []
-    ]
+def _efetiva(reducao: Reducao | None, nominal: Decimal) -> Decimal:
+    return reducao.pAliqEfet if reducao else nominal
 
 
-def _efetiva(grupo: Mapping[str, Any], chave_nominal: str) -> Decimal | None:
-    reducao = grupo.get("gRed")
-    return _dec(reducao.get("pAliqEfet")) if reducao else _dec(grupo.get(chave_nominal))
-
-
-def ler_item_rr(objeto: Mapping[str, Any]) -> LeituraItem:
+def ler_item_rr(objeto: ObjetoRR) -> LeituraItem:
     """Um item de POST /calculadora/observabilidade/regime-geral."""
-    trib = objeto.get("tribCalc") or {}
-    ibscbs = trib.get("IBSCBS") or {}
-    g = ibscbs.get("gIBSCBS") or {}
-    gcbs, guf, gmun = g.get("gCBS") or {}, g.get("gIBSUF") or {}, g.get("gIBSMun") or {}
-    grupo_is = trib.get("IS")
+    trib = objeto.tribCalc
+    ibscbs = trib.IBSCBS if trib else None
+    g = ibscbs.gIBSCBS if ibscbs else None
+    grupo_is = trib.IS if trib else None
 
-    memoria = dict(ibscbs.get("memoriaCalculo") or {}) or None
-    if grupo_is and grupo_is.get("memoriaCalculo"):
-        memoria = {**(memoria or {}), "impostoSeletivo": grupo_is["memoriaCalculo"]}
+    memoria = dict(ibscbs.memoriaCalculo or {}) if ibscbs else {}
+    if grupo_is and grupo_is.memoriaCalculo:
+        memoria["impostoSeletivo"] = grupo_is.memoriaCalculo
 
-    reducao = (gcbs.get("gRed") or {}).get("pRedAliq")
+    if g is None:
+        reducao, aliquota = None, None
+    else:
+        reducao = g.gCBS.gRed.pRedAliq if g.gCBS.gRed else Decimal("0.00")
+        aliquota = AliquotaEfetiva(
+            cbs=_efetiva(g.gCBS.gRed, g.gCBS.pCBS),
+            ibsUF=_efetiva(g.gIBSUF.gRed, g.gIBSUF.pIBSUF),
+            ibsMun=_efetiva(g.gIBSMun.gRed, g.gIBSMun.pIBSMun),
+        )
     return LeituraItem(
-        numero=objeto["nObj"],
+        numero=objeto.nObj,
         motor=Motor.REGIME_REGULAR,
-        estado=EstadoItem(objeto["estadoItem"]),
+        estado=objeto.estadoItem,
         motivoEstado=None,
         tributos=Tributos(
-            cbs=_dec(gcbs.get("vCBS")),
-            ibs=_dec(g.get("vIBS")),
-            impostoSeletivo=_dec(grupo_is.get("vIS")) if grupo_is else None,
+            cbs=g.gCBS.vCBS if g else None,
+            ibs=g.vIBS if g else None,
+            impostoSeletivo=grupo_is.vIS if grupo_is else None,
         ),
-        reducaoPct=_dec(reducao) if reducao is not None else (Decimal("0.00") if g else None),
-        aliquotaEfetiva=AliquotaEfetiva(
-            cbs=_efetiva(gcbs, "pCBS"), ibsUF=_efetiva(guf, "pIBSUF"), ibsMun=_efetiva(gmun, "pIBSMun")
-        )
-        if g
-        else None,
-        memoria=memoria,
-        erros=ler_erros(objeto),
+        reducaoPct=reducao,
+        aliquotaEfetiva=aliquota,
+        memoria=memoria or None,
+        erros=[erro_do_contrato(e) for e in objeto.erros],
     )
 
 
-def ler_item_sn(objeto: Mapping[str, Any]) -> LeituraItem:
+def ler_item_sn(objeto: ObjetoSN) -> LeituraItem:
     """Um item de POST /calculadora/observabilidade/simples-nacional/nao-assistido."""
-    trib = objeto.get("tribCalc") or {}
-    estado = EstadoItem(objeto["estadoItem"])
-    tem_valores = "vCBSSN" in trib
+    trib = objeto.tribCalc
+    tem_valores = trib is not None and trib.vCBSSN is not None
     return LeituraItem(
-        numero=objeto["nObj"],
+        numero=objeto.nObj,
         motor=Motor.SIMPLES_NACIONAL,
-        estado=estado,
-        motivoEstado=(objeto.get("motivoEstado") or {}).get("descricao"),
+        estado=objeto.estadoItem,
+        motivoEstado=objeto.motivoEstado.descricao if objeto.motivoEstado else None,
         tributos=Tributos(
-            cbs=_dec(trib.get("vCBSSN")),
-            ibs=_dec(trib.get("vIBSSN")),
-            impostoSeletivo=_dec((trib.get("IS") or {}).get("valor")),
+            cbs=trib.vCBSSN if trib else None,
+            ibs=trib.vIBSSN if trib else None,
+            impostoSeletivo=trib.IS.valor if trib and trib.IS else None,
         ),
         reducaoPct=None,
-        aliquotaEfetiva=AliquotaEfetiva(cbs=_dec(trib.get("pCBSSN")), ibs=_dec(trib.get("pIBSSN")))
-        if tem_valores
-        else None,
-        memoria=dict(trib.get("memoriaCalculo") or {}) or None,
-        erros=ler_erros(objeto),
+        aliquotaEfetiva=AliquotaEfetiva(cbs=trib.pCBSSN, ibs=trib.pIBSSN) if tem_valores and trib else None,
+        memoria=dict(trib.memoriaCalculo or {}) or None if trib else None,
+        erros=[erro_do_contrato(e) for e in objeto.erros],
     )
+
+
+def ler_rr(resposta: RespostaRR) -> list[LeituraItem]:
+    return sorted((ler_item_rr(o) for o in resposta.objetos), key=lambda i: i.numero)
+
+
+def ler_sn(resposta: RespostaSN) -> list[LeituraItem]:
+    return sorted((ler_item_sn(o) for o in resposta.objetos), key=lambda i: i.numero)
 
 
 def ler_resposta(corpo: Mapping[str, Any], motor: Motor) -> list[LeituraItem]:
-    leitor = ler_item_rr if motor == Motor.REGIME_REGULAR else ler_item_sn
-    return sorted((leitor(o) for o in corpo.get("objetos", [])), key=lambda i: i.numero)
+    """Valida o JSON cru no modelo do motor e lê os itens (usado pelos scripts geradores)."""
+    if motor == Motor.REGIME_REGULAR:
+        return ler_rr(RespostaRR.model_validate(corpo))
+    return ler_sn(RespostaSN.model_validate(corpo))
+
+
+def _header(headers: Mapping[str, str] | None, nome: str) -> str | None:
+    if not headers:
+        return None
+    return next((v for k, v in headers.items() if k.lower() == nome), None)
 
 
 def versoes(headers_rr: Mapping[str, str] | None = None, headers_sn: Mapping[str, str] | None = None) -> Versoes:
-    def h(headers: Mapping[str, str] | None, nome: str) -> str | None:
-        if not headers:
-            return None
-        return next((v for k, v in headers.items() if k.lower() == nome), None)
-
     return Versoes(
-        motorRegimeRegular=h(headers_rr, "x-calc-app-version"),
-        motorSimplesNacional=h(headers_sn, "x-calc-app-version"),
-        banco=h(headers_rr, "x-calc-db-version") or h(headers_sn, "x-calc-db-version"),
+        motorRegimeRegular=_header(headers_rr, HEADER_VERSAO_APP),
+        motorSimplesNacional=_header(headers_sn, HEADER_VERSAO_APP),
+        banco=_header(headers_rr, HEADER_VERSAO_BANCO) or _header(headers_sn, HEADER_VERSAO_BANCO),
     )

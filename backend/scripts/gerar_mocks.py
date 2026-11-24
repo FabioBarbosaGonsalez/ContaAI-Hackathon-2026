@@ -264,7 +264,13 @@ def premissas(regime: Regime, com_is: bool = True) -> list[Premissa]:
             Premissa(
                 nome="Crédito das compras no Simples tradicional",
                 valor="não aproveitado: entra no custo",
-                fonte="Hipótese dos guias citados no plano (seção 11.2). Validar com o contador.",
+                fonte="LC 214/2025, art. 47, §9º, I: o optante do Simples não se credita de IBS e CBS.",
+            ),
+            Premissa(
+                nome="Cesta básica dentro do DAS",
+                valor="sem redução: o arroz paga as alíquotas efetivas do anexo",
+                fonte="Premissa da equipe. A LC 214 zera a cesta básica (art. 125), mas não diz se vale dentro do DAS, "
+                "e o motor do Simples só aplica as alíquotas informadas. Validar com o contador (ADR 0003).",
             ),
         ]
     lista += [
@@ -482,7 +488,9 @@ def regime_comparar(motores: Motores, custos: dict[str, Custo]) -> RegimeCompara
             "Mesmo preço total ao cliente nos dois regimes: no híbrido, a base é o valor que somado à CBS/IBS dá esse "
             "preço (pode diferir em centavos pelo arredondamento ao centavo de cada linha).",
             "Crédito das compras proporcional às quantidades vendidas, pelo crédito por unidade da última nota de cada item.",
-            "No Simples tradicional o crédito das compras não é aproveitado (hipótese dos guias; validar com o contador).",
+            "No Simples tradicional o crédito das compras não é aproveitado (LC 214/2025, art. 47, §9º, I).",
+            "No Simples tradicional o arroz paga as alíquotas efetivas do anexo, sem a redução da cesta básica "
+            "(premissa da equipe; validar com o contador). O resultado da comparação depende dela.",
             "ICMS fora das contas.",
         ],
         simulado=True,
@@ -702,7 +710,7 @@ def gravar(nome: str, conteudo: Any) -> None:
         return v
 
     (PASTA_MOCKS / nome).write_text(
-        json.dumps(serializar(conteudo), ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        json.dumps(serializar(conteudo), ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n"
     )
     print(f"  {nome}")
 

@@ -63,7 +63,7 @@ def gravar(nome: str, base: str, rota: str, arquivo_entrada: str, versao_fixada:
         "corpo": resposta.json(),
     }
     destino = PASTA / f"{nome}.resposta.json"
-    destino.write_text(json.dumps(registro, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    destino.write_text(json.dumps(registro, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
     print(f"{nome}: HTTP {resposta.status_code} gravado em {destino.name}")
 
 

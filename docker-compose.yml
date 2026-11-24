@@ -1,4 +1,4 @@
-# ContaAI: motores oficiais da Receita (Etapa 0). Backend e frontend entram na Etapa 1.
+# ContaAI: motores oficiais da Receita. Backend e frontend entram no compose com o deploy (E6, ADR 0004).
 #
 #   docker compose up -d --build     # primeira vez: ~5 a 10 min (Maven + banco do Flyway)
 #   docker compose ps                # aguardar os dois motores "healthy"

@@ -31,6 +31,8 @@ cd backend && uv run pytest -m golden
 
 No Linux e no macOS, `make lint`, `make test` e `make golden` fazem o mesmo. No Windows sem `make`, use os comandos acima.
 
+No GitHub, o workflow **Golden** roda os mesmos testes de referência: sozinho nos PRs que mexem em `motores/`, `backend/app/motores/`, `backend/app/precificacao/`, `backend/app/cenarios/`, `backend/scripts/`, `backend/tests/golden/` ou `data/demo/`, e à mão em Actions → Golden → Run workflow. Ele não é exigido pela proteção da `main`, porque o build dos motores leva alguns minutos; confira o resultado antes de aprovar.
+
 ## Mudou o contrato ou os dados de demonstração?
 
 - **Contrato** (`backend/app/contrato.py`): reexporte com `cd backend && uv run python scripts/exportar_openapi.py`. O teste `test_openapi_exportado_esta_atualizado` falha se o arquivo `docs/contrato/openapi.json` ficar para trás. Registre a mudança no [ADR 0003](docs/adr/0003-contrato-da-api.md).
