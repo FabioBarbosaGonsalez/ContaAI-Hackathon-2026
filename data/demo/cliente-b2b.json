@@ -1,0 +1,18 @@
+{
+  "_aviso": "Dados fictícios para demonstração (princípio P10). Empresa, CNPJ (com dígito verificador propositalmente inválido) e quantidades não representam empresas reais.",
+  "cliente": {
+    "razaoSocial": "Mercado Bom Preço Ltda (fictício)",
+    "cnpj": "50291633000185",
+    "regime": "regime_regular",
+    "uf": "RS",
+    "municipio": 4314902
+  },
+  "compraMensal": {
+    "descricao": "Cesta mensal fictícia, perto dos R$ 20 mil por mês do plano (seção 13), aos preços do catálogo da distribuidora",
+    "itens": [
+      { "itemId": "arroz-5kg", "quantidade": "400" },
+      { "itemId": "cerveja-lata", "quantidade": "1200" },
+      { "itemId": "chocolate-barra", "quantidade": "700" }
+    ]
+  }
+}
