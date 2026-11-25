@@ -4,7 +4,10 @@
 # Fonte: https://github.com/ReceitaFederal/calculadora-rtc-regime-regular
 #
 # Versão fixada (princípio P5). Atualizar exige PR próprio e testes de referência verdes.
-# O SHA garante que a tag não foi movida depois da verificação (2026-11-24).
+# O build busca o commit verificado pelo SHA, e não pela tag: em 2026-11-25 a Receita republicou a
+# tag 1.7.2 do RR no commit 39363aa (remove ArredondamentoUtils.java e CaptchaException.java). O
+# commit verificado em 2026-11-24 (32df719) continua no histórico oficial. Trocar de commit exige PR
+# próprio e testes de referência verdes (ADR 0002).
 #
 # As etapas "fonte-rr" e "banco" são idênticas às do Dockerfile do Simples Nacional,
 # para o BuildKit reaproveitar o banco gerado entre os dois builds.
@@ -22,11 +25,13 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends git curl ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 WORKDIR /src/rr
-RUN git clone --depth 1 --branch "${RR_TAG}" \
-      https://github.com/ReceitaFederal/calculadora-rtc-regime-regular.git . \
+RUN git init -q . \
+ && git remote add origin https://github.com/ReceitaFederal/calculadora-rtc-regime-regular.git \
+ && git fetch -q --depth 1 origin "${RR_SHA}" \
+ && git checkout -q --detach FETCH_HEAD \
  && atual="$(git rev-parse HEAD)" \
  && if [ "${atual}" != "${RR_SHA}" ]; then \
-      echo "A tag ${RR_TAG} aponta para ${atual}, esperado ${RR_SHA}. Abortando." >&2; exit 1; \
+      echo "O commit baixado é ${atual}, esperado ${RR_SHA} (tag ${RR_TAG}). Abortando." >&2; exit 1; \
     fi
 
 # ---------------------------------------------------------------------------
