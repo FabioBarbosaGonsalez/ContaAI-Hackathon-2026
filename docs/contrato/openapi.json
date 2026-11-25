@@ -35,11 +35,18 @@
             }
           },
           "422": {
-            "description": "O motor recusou a operação (erros do motor, ex.: VSN-015). A validação de entrada do ContaAI também responde 422, no formato padrão do FastAPI (detail como lista).",
+            "description": "O motor recusou a operação (/problemas/motor-recusou, ex.: VSN-015) ou a entrada não segue o contrato (/problemas/entrada-invalida).",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ProblemaMotor"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ProblemaValidacao"
+                    }
+                  ]
                 }
               }
             }
@@ -47,9 +54,9 @@
           "502": {
             "description": "O motor devolveu uma resposta que o ContaAI não reconhece.",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                  "$ref": "#/components/schemas/ProblemaMotor"
                 }
               }
             }
@@ -57,9 +64,9 @@
           "503": {
             "description": "Motor indisponível.",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                  "$ref": "#/components/schemas/ProblemaMotor"
                 }
               }
             }
@@ -96,19 +103,21 @@
             }
           },
           "422": {
-            "description": "Sem preço possível (RecusaCalculo: margem impossível, item que o motor não calcula, sem convergência) ou recusa do motor (FalhaMotorResposta). A validação de entrada também usa 422, no formato padrão do FastAPI.",
+            "description": "Sem resposta para o cálculo pedido (/problemas/calculo-recusado: margem impossível, item que o motor não calcula, base do híbrido que não fecha, sem convergência), recusa do motor (/problemas/motor-recusou) ou entrada fora do contrato (/problemas/entrada-invalida).",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
                   "anyOf": [
                     {
-                      "$ref": "#/components/schemas/RecusaCalculo"
+                      "$ref": "#/components/schemas/ProblemaCalculo"
                     },
                     {
-                      "$ref": "#/components/schemas/FalhaMotorResposta"
+                      "$ref": "#/components/schemas/ProblemaMotor"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ProblemaValidacao"
                     }
-                  ],
-                  "title": "Response 422 Preco Alvo Item Preco Alvo Post"
+                  ]
                 }
               }
             }
@@ -116,9 +125,9 @@
           "502": {
             "description": "O motor devolveu uma resposta que o ContaAI não reconhece.",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                  "$ref": "#/components/schemas/ProblemaMotor"
                 }
               }
             }
@@ -126,9 +135,9 @@
           "503": {
             "description": "Motor indisponível.",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                  "$ref": "#/components/schemas/ProblemaMotor"
                 }
               }
             }
@@ -188,19 +197,21 @@
             }
           },
           "422": {
-            "description": "Sem comparação possível (RecusaCalculo: item que um dos motores não calcula ou base do híbrido que não fecha) ou recusa do motor (FalhaMotorResposta). A validação de entrada (data antes de 2027, item sem custo, sem premissasDas) também usa 422, no formato padrão do FastAPI.",
+            "description": "Sem resposta para o cálculo pedido (/problemas/calculo-recusado: margem impossível, item que o motor não calcula, base do híbrido que não fecha, sem convergência), recusa do motor (/problemas/motor-recusou) ou entrada fora do contrato (/problemas/entrada-invalida).",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
                   "anyOf": [
                     {
-                      "$ref": "#/components/schemas/RecusaCalculo"
+                      "$ref": "#/components/schemas/ProblemaCalculo"
                     },
                     {
-                      "$ref": "#/components/schemas/FalhaMotorResposta"
+                      "$ref": "#/components/schemas/ProblemaMotor"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ProblemaValidacao"
                     }
-                  ],
-                  "title": "Response 422 Regime Comparar Regime Comparar Post"
+                  ]
                 }
               }
             }
@@ -208,9 +219,9 @@
           "502": {
             "description": "O motor devolveu uma resposta que o ContaAI não reconhece.",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                  "$ref": "#/components/schemas/ProblemaMotor"
                 }
               }
             }
@@ -218,9 +229,9 @@
           "503": {
             "description": "Motor indisponível.",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                  "$ref": "#/components/schemas/ProblemaMotor"
                 }
               }
             }
@@ -276,14 +287,31 @@
             }
           },
           "422": {
-            "description": "XML que não é uma NF-e lida pelo ContaAI, ou destinatário que não é empresa cadastrada."
+            "description": "XML que não é uma NF-e lida pelo ContaAI (/problemas/nota-invalida), destinatário que não é empresa cadastrada (/problemas/nota-recusada), recusa do motor ou entrada fora do contrato.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ProblemaMotor"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Problema"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ProblemaValidacao"
+                    }
+                  ]
+                }
+              }
+            }
           },
           "502": {
             "description": "O motor devolveu uma resposta que o ContaAI não reconhece.",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                  "$ref": "#/components/schemas/ProblemaMotor"
                 }
               }
             }
@@ -291,33 +319,82 @@
           "503": {
             "description": "Motor indisponível.",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                  "$ref": "#/components/schemas/ProblemaMotor"
                 }
               }
             }
           },
           "401": {
-            "description": "Token da demo ausente ou errado (header X-ContaAI-Token)."
+            "description": "Token da demo ausente ou errado (header X-ContaAI-Token).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
           },
           "404": {
-            "description": "Empresa ou alerta não encontrado."
+            "description": "Empresa ou alerta não encontrado.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
           },
           "429": {
-            "description": "Limite de requisições por minuto atingido (header Retry-After)."
+            "description": "Limite de requisições por minuto atingido (header Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
           },
           "409": {
-            "description": "A mesma nota (emitente, série e número) já foi importada com outro conteúdo."
+            "description": "A mesma nota (emitente, série e número) já foi importada com outro conteúdo, ou o estado mudou durante a importação (/problemas/nota-recusada).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
           },
           "411": {
-            "description": "Upload sem Content-Length."
+            "description": "Upload sem Content-Length.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
           },
           "413": {
-            "description": "Arquivo maior que o limite para uma NF-e."
+            "description": "Arquivo maior que o limite para uma NF-e.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
           },
           "415": {
-            "description": "O arquivo não é XML."
+            "description": "O arquivo não é XML.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
           }
         }
       }
@@ -381,20 +458,41 @@
             }
           },
           "401": {
-            "description": "Token da demo ausente ou errado (header X-ContaAI-Token)."
+            "description": "Token da demo ausente ou errado (header X-ContaAI-Token).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
           },
           "404": {
-            "description": "Empresa ou alerta não encontrado."
+            "description": "Empresa ou alerta não encontrado.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
           },
           "429": {
-            "description": "Limite de requisições por minuto atingido (header Retry-After)."
+            "description": "Limite de requisições por minuto atingido (header Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ProblemaValidacao"
                 }
               }
             }
@@ -450,23 +548,61 @@
             }
           },
           "401": {
-            "description": "Token da demo ausente ou errado (header X-ContaAI-Token)."
+            "description": "Token da demo ausente ou errado (header X-ContaAI-Token).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
           },
           "404": {
-            "description": "Empresa ou alerta não encontrado."
+            "description": "Empresa ou alerta não encontrado.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
           },
           "429": {
-            "description": "Limite de requisições por minuto atingido (header Retry-After)."
+            "description": "Limite de requisições por minuto atingido (header Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Rota que só funciona no modo real (CONTAAI_MODO=real).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
           },
           "409": {
-            "description": "Já aplicado, ou alerta sem preço sugerido."
+            "description": "Já aplicado, ou alerta sem preço sugerido.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ProblemaValidacao"
                 }
               }
             }
@@ -508,20 +644,41 @@
             }
           },
           "401": {
-            "description": "Token da demo ausente ou errado (header X-ContaAI-Token)."
+            "description": "Token da demo ausente ou errado (header X-ContaAI-Token).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
           },
           "404": {
-            "description": "Empresa ou alerta não encontrado."
+            "description": "Empresa ou alerta não encontrado.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
           },
           "429": {
-            "description": "Limite de requisições por minuto atingido (header Retry-After)."
+            "description": "Limite de requisições por minuto atingido (header Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ProblemaValidacao"
                 }
               }
             }
@@ -547,78 +704,6 @@
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "/demo/restaurar": {
-      "post": {
-        "tags": [
-          "operação"
-        ],
-        "summary": "Demo Restaurar",
-        "description": "Volta o estado às sementes de data/demo (empresas fictícias e notas iniciais), desfazendo tudo o que foi\nimportado ou aplicado. Atômico: se um motor falhar no meio, o estado fica como estava. Exige o token da\ndemo quando ele está configurado.",
-        "operationId": "demo_restaurar_demo_restaurar_post",
-        "parameters": [
-          {
-            "name": "X-ContaAI-Token",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Contaai-Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RestaurarResposta"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "O motor recusou a operação (erros do motor, ex.: VSN-015). A validação de entrada do ContaAI também responde 422, no formato padrão do FastAPI (detail como lista).",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/FalhaMotorResposta"
-                }
-              }
-            }
-          },
-          "502": {
-            "description": "O motor devolveu uma resposta que o ContaAI não reconhece.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/FalhaMotorResposta"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "Motor indisponível, ou sementes não encontradas (CONTAAI_PASTA_DEMO)."
-          },
-          "401": {
-            "description": "Token da demo ausente ou errado (header X-ContaAI-Token)."
-          },
-          "404": {
-            "description": "Empresa ou alerta não encontrado."
-          },
-          "429": {
-            "description": "Limite de requisições por minuto atingido (header Retry-After)."
           }
         }
       }
@@ -675,11 +760,18 @@
             }
           },
           "422": {
-            "description": "O motor recusou a operação (erros do motor, ex.: VSN-015). A validação de entrada do ContaAI também responde 422, no formato padrão do FastAPI (detail como lista).",
+            "description": "O motor recusou a operação (/problemas/motor-recusou, ex.: VSN-015) ou a entrada não segue o contrato (/problemas/entrada-invalida).",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ProblemaMotor"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ProblemaValidacao"
+                    }
+                  ]
                 }
               }
             }
@@ -687,9 +779,9 @@
           "502": {
             "description": "O motor devolveu uma resposta que o ContaAI não reconhece.",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                  "$ref": "#/components/schemas/ProblemaMotor"
                 }
               }
             }
@@ -697,9 +789,19 @@
           "503": {
             "description": "Motor indisponível.",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                  "$ref": "#/components/schemas/ProblemaMotor"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por minuto atingido (header Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
                 }
               }
             }
@@ -748,11 +850,18 @@
             }
           },
           "422": {
-            "description": "O motor recusou a operação (erros do motor, ex.: VSN-015). A validação de entrada do ContaAI também responde 422, no formato padrão do FastAPI (detail como lista).",
+            "description": "O motor recusou a operação (/problemas/motor-recusou, ex.: VSN-015) ou a entrada não segue o contrato (/problemas/entrada-invalida).",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ProblemaMotor"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ProblemaValidacao"
+                    }
+                  ]
                 }
               }
             }
@@ -760,9 +869,9 @@
           "502": {
             "description": "O motor devolveu uma resposta que o ContaAI não reconhece.",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                  "$ref": "#/components/schemas/ProblemaMotor"
                 }
               }
             }
@@ -770,9 +879,29 @@
           "503": {
             "description": "Motor indisponível.",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                  "$ref": "#/components/schemas/ProblemaMotor"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Item ou código não encontrado.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por minuto atingido (header Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
                 }
               }
             }
@@ -810,11 +939,18 @@
             }
           },
           "422": {
-            "description": "O motor recusou a operação (erros do motor, ex.: VSN-015). A validação de entrada do ContaAI também responde 422, no formato padrão do FastAPI (detail como lista).",
+            "description": "O motor recusou a operação (/problemas/motor-recusou, ex.: VSN-015) ou a entrada não segue o contrato (/problemas/entrada-invalida).",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ProblemaMotor"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ProblemaValidacao"
+                    }
+                  ]
                 }
               }
             }
@@ -822,9 +958,9 @@
           "502": {
             "description": "O motor devolveu uma resposta que o ContaAI não reconhece.",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                  "$ref": "#/components/schemas/ProblemaMotor"
                 }
               }
             }
@@ -832,9 +968,29 @@
           "503": {
             "description": "Motor indisponível.",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                  "$ref": "#/components/schemas/ProblemaMotor"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Rota que só funciona no modo real (CONTAAI_MODO=real).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por minuto atingido (header Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
                 }
               }
             }
@@ -873,11 +1029,18 @@
             }
           },
           "422": {
-            "description": "O motor recusou a operação (erros do motor, ex.: VSN-015). A validação de entrada do ContaAI também responde 422, no formato padrão do FastAPI (detail como lista).",
+            "description": "O motor recusou a operação (/problemas/motor-recusou, ex.: VSN-015) ou a entrada não segue o contrato (/problemas/entrada-invalida).",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ProblemaMotor"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ProblemaValidacao"
+                    }
+                  ]
                 }
               }
             }
@@ -885,9 +1048,9 @@
           "502": {
             "description": "O motor devolveu uma resposta que o ContaAI não reconhece.",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                  "$ref": "#/components/schemas/ProblemaMotor"
                 }
               }
             }
@@ -895,9 +1058,29 @@
           "503": {
             "description": "Motor indisponível.",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                  "$ref": "#/components/schemas/ProblemaMotor"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Item ou código não encontrado.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por minuto atingido (header Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
                 }
               }
             }
@@ -953,11 +1136,18 @@
             }
           },
           "422": {
-            "description": "O motor recusou a operação (erros do motor, ex.: VSN-015). A validação de entrada do ContaAI também responde 422, no formato padrão do FastAPI (detail como lista).",
+            "description": "O motor recusou a operação (/problemas/motor-recusou, ex.: VSN-015) ou a entrada não segue o contrato (/problemas/entrada-invalida).",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ProblemaMotor"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ProblemaValidacao"
+                    }
+                  ]
                 }
               }
             }
@@ -965,21 +1155,167 @@
           "502": {
             "description": "O motor devolveu uma resposta que o ContaAI não reconhece.",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                  "$ref": "#/components/schemas/ProblemaMotor"
                 }
               }
             }
           },
           "503": {
-            "description": "Motor ou provedor de IA indisponível."
+            "description": "Motor (/problemas/motor-indisponivel) ou provedor de IA (/problemas/ia-indisponivel) indisponível.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ProblemaMotor"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Problema"
+                    }
+                  ],
+                  "title": "Response 503 Chat Chat Post"
+                }
+              }
+            }
           },
           "401": {
-            "description": "Token da demo ausente ou errado (header X-ContaAI-Token)."
+            "description": "Token da demo ausente ou errado (header X-ContaAI-Token).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
           },
           "429": {
-            "description": "Limite de mensagens por minuto atingido (header Retry-After)."
+            "description": "Limite de mensagens por minuto atingido (header Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/demo/restaurar": {
+      "post": {
+        "tags": [
+          "operação"
+        ],
+        "summary": "Demo Restaurar",
+        "description": "Volta o estado às sementes de data/demo (empresas fictícias e notas iniciais), desfazendo tudo o que foi\nimportado ou aplicado. Atômico: se um motor falhar no meio, o estado fica como estava. Exige o token da\ndemo quando ele está configurado.",
+        "operationId": "demo_restaurar_demo_restaurar_post",
+        "parameters": [
+          {
+            "name": "X-ContaAI-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Contaai-Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestaurarResposta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "O motor recusou a operação (/problemas/motor-recusou, ex.: VSN-015) ou a entrada não segue o contrato (/problemas/entrada-invalida).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ProblemaMotor"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ProblemaValidacao"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "O motor devolveu uma resposta que o ContaAI não reconhece.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaMotor"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Motor indisponível (/problemas/motor-indisponivel), ou sementes não encontradas (/problemas/sementes-indisponiveis, CONTAAI_PASTA_DEMO).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaMotor"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token da demo ausente ou errado (header X-ContaAI-Token).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Empresa ou alerta não encontrado.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por minuto atingido (header Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Rota que só funciona no modo real (CONTAAI_MODO=real).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
           }
         }
       }
@@ -999,6 +1335,60 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SaudeResposta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/problemas/{nome}": {
+      "get": {
+        "tags": [
+          "operação"
+        ],
+        "summary": "Tipo Problema",
+        "description": "Descreve um tipo de problema que aparece no campo `type` das respostas de erro (RFC 9457).",
+        "operationId": "tipo_problema_problemas__nome__get",
+        "parameters": [
+          {
+            "name": "nome",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z-]{3,40}$",
+              "title": "Nome"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TipoProblema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tipo de problema desconhecido.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaValidacao"
                 }
               }
             }
@@ -2391,33 +2781,6 @@
         ],
         "title": "ExplicarResposta"
       },
-      "FalhaMotorResposta": {
-        "properties": {
-          "detail": {
-            "type": "string",
-            "title": "Detail"
-          },
-          "motor": {
-            "$ref": "#/components/schemas/Motor"
-          },
-          "erros": {
-            "items": {
-              "$ref": "#/components/schemas/ErroMotor"
-            },
-            "type": "array",
-            "title": "Erros",
-            "default": []
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "detail",
-          "motor"
-        ],
-        "title": "FalhaMotorResposta",
-        "description": "Corpo das respostas 422 (o motor recusou a operação), 502 e 503 vindas dos motores.\n\nOs erros de validação do próprio ContaAI também usam 422, no formato padrão do FastAPI\n(detail como lista). Nunca traz URL, host ou corpo do motor."
-      },
       "Fundamentacao": {
         "properties": {
           "cClassTrib": {
@@ -2446,19 +2809,6 @@
           "referenciaNormativa"
         ],
         "title": "Fundamentacao"
-      },
-      "HTTPValidationError": {
-        "properties": {
-          "detail": {
-            "items": {
-              "$ref": "#/components/schemas/ValidationError"
-            },
-            "type": "array",
-            "title": "Detail"
-          }
-        },
-        "type": "object",
-        "title": "HTTPValidationError"
       },
       "ImpostoSeletivoEntrada-Input": {
         "properties": {
@@ -3985,11 +4335,75 @@
         ],
         "title": "PresetsResposta"
       },
-      "RecusaCalculo": {
+      "Problema": {
         "properties": {
-          "detail": {
+          "type": {
             "type": "string",
-            "title": "Detail"
+            "title": "Type",
+            "description": "URI do tipo do problema (relativa à API).",
+            "default": "about:blank"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "Resumo do tipo do problema; não muda entre ocorrências."
+          },
+          "status": {
+            "type": "integer",
+            "title": "Status",
+            "description": "O mesmo código HTTP da resposta."
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail",
+            "description": "Explicação desta ocorrência, para a pessoa ler."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title",
+          "status"
+        ],
+        "title": "Problema",
+        "description": "Corpo de toda resposta de erro (4xx e 5xx). `type` identifica o problema: \"about:blank\" quando o\ncódigo HTTP basta (title = frase do código), ou /problemas/<nome> (GET nesse caminho descreve o tipo).\n`detail` é para a pessoa ler, não para o frontend interpretar. Nunca traz URL, host, caminho do\nservidor nem corpo dos motores ou do provedor de IA."
+      },
+      "ProblemaCalculo": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "description": "URI do tipo do problema (relativa à API).",
+            "default": "about:blank"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "Resumo do tipo do problema; não muda entre ocorrências."
+          },
+          "status": {
+            "type": "integer",
+            "title": "Status",
+            "description": "O mesmo código HTTP da resposta."
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail",
+            "description": "Explicação desta ocorrência, para a pessoa ler."
           },
           "erros": {
             "items": {
@@ -4003,10 +4417,63 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "detail"
+          "title",
+          "status"
         ],
-        "title": "RecusaCalculo",
-        "description": "422 quando o cálculo pedido não tem resposta: margem impossível, item que o motor não calcula ou\npreço-alvo que não converge. Traz os erros do motor quando eles explicam a recusa."
+        "title": "ProblemaCalculo",
+        "description": "422 /problemas/calculo-recusado: o cálculo pedido não tem resposta (margem impossível, item que o\nmotor não calcula, preço-alvo que não converge). Traz os erros do motor quando eles explicam a recusa."
+      },
+      "ProblemaMotor": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "description": "URI do tipo do problema (relativa à API).",
+            "default": "about:blank"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "Resumo do tipo do problema; não muda entre ocorrências."
+          },
+          "status": {
+            "type": "integer",
+            "title": "Status",
+            "description": "O mesmo código HTTP da resposta."
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail",
+            "description": "Explicação desta ocorrência, para a pessoa ler."
+          },
+          "motor": {
+            "$ref": "#/components/schemas/Motor"
+          },
+          "erros": {
+            "items": {
+              "$ref": "#/components/schemas/ErroMotor"
+            },
+            "type": "array",
+            "title": "Erros",
+            "default": []
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title",
+          "status",
+          "motor"
+        ],
+        "title": "ProblemaMotor",
+        "description": "Falha de um motor oficial: 422 /problemas/motor-recusou (com os erros do motor, ex.: VSN-015),\n502 /problemas/motor-resposta-invalida ou 503 /problemas/motor-indisponivel."
       },
       "Regime": {
         "type": "string",
@@ -4319,6 +4786,40 @@
         ],
         "title": "SaudeResposta"
       },
+      "TipoProblema": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "status": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Status",
+            "description": "Códigos HTTP em que o tipo aparece."
+          },
+          "descricao": {
+            "type": "string",
+            "title": "Descricao"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "type",
+          "title",
+          "status",
+          "descricao"
+        ],
+        "title": "TipoProblema",
+        "description": "Descrição de um tipo de problema (GET /problemas/{nome}), como pede a RFC 9457 para tipos novos."
+      },
       "Totais": {
         "properties": {
           "valorProdutos": {
@@ -4393,46 +4894,6 @@
         "type": "object",
         "title": "Tributos"
       },
-      "ValidationError": {
-        "properties": {
-          "loc": {
-            "items": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "integer"
-                }
-              ]
-            },
-            "type": "array",
-            "title": "Location"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Message"
-          },
-          "type": {
-            "type": "string",
-            "title": "Error Type"
-          },
-          "input": {
-            "title": "Input"
-          },
-          "ctx": {
-            "type": "object",
-            "title": "Context"
-          }
-        },
-        "type": "object",
-        "required": [
-          "loc",
-          "msg",
-          "type"
-        ],
-        "title": "ValidationError"
-      },
       "Versoes": {
         "properties": {
           "motorRegimeRegular": {
@@ -4472,6 +4933,87 @@
         "additionalProperties": false,
         "type": "object",
         "title": "Versoes"
+      },
+      "CampoInvalido": {
+        "additionalProperties": false,
+        "properties": {
+          "origem": {
+            "enum": [
+              "body",
+              "query",
+              "path",
+              "header",
+              "cookie"
+            ],
+            "title": "Origem",
+            "type": "string"
+          },
+          "campo": {
+            "description": "JSON Pointer do campo dentro da origem (ex.: \"#/itens/0/ncm\"); \"#\" = inteiro.",
+            "title": "Campo",
+            "type": "string"
+          },
+          "detalhe": {
+            "title": "Detalhe",
+            "type": "string"
+          }
+        },
+        "required": [
+          "origem",
+          "campo",
+          "detalhe"
+        ],
+        "title": "CampoInvalido",
+        "type": "object"
+      },
+      "ProblemaValidacao": {
+        "additionalProperties": false,
+        "description": "422 /problemas/entrada-invalida: a requisição não passou na validação do contrato.",
+        "properties": {
+          "type": {
+            "default": "about:blank",
+            "description": "URI do tipo do problema (relativa à API).",
+            "title": "Type",
+            "type": "string"
+          },
+          "title": {
+            "description": "Resumo do tipo do problema; não muda entre ocorrências.",
+            "title": "Title",
+            "type": "string"
+          },
+          "status": {
+            "description": "O mesmo código HTTP da resposta.",
+            "title": "Status",
+            "type": "integer"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Explicação desta ocorrência, para a pessoa ler.",
+            "title": "Detail"
+          },
+          "campos": {
+            "items": {
+              "$ref": "#/components/schemas/CampoInvalido"
+            },
+            "title": "Campos",
+            "type": "array"
+          }
+        },
+        "required": [
+          "title",
+          "status",
+          "campos"
+        ],
+        "title": "ProblemaValidacao",
+        "type": "object"
       }
     }
   }

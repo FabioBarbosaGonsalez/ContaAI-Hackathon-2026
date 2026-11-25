@@ -533,9 +533,9 @@ def producao(
 ) -> tuple[dict[str, CarrinhoResposta], dict[str, PrecoAlvoResposta], dict[str, dict[str, ExplicarResposta]]]:
     import asyncio
 
+    from app.api.rotas.explicacao import requisicao_demo
     from app.contrato import CarrinhoRequisicao, ItemBase, PrecoAlvoRequisicao
     from app.explicacao import explicar_item
-    from app.main import requisicao_demo
     from app.motores.cliente import ClienteMotores
     from app.motores.dados_abertos import DadosAbertos
     from app.precificacao.carrinho import calcular_carrinho

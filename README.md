@@ -38,7 +38,7 @@ uv run uvicorn app.main:app --reload   # documentação interativa em http://127
 As rotas seguem o contrato ([docs/contrato/openapi.json](docs/contrato/openapi.json), [ADR 0003](docs/adr/0003-contrato-da-api.md)). Há dois modos:
 
 - **mock** (padrão): todas as rotas respondem com mocks gerados a partir dos motores oficiais, com o header `X-ContaAI-Mock: 1`.
-- **real** (`CONTAAI_MODO=real`, motores de pé): `POST /carrinho/calcular` e `POST /item/preco-alvo` calculam pelos motores ([ADR 0004](docs/adr/0004-nucleo-de-calculo.md), [ADR 0005](docs/adr/0005-preco-alvo-e-premissas.md)); `GET /busca/ncm`, `GET`/`POST /explicar`, `GET /erros/{codigo}` e `POST /chat` também ([ADR 0006](docs/adr/0006-agente.md)), `POST /regime/comparar` ([ADR 0007](docs/adr/0007-comparacao-de-regimes.md)), e NF-e, alertas, catálogo e painel do contador ([ADR 0008](docs/adr/0008-nfe-historico-e-alertas.md)). Falhas dos motores voltam como 422 (operação recusada, com os erros do motor), 502 ou 503, sem expor endereço interno.
+- **real** (`CONTAAI_MODO=real`, motores de pé): `POST /carrinho/calcular` e `POST /item/preco-alvo` calculam pelos motores ([ADR 0004](docs/adr/0004-nucleo-de-calculo.md), [ADR 0005](docs/adr/0005-preco-alvo-e-premissas.md)); `GET /busca/ncm`, `GET`/`POST /explicar`, `GET /erros/{codigo}` e `POST /chat` também ([ADR 0006](docs/adr/0006-agente.md)), `POST /regime/comparar` ([ADR 0007](docs/adr/0007-comparacao-de-regimes.md)), e NF-e, alertas, catálogo e painel do contador ([ADR 0008](docs/adr/0008-nfe-historico-e-alertas.md)). Todo erro sai no formato Problem Details da RFC 9457 (`application/problem+json`, com `type`, `title`, `status` e `detail`); `GET /problemas/{nome}` descreve cada tipo próprio ([ADR 0009](docs/adr/0009-camada-http-e-erros.md)). Falhas dos motores voltam como 422 (operação recusada, com os erros do motor), 502 ou 503, sem expor endereço interno.
 
 ### Testar a recorrência (NF-e → alerta)
 
@@ -112,6 +112,7 @@ No Linux e no macOS, o [Makefile](Makefile) tem atalhos para os mesmos comandos:
 - [ADR 0006](docs/adr/0006-agente.md): agente com IA trocável, ferramentas, verificador anti-alucinação, busca de NCM e proteção da demo
 - [ADR 0007](docs/adr/0007-comparacao-de-regimes.md): comparação Simples tradicional × híbrido, crédito das compras e preço de empate
 - [ADR 0008](docs/adr/0008-nfe-historico-e-alertas.md): NF-e de compra, estado em SQLite com migrações, alertas de margem, painel do contador e proteções
+- [ADR 0009](docs/adr/0009-camada-http-e-erros.md): camada HTTP em routers, erros no formato da RFC 9457 e ordem dos middlewares
 - [Contrato OpenAPI](docs/contrato/openapi.json): o que frontend e agente consomem
 - [Dados de demonstração](data/demo/README.md): distribuidora, carteira do contador, cliente B2B, notas de compra fictícias e sementes do estado
 - [Direção visual](.taste-skill/app/inventario.md): inventário, a pergunta de cada tela e o estilo sorteado pela skill design-taste-frontend

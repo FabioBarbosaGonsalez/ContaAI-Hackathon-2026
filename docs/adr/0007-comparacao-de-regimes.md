@@ -3,7 +3,7 @@
 - Status: aceito
 - Data: 2026-11-25
 - Etapa: E3 (E3-01, E3-02, E3-04 e E3-05; a E3-03 passa para a E5)
-- Código: `backend/app/regime/comparar.py`, a rota `POST /regime/comparar` em `backend/app/main.py`, a ferramenta `comparar_regimes` em `backend/app/agente/ferramentas.py`
+- Código: `backend/app/regime/comparar.py`, a rota `POST /regime/comparar` em `backend/app/main.py` (desde o ADR 0009, `backend/app/api/rotas/calculo.py`), a ferramenta `comparar_regimes` em `backend/app/agente/ferramentas.py`
 
 ## Contexto
 
@@ -34,7 +34,7 @@ Decisões do usuário em 2026-11-25, todas como sugeridas:
 - `diferencaCaixa` = tributo tradicional − (D − Cc), a preço igual (ADR 0003). Os centavos que sobram do arredondamento da base aparecem à parte, em `diferencaPrecoCliente`. Na demo: R$ 0,03.
 - **Tolerância da base:** R$ 0,05 por linha. Se a confirmação errar por mais que isso (motor não linear), a secante refina até 3 vezes. Se ainda não fechar, a resposta é 422.
 - **Chamadas aos motores:** SN 1 (venda) + 2 (empate); RR 3 (reta e confirmação) + 1 lote para o crédito pelo motor, quando algum item não traz o crédito. São até 7 chamadas por requisição, e a rota está no limite por IP (`ROTAS_LIMITADAS`).
-- **Recusas:** um item que um dos motores não calcula recusa a comparação inteira (422 `RecusaCalculo`, com os erros do motor), porque os dois lados precisam ter os mesmos itens. A validação de entrada também recusa:
+- **Recusas:** um item que um dos motores não calcula recusa a comparação inteira (422 `RecusaCalculo`, hoje `ProblemaCalculo` pelo ADR 0009, com os erros do motor), porque os dois lados precisam ter os mesmos itens. A validação de entrada também recusa:
   - data antes de 2027 (em 2026 o motor SN devolve VSN-015 e não há lado tradicional; isso fecha, para esta rota, o ponto aberto no ADR 0004);
   - item sem custo;
   - ids repetidos;

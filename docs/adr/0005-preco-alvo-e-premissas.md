@@ -25,7 +25,7 @@ O critério de saída da E1 é a tabela da distribuidora vir da API (E1-02, ADR 
 
   A condição 3 não está no plano. Sem ela, um tributo não linear pode passar na confirmação com um preço que não é o menor centavo, e só uma 4ª chamada perceberia.
 - **Bisseção de reserva.** Busca o menor centavo com margem ≥ alvo, partindo do custo e de um teto que dobra até atingir o alvo, no máximo 25 avaliações. Supõe a margem crescente no preço, como o plano.
-- **Recusas.** Respondem 422 com `RecusaCalculo` (`detail` mais os erros do motor quando existem):
+- **Recusas.** Respondem 422 com `RecusaCalculo`, com `detail` mais os erros do motor quando existem (desde o ADR 0009, `ProblemaCalculo`, tipo `/problemas/calculo-recusado`):
   - margem impossível (denominador da fórmula ≤ 0);
   - item que o motor não calcula já no primeiro ponto (ex.: REG-011, VSN-047);
   - falta de convergência.

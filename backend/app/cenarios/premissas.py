@@ -9,7 +9,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from decimal import Decimal
 
-from app.contrato import EstadoItem, ItemBase, Premissa, Regime, _Operacao
+from app.contrato import EstadoItem, ItemBase, Operacao, Premissa, Regime
 from app.motores.requisicoes import CST_IS_SEM_INCIDENCIA, IS_REVENDA_PREMISSA
 
 FONTE_USUARIO_ALIQUOTAS = "Informadas pelo usuário (P6). Não são alíquotas oficiais."
@@ -31,7 +31,7 @@ def _nomes(itens: Sequence[ItemBase]) -> str:
 
 
 def premissas(
-    op: _Operacao,
+    op: Operacao,
     regime: Regime,
     itens: Sequence[ItemBase],
     usou_rr: bool,
@@ -132,7 +132,7 @@ def premissas(
     return lista
 
 
-def simulado(op: _Operacao, regime: Regime, motor_sinalizou: bool, estados: Sequence[EstadoItem]) -> bool:
+def simulado(op: Operacao, regime: Regime, motor_sinalizou: bool, estados: Sequence[EstadoItem]) -> bool:
     """Há premissa de alíquota (DAS ou nominais) ou o próprio motor marcou o cálculo como simulado."""
     return (
         regime == Regime.SIMPLES_TRADICIONAL
@@ -142,7 +142,7 @@ def simulado(op: _Operacao, regime: Regime, motor_sinalizou: bool, estados: Sequ
     )
 
 
-def aviso_simulacao(op: _Operacao, regime: Regime, eh_simulado: bool) -> str | None:
+def aviso_simulacao(op: Operacao, regime: Regime, eh_simulado: bool) -> str | None:
     """Frase de estado para o título da tela (seção 12 do plano)."""
     if not eh_simulado:
         return None

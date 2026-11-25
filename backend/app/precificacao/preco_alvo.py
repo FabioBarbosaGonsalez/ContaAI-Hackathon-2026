@@ -34,7 +34,7 @@ C2, C4 = Decimal("0.01"), Decimal("0.0001")
 
 
 class CalculoRecusado(Exception):
-    """O pedido não tem resposta. Vira 422 com RecusaCalculo."""
+    """O pedido não tem resposta. Vira 422 com ProblemaCalculo."""
 
     def __init__(self, detalhe: str, erros: list[ErroMotor] | None = None) -> None:
         super().__init__(detalhe)

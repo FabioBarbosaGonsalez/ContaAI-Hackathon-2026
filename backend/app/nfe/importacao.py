@@ -40,11 +40,11 @@ from app.contrato import (
     ItemNotaSemPar,
     NfeImportarResposta,
     NotaResumo,
+    Operacao,
     OrigemAlerta,
     PrecoAlvoRequisicao,
     Premissa,
     Regime,
-    _Operacao,
 )
 from app.dados_demo import ItemCatalogo
 from app.empresa import item_base, item_entrada, operacao_da_empresa, regime_atual
@@ -161,7 +161,7 @@ async def _creditos(
     if not pelo_motor:
         return []
     data = nota.dataEmissao.date()
-    op = _Operacao(**operacao_da_empresa(reg.empresa, reg.cenario, data))
+    op = Operacao(**operacao_da_empresa(reg.empresa, reg.cenario, data))
     calculo = await motores.regime_regular(
         [Linha(item_base(c.cat), c.lido.qCom, c.lido.vProd) for c in pelo_motor],
         data,
@@ -265,7 +265,7 @@ def _premissa_credito_motor(itens: list[ItemCatalogo]) -> Premissa:
 def _premissas_da_importacao(reg: EmpresaRegistro, nota: NotaLida, pelo_motor: list[ItemCatalogo]) -> list[Premissa]:
     lista = []
     if pelo_motor:
-        op = _Operacao(**operacao_da_empresa(reg.empresa, reg.cenario, nota.dataEmissao.date()))
+        op = Operacao(**operacao_da_empresa(reg.empresa, reg.cenario, nota.dataEmissao.date()))
         if op.aliquotasNominais is not None:
             al = op.aliquotasNominais
             lista.append(

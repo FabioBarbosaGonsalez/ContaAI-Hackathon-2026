@@ -6,7 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
 
-from app import main
+from app.api import middlewares
 from app.config import Configuracao, configuracao
 from app.main import app
 from app.seguranca import LimitadorPorIp, token_confere
@@ -57,21 +57,21 @@ def test_chat_exige_token_quando_configurado(configurar) -> None:
 
 
 def test_chat_responde_429_depois_do_limite(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(main, "LIMITE_CHAT", LimitadorPorIp(2))
+    monkeypatch.setattr(middlewares, "LIMITE_CHAT", LimitadorPorIp(2))
     assert [cliente.post("/chat", json=PERGUNTA).status_code for _ in range(3)] == [200, 200, 429]
     r = cliente.post("/chat", json=PERGUNTA)
     assert r.status_code == 429 and int(r.headers["Retry-After"]) >= 1
 
 
 def test_rotas_dos_motores_tem_limite_geral(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(main, "LIMITE_GERAL", LimitadorPorIp(1))
+    monkeypatch.setattr(middlewares, "LIMITE_GERAL", LimitadorPorIp(1))
     assert cliente.get("/busca/ncm", params={"q": "arroz"}).status_code == 200
     assert cliente.get("/busca/ncm", params={"q": "arroz"}).status_code == 429
     assert cliente.get("/saude").status_code == 200  # fora do limite
 
 
 def test_busca_tem_limite_proprio(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(main, "LIMITE_BUSCA", LimitadorPorIp(1))
+    monkeypatch.setattr(middlewares, "LIMITE_BUSCA", LimitadorPorIp(1))
     assert cliente.get("/busca/ncm", params={"q": "arroz"}).status_code == 200
     assert cliente.get("/busca/ncm", params={"q": "cerveja"}).status_code == 429
     assert cliente.get("/erros/REG-011").status_code == 200  # as outras rotas seguem no limite geral

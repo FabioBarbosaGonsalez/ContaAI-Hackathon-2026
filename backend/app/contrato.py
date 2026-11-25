@@ -158,7 +158,7 @@ def validar_itens_do_tradicional(itens: list[ItemEntrada] | list[ItemBase]) -> N
             )
 
 
-class _Operacao(_Modelo):
+class Operacao(_Modelo):
     data: date = Field(description="Data do fato gerador. Rege as vigências nos dois motores.")
     uf: str = Field(pattern=r"^[A-Z]{2}$")
     municipio: int = Field(description="Código IBGE do município.")
@@ -166,7 +166,7 @@ class _Operacao(_Modelo):
     premissasDas: PremissasDas | None = None
 
     @model_validator(mode="after")
-    def validar_premissas_por_ano(self) -> _Operacao:
+    def validar_premissas_por_ano(self) -> Operacao:
         if self.data.year >= 2027 and self.aliquotasNominais is None:
             raise ValueError("A partir de 2027 as alíquotas são premissas do usuário: informe aliquotasNominais (P6).")
         if self.data.year < 2027 and self.aliquotasNominais is not None:
@@ -224,7 +224,7 @@ class _Simulacao(_Modelo):
 # POST /carrinho/calcular
 
 
-class CarrinhoRequisicao(_Operacao):
+class CarrinhoRequisicao(Operacao):
     regime: Regime
     itens: list[ItemEntrada] = Field(min_length=1, max_length=200)
     cargaAtualPct: Porcentagem | None = Field(
@@ -297,7 +297,7 @@ class CarrinhoResposta(_Simulacao):
 # POST /item/preco-alvo
 
 
-class PrecoAlvoRequisicao(_Operacao):
+class PrecoAlvoRequisicao(Operacao):
     regime: Regime
     item: ItemBase
     custoUnitario: Decimal = Field(ge=0)
@@ -351,7 +351,7 @@ class ClienteB2B(_Modelo):
     regime: Literal["regime_regular"]
 
 
-class RegimeCompararRequisicao(_Operacao):
+class RegimeCompararRequisicao(Operacao):
     """Venda a um cliente do regime regular, comparada nos dois lados do Simples (plano 11.2, ADR 0007).
 
     O crédito das compras vem de creditoCompraUnitario (grupo IBSCBS da NF-e; desde a E4, o GET /catalogo
@@ -666,7 +666,7 @@ class Fundamentacao(_Modelo):
     referenciaNormativa: str
 
 
-class ExplicarRequisicao(_Operacao):
+class ExplicarRequisicao(Operacao):
     """Explicação de um item qualquer (o GET /explicar/{itemId} conhece só o catálogo de demonstração)."""
 
     regime: Regime
@@ -711,7 +711,7 @@ class MensagemChat(_Modelo):
     texto: str = Field(min_length=1, max_length=4000)
 
 
-class ContextoChat(_Operacao):
+class ContextoChat(Operacao):
     """O que a tela já sabe: a operação, o regime e os itens que o usuário já confirmou (P3).
 
     O backend não guarda estado: a cada mensagem a tela manda o contexto. O agente só calcula os
@@ -803,27 +803,55 @@ class ChatResposta(_Modelo):
 
 
 # ---------------------------------------------------------------------------
-# Falhas dos motores (modo real)
+# Erros: Problem Details da RFC 9457 (application/problem+json), ADR 0009
 
 
-class FalhaMotorResposta(_Modelo):
-    """Corpo das respostas 422 (o motor recusou a operação), 502 e 503 vindas dos motores.
+class Problema(_Modelo):
+    """Corpo de toda resposta de erro (4xx e 5xx). `type` identifica o problema: "about:blank" quando o
+    código HTTP basta (title = frase do código), ou /problemas/<nome> (GET nesse caminho descreve o tipo).
+    `detail` é para a pessoa ler, não para o frontend interpretar. Nunca traz URL, host, caminho do
+    servidor nem corpo dos motores ou do provedor de IA."""
 
-    Os erros de validação do próprio ContaAI também usam 422, no formato padrão do FastAPI
-    (detail como lista). Nunca traz URL, host ou corpo do motor.
-    """
+    type: str = Field(default="about:blank", description="URI do tipo do problema (relativa à API).")
+    title: str = Field(description="Resumo do tipo do problema; não muda entre ocorrências.")
+    status: int = Field(description="O mesmo código HTTP da resposta.")
+    detail: str | None = Field(default=None, description="Explicação desta ocorrência, para a pessoa ler.")
 
-    detail: str
+
+class CampoInvalido(_Modelo):
+    origem: Literal["body", "query", "path", "header", "cookie"]
+    campo: str = Field(description='JSON Pointer do campo dentro da origem (ex.: "#/itens/0/ncm"); "#" = inteiro.')
+    detalhe: str
+
+
+class ProblemaValidacao(Problema):
+    """422 /problemas/entrada-invalida: a requisição não passou na validação do contrato."""
+
+    campos: list[CampoInvalido]
+
+
+class ProblemaMotor(Problema):
+    """Falha de um motor oficial: 422 /problemas/motor-recusou (com os erros do motor, ex.: VSN-015),
+    502 /problemas/motor-resposta-invalida ou 503 /problemas/motor-indisponivel."""
+
     motor: Motor
     erros: list[ErroMotor] = []
 
 
-class RecusaCalculo(_Modelo):
-    """422 quando o cálculo pedido não tem resposta: margem impossível, item que o motor não calcula ou
-    preço-alvo que não converge. Traz os erros do motor quando eles explicam a recusa."""
+class ProblemaCalculo(Problema):
+    """422 /problemas/calculo-recusado: o cálculo pedido não tem resposta (margem impossível, item que o
+    motor não calcula, preço-alvo que não converge). Traz os erros do motor quando eles explicam a recusa."""
 
-    detail: str
     erros: list[ErroMotor] = []
+
+
+class TipoProblema(_Modelo):
+    """Descrição de um tipo de problema (GET /problemas/{nome}), como pede a RFC 9457 para tipos novos."""
+
+    type: str
+    title: str
+    status: list[int] = Field(description="Códigos HTTP em que o tipo aparece.")
+    descricao: str
 
 
 # ---------------------------------------------------------------------------
