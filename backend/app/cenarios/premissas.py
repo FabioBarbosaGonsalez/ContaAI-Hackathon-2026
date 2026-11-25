@@ -10,6 +10,7 @@ from collections.abc import Sequence
 from decimal import Decimal
 
 from app.contrato import EstadoItem, ItemBase, Premissa, Regime, _Operacao
+from app.motores.requisicoes import CST_IS_SEM_INCIDENCIA, IS_REVENDA_PREMISSA
 
 FONTE_USUARIO_ALIQUOTAS = "Informadas pelo usuário (P6). Não são alíquotas oficiais."
 FONTE_USUARIO_DAS = "Informadas pelo usuário: saem da apuração do Simples do contribuinte (P8, ADR 0001)."
@@ -48,6 +49,17 @@ def premissas(
                 fonte=_com_rotulo(al.fonte, FONTE_USUARIO_ALIQUOTAS),
             )
         )
+        sem_incidencia = [i for i in itens if i.impostoSeletivo and i.impostoSeletivo.cst == CST_IS_SEM_INCIDENCIA]
+        if usou_rr and al.impostoSeletivoAdValorem is None and sem_incidencia:
+            lista.append(
+                Premissa(
+                    nome="Alíquota do Imposto Seletivo na revenda",
+                    valor=f"{br(IS_REVENDA_PREMISSA)}% enviada ao motor: {_nomes(sem_incidencia)}",
+                    fonte="Premissa do produto (ADR 0006). O motor RR exige uma alíquota de IS para NCM sujeita ao "
+                    "IS (erro REG-035), mesmo sem nova incidência (CST 200 do IS, ex.: revenda 200007). Conferido "
+                    "no motor RR 1.7.2: nesse caso o IS sai zero com qualquer alíquota e a CBS/IBS não muda.",
+                )
+            )
         if usou_rr and al.impostoSeletivoAdValorem is not None and any(i.impostoSeletivo for i in itens):
             lista.append(
                 Premissa(

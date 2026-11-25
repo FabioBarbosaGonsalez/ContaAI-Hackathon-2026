@@ -26,7 +26,6 @@ import httpx
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from app.contrato import (  # noqa: E402
     AVISO_LEGAL,
-    AcaoConfirmarClassificacao,
     Alerta,
     AlertasResposta,
     BuscaNcmResposta,
@@ -608,7 +607,7 @@ def busca_ncm(motores: Motores) -> dict[str, BuscaNcmResposta]:
             info[k].rstrip(".") for k in ("posicao", "subposicao", "item", "subitem") if info.get(k)
         )
         v = validas(cat.ncm)
-        codigos = sorted((v - neutras) | ({"000001"} & v))
+        codigos = sorted(v - neutras) + sorted({"000001"} & v)  # mesma ordem de app/classificacao (ADR 0006)
         saida[consulta] = BuscaNcmResposta(
             consulta=consulta,
             candidatos=[
@@ -682,20 +681,34 @@ def erros(motores: Motores) -> dict[str, ErroDescricao]:
     return saida
 
 
-def chat(busca: dict[str, BuscaNcmResposta]) -> ChatResposta:
-    acoes = [
-        AcaoConfirmarClassificacao(
-            tipo="confirmar_classificacao", itemDescricao=DEMO.item(item_id).descricao, candidatos=busca[q].candidatos
-        )
-        for q, item_id in (("arroz", "arroz-5kg"), ("cerveja", "cerveja-lata"), ("chocolate", "chocolate-barra"))
-    ]
-    return ChatResposta(
-        resposta="Encontrei classificações candidatas para os 3 itens que você citou. Confira cada uma e confirme: "
-        "a classificação fiscal é decisão sua ou do seu contador, e eu só calculo depois da confirmação.",
-        acoesPropostas=acoes,
-        ferramentasChamadas=["buscar_ncm", "listar_cclasstrib"],
-        aviso=AVISO_LEGAL,
-    )
+FRASE_CHAT = "Cadastra arroz polido não parboilizado, cerveja de malte e chocolate não recheado"
+
+
+def chat() -> ChatResposta:
+    """Saída real do agente (provedor roteiro, sem IA) para a frase da demo, contra os motores em execução."""
+    import asyncio
+
+    from app.agente.ferramentas import Ambiente
+    from app.agente.loop import responder_chat
+    from app.agente.provedores.roteiro import Roteiro
+    from app.config import Configuracao
+    from app.contrato import ChatRequisicao, MensagemChat
+    from app.motores.cliente import ClienteMotores
+    from app.motores.dados_abertos import DadosAbertos
+
+    async def rodar() -> ChatResposta:
+        async with httpx.AsyncClient(timeout=60, trust_env=False) as http:
+            # Sem contexto: a tela ainda não confirmou nada. As classificações valem na data do cenário.
+            amb = Ambiente(
+                ClienteMotores(http, MOTOR_RR_URL, MOTOR_SN_URL),
+                DadosAbertos(http, MOTOR_RR_URL, MOTOR_SN_URL),
+                contexto=None,
+                data_sem_contexto=CEN.data,
+            )
+            req = ChatRequisicao(mensagens=[MensagemChat(papel="usuario", texto=FRASE_CHAT)])
+            return await responder_chat(req, Roteiro(), Configuracao(modo="real"), amb)
+
+    return asyncio.run(rodar())
 
 
 # ---------------------------------------------------------------------------
@@ -752,7 +765,7 @@ def main() -> None:
             explicar(motores, {Regime.SIMPLES_TRADICIONAL: leit_trad, Regime.SIMPLES_HIBRIDO: leit_hib}),
         )
         gravar("erros.json", erros(motores))
-        gravar("chat.json", chat(busca))
+        gravar("chat.json", chat())
 
 
 if __name__ == "__main__":

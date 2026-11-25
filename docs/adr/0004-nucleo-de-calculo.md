@@ -77,8 +77,8 @@ Não observados nos motores reais: `NAO_IMPLEMENTADO` e `FALHA_TECNICA`. Eles s�
 | 3 | CI verde sem nada testado | Exagerado. O job Python roda os testes; no frontend, os passos (e não o job) são pulados e passam a rodar quando existir `frontend/package.json`. | Nada. |
 | 4 | Preço-alvo afim supõe tributo linear | Válido e já previsto no plano (11.1). | Bisseção de reserva na E1-03. |
 | 5 | Sem persistência | Válido. O plano já prevê SQLite no backend. | Decisão para a E4: SQLite, com o CNPJ do contribuinte em toda tabela desde o início (painel do contador, D1). |
-| 6 | `/chat` e `/nfe/importar` sem defesa | Válido (hoje são mocks). | Requisitos da E2/E4: texto da nota (`xProd`) tratado como dado não confiável no contexto do LLM; `defusedxml`; limite de requisições e token na demo pública, porque o LLM custa dinheiro. |
-| 7 | Poucas ações do agente no contrato | Válido. | Na E2: aplicar preço, corrigir classificação (REG-011/VSN-047) e importar nota, sempre com confirmação do usuário (P3). |
+| 6 | `/chat` e `/nfe/importar` sem defesa | Válido (hoje são mocks). | Requisitos da E2/E4: texto da nota (`xProd`) tratado como dado não confiável no contexto do LLM; `defusedxml`; limite de requisições e token na demo pública, porque o LLM custa dinheiro. **E2:** limite por IP, token e regra de dado não confiável no prompt ([ADR 0006](0006-agente.md)); `defusedxml` segue para a E4. |
+| 7 | Poucas ações do agente no contrato | Válido. | Na E2: aplicar preço, corrigir classificação (REG-011/VSN-047) e importar nota, sempre com confirmação do usuário (P3). **E2:** aplicar preço e corrigir classificação entraram ([ADR 0006](0006-agente.md)); importar nota fica para a E4. |
 | 8 | Deploy não pronto | Válido. | Na E6: Dockerfile do backend e imagens no GHCR. **A VM do deploy é paga** e precisa de aprovação do time antes. |
 | 9 | `/saude` em sequência | Válido. | `asyncio.gather`. |
 | 10 | CORS só para localhost | Já documentado (`CONTAAI_CORS_ORIGENS` no README). | Nada. |

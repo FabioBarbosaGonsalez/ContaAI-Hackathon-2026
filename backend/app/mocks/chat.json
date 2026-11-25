@@ -1,9 +1,9 @@
 {
-  "resposta": "Encontrei classificações candidatas para os 3 itens que você citou. Confira cada uma e confirme: a classificação fiscal é decisão sua ou do seu contador, e eu só calculo depois da confirmação.",
+  "resposta": "Para “arroz polido não parboilizado”, a NCM mais provável é 10063021 (Arroz - Arroz semibranqueado ou branqueado, mesmo polido ou brunido (glaciado*) - Não parboilizado - Polido ou brunido), com 4 classificação(ões) válida(s) no motor, e mais 2 candidata(s). Para “cerveja de malte”, a NCM mais provável é 22030000 (Cervejas de malte), com 1 classificação(ões) válida(s) no motor, e mais 2 candidata(s). Para “chocolate não recheado”, a NCM mais provável é 18063210 (Chocolate e outras preparações alimentícias que contenham cacau - Não recheados - Chocolate), com 1 classificação(ões) válida(s) no motor, e mais 2 candidata(s). Confira os cartões e confirme: a classificação fiscal é decisão sua ou do seu contador, e eu só calculo depois da confirmação.",
   "acoesPropostas": [
     {
       "tipo": "confirmar_classificacao",
-      "itemDescricao": "Arroz polido não parboilizado, pacote 5 kg",
+      "itemDescricao": "arroz polido não parboilizado",
       "candidatos": [
         {
           "ncm": "10063021",
@@ -11,14 +11,6 @@
           "descricao": "Arroz - Arroz semibranqueado ou branqueado, mesmo polido ou brunido (glaciado*) - Não parboilizado - Polido ou brunido",
           "tributadoPeloImpostoSeletivo": false,
           "classificacoes": [
-            {
-              "cClassTrib": "000001",
-              "cst": "000",
-              "descricao": "Situações tributadas integralmente pelo IBS e CBS.",
-              "reducaoPct": "0.00",
-              "especificaDoProduto": false,
-              "fundamentacao": "LC 214/2025"
-            },
             {
               "cClassTrib": "200003",
               "cst": "200",
@@ -42,6 +34,94 @@
               "reducaoPct": "60.00",
               "especificaDoProduto": true,
               "fundamentacao": "Art. 138, § 2º"
+            },
+            {
+              "cClassTrib": "000001",
+              "cst": "000",
+              "descricao": "Situações tributadas integralmente pelo IBS e CBS.",
+              "reducaoPct": "0.00",
+              "especificaDoProduto": false,
+              "fundamentacao": "LC 214/2025"
+            }
+          ]
+        },
+        {
+          "ncm": "10063029",
+          "nbs": null,
+          "descricao": "Arroz - Arroz semibranqueado ou branqueado, mesmo polido ou brunido (glaciado*) - Não parboilizado - Outros",
+          "tributadoPeloImpostoSeletivo": false,
+          "classificacoes": [
+            {
+              "cClassTrib": "200003",
+              "cst": "200",
+              "descricao": "Vendas de produtos destinados à alimentação humana (Anexo I)",
+              "reducaoPct": "100.00",
+              "especificaDoProduto": true,
+              "fundamentacao": "Art. 125"
+            },
+            {
+              "cClassTrib": "200038",
+              "cst": "200",
+              "descricao": "Fornecimento dos insumos agropecuários e aquícolas (Anexo IX)",
+              "reducaoPct": "60.00",
+              "especificaDoProduto": true,
+              "fundamentacao": "Art. 138"
+            },
+            {
+              "cClassTrib": "515001",
+              "cst": "515",
+              "descricao": "Operações, sujeitas a diferimento, com insumos agropecuários e aquícolas (Anexo IX)",
+              "reducaoPct": "60.00",
+              "especificaDoProduto": true,
+              "fundamentacao": "Art. 138, § 2º"
+            },
+            {
+              "cClassTrib": "000001",
+              "cst": "000",
+              "descricao": "Situações tributadas integralmente pelo IBS e CBS.",
+              "reducaoPct": "0.00",
+              "especificaDoProduto": false,
+              "fundamentacao": "LC 214/2025"
+            }
+          ]
+        },
+        {
+          "ncm": "10063011",
+          "nbs": null,
+          "descricao": "Arroz - Arroz semibranqueado ou branqueado, mesmo polido ou brunido (glaciado*) - Parboilizado - Polido ou brunido",
+          "tributadoPeloImpostoSeletivo": false,
+          "classificacoes": [
+            {
+              "cClassTrib": "200003",
+              "cst": "200",
+              "descricao": "Vendas de produtos destinados à alimentação humana (Anexo I)",
+              "reducaoPct": "100.00",
+              "especificaDoProduto": true,
+              "fundamentacao": "Art. 125"
+            },
+            {
+              "cClassTrib": "200038",
+              "cst": "200",
+              "descricao": "Fornecimento dos insumos agropecuários e aquícolas (Anexo IX)",
+              "reducaoPct": "60.00",
+              "especificaDoProduto": true,
+              "fundamentacao": "Art. 138"
+            },
+            {
+              "cClassTrib": "515001",
+              "cst": "515",
+              "descricao": "Operações, sujeitas a diferimento, com insumos agropecuários e aquícolas (Anexo IX)",
+              "reducaoPct": "60.00",
+              "especificaDoProduto": true,
+              "fundamentacao": "Art. 138, § 2º"
+            },
+            {
+              "cClassTrib": "000001",
+              "cst": "000",
+              "descricao": "Situações tributadas integralmente pelo IBS e CBS.",
+              "reducaoPct": "0.00",
+              "especificaDoProduto": false,
+              "fundamentacao": "LC 214/2025"
             }
           ]
         }
@@ -49,7 +129,7 @@
     },
     {
       "tipo": "confirmar_classificacao",
-      "itemDescricao": "Cerveja de malte, lata 350 ml",
+      "itemDescricao": "cerveja de malte",
       "candidatos": [
         {
           "ncm": "22030000",
@@ -66,17 +146,113 @@
               "fundamentacao": "LC 214/2025"
             }
           ]
+        },
+        {
+          "ncm": "11072010",
+          "nbs": null,
+          "descricao": "Malte, mesmo torrado - Torrado - Inteiro ou partido",
+          "tributadoPeloImpostoSeletivo": false,
+          "classificacoes": [
+            {
+              "cClassTrib": "200038",
+              "cst": "200",
+              "descricao": "Fornecimento dos insumos agropecuários e aquícolas (Anexo IX)",
+              "reducaoPct": "60.00",
+              "especificaDoProduto": true,
+              "fundamentacao": "Art. 138"
+            },
+            {
+              "cClassTrib": "515001",
+              "cst": "515",
+              "descricao": "Operações, sujeitas a diferimento, com insumos agropecuários e aquícolas (Anexo IX)",
+              "reducaoPct": "60.00",
+              "especificaDoProduto": true,
+              "fundamentacao": "Art. 138, § 2º"
+            },
+            {
+              "cClassTrib": "000001",
+              "cst": "000",
+              "descricao": "Situações tributadas integralmente pelo IBS e CBS.",
+              "reducaoPct": "0.00",
+              "especificaDoProduto": false,
+              "fundamentacao": "LC 214/2025"
+            }
+          ]
+        },
+        {
+          "ncm": "11072020",
+          "nbs": null,
+          "descricao": "Malte, mesmo torrado - Torrado - Moído ou em farinha",
+          "tributadoPeloImpostoSeletivo": false,
+          "classificacoes": [
+            {
+              "cClassTrib": "200038",
+              "cst": "200",
+              "descricao": "Fornecimento dos insumos agropecuários e aquícolas (Anexo IX)",
+              "reducaoPct": "60.00",
+              "especificaDoProduto": true,
+              "fundamentacao": "Art. 138"
+            },
+            {
+              "cClassTrib": "515001",
+              "cst": "515",
+              "descricao": "Operações, sujeitas a diferimento, com insumos agropecuários e aquícolas (Anexo IX)",
+              "reducaoPct": "60.00",
+              "especificaDoProduto": true,
+              "fundamentacao": "Art. 138, § 2º"
+            },
+            {
+              "cClassTrib": "000001",
+              "cst": "000",
+              "descricao": "Situações tributadas integralmente pelo IBS e CBS.",
+              "reducaoPct": "0.00",
+              "especificaDoProduto": false,
+              "fundamentacao": "LC 214/2025"
+            }
+          ]
         }
       ]
     },
     {
       "tipo": "confirmar_classificacao",
-      "itemDescricao": "Chocolate não recheado, barra 90 g",
+      "itemDescricao": "chocolate não recheado",
       "candidatos": [
         {
           "ncm": "18063210",
           "nbs": null,
           "descricao": "Chocolate e outras preparações alimentícias que contenham cacau - Não recheados - Chocolate",
+          "tributadoPeloImpostoSeletivo": false,
+          "classificacoes": [
+            {
+              "cClassTrib": "000001",
+              "cst": "000",
+              "descricao": "Situações tributadas integralmente pelo IBS e CBS.",
+              "reducaoPct": "0.00",
+              "especificaDoProduto": false,
+              "fundamentacao": "LC 214/2025"
+            }
+          ]
+        },
+        {
+          "ncm": "18063110",
+          "nbs": null,
+          "descricao": "Chocolate e outras preparações alimentícias que contenham cacau - Recheados - Chocolate",
+          "tributadoPeloImpostoSeletivo": false,
+          "classificacoes": [
+            {
+              "cClassTrib": "000001",
+              "cst": "000",
+              "descricao": "Situações tributadas integralmente pelo IBS e CBS.",
+              "reducaoPct": "0.00",
+              "especificaDoProduto": false,
+              "fundamentacao": "LC 214/2025"
+            }
+          ]
+        },
+        {
+          "ncm": "18063220",
+          "nbs": null,
+          "descricao": "Chocolate e outras preparações alimentícias que contenham cacau - Não recheados - Outras preparações",
           "tributadoPeloImpostoSeletivo": false,
           "classificacoes": [
             {
@@ -94,7 +270,13 @@
   ],
   "ferramentasChamadas": [
     "buscar_ncm",
-    "listar_cclasstrib"
+    "buscar_ncm",
+    "buscar_ncm"
   ],
+  "provedor": "roteiro",
+  "verificacao": "aprovada",
+  "simulado": false,
+  "avisoSimulacao": null,
+  "premissas": [],
   "aviso": "Estimativa baseada nas calculadoras oficiais. Não é parecer fiscal e não substitui o contador."
 }

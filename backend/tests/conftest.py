@@ -17,10 +17,13 @@ from typing import Any
 import httpx
 import pytest
 
+from app import main
 from app.config import Configuracao, configuracao
-from app.main import app, cliente_motores
+from app.main import app, cliente_motores, dados_abertos
 from app.motores.cache import CacheRespostas
 from app.motores.cliente import ROTA_RR, ROTA_SN, ClienteMotores
+from app.motores.dados_abertos import CacheConsultas, DadosAbertos
+from app.seguranca import LimitadorPorIp
 
 C2 = Decimal("0.01")
 URL_RR, URL_SN = "http://rr.interno.test/api", "http://sn.interno.test/api"
@@ -112,6 +115,92 @@ def objeto_sn(numero: int, item: dict[str, Any], estado: str, anexo: dict[str, s
     }
 
 
+# ---------------------------------------------------------------------------
+# Dados abertos falsos: formato dos motores reais (conferido em 2026-11-24 no RR 1.7.2 e no SN 1.0.2),
+# conteúdo reduzido e fictício. As classificações e NCMs são códigos reais, mas a tabela de quais valem
+# para cada NCM é só um recorte para os testes; a busca real é testada com -m golden.
+
+CLASSIFICACOES_FALSAS = [
+    {
+        "codigo": "000001",
+        "descricao": "Tributação integral (teste)",
+        "nomenclatura": "NBS ou NCM",
+        "percentualReducaoCbs": 0.0,
+    },
+    {
+        "codigo": "200003",
+        "descricao": "Alimentação humana, Anexo I (teste)",
+        "nomenclatura": "NCM",
+        "percentualReducaoCbs": 100.0,
+    },
+    {
+        "codigo": "200035",
+        "descricao": "Classificação de outro produto (teste)",
+        "nomenclatura": "NCM",
+        "percentualReducaoCbs": 60.0,
+    },
+    {
+        "codigo": "410999",
+        "descricao": "Genérica, vale para qualquer NCM (teste)",
+        "nomenclatura": "NBS ou NCM",
+        "percentualReducaoCbs": 0.0,
+    },
+    {"codigo": "900001", "descricao": "Só de serviço (teste)", "nomenclatura": "NBS", "percentualReducaoCbs": 0.0},
+]
+CST_FALSO = {"000001": "000", "200003": "200", "200035": "200", "410999": "410", "900001": "900"}
+VALIDAS_FALSAS = {
+    "84381000": {"000001", "410999"},  # NCM neutra
+    "10063021": {"000001", "200003", "410999"},
+    "02013000": {"000001", "200003", "410999"},
+    "22030000": {"000001", "410999"},
+    "18063210": {"000001", "410999"},
+}
+NCM_FALSAS = {
+    "10063021": {"capitulo": "Cereais.", "posicao": "Arroz.", "subposicao": "Arroz polido (teste)"},
+    "02013000": {"capitulo": "Carnes.", "posicao": "Carnes bovinas (teste)", "subposicao": "Desossadas"},
+    "22030000": {"capitulo": "Bebidas.", "subitem": "Cervejas de malte.", "tributadoPeloImpostoSeletivo": True},
+    "18063210": {"capitulo": "Cacau.", "posicao": "Chocolate (teste)", "item": "Não recheados"},
+    "84381000": {"capitulo": "Máquinas.", "posicao": "Máquinas de padaria (teste)"},
+}
+ERROS_FALSOS = {
+    "REG-011": {"codigo": "REG-011", "titulo": "NCM não vinculada", "descricao": "NCM não vinculada (teste)."},
+    "VSN-047": {"codigo": "VSN-047", "titulo": "NCM não aplicável", "descricao": "NCM não aplicável (teste)."},
+}
+
+
+def dados_abertos_falsos(request: httpx.Request, consultas: list[str]) -> httpx.Response:
+    caminho, q = request.url.path, dict(request.url.params)
+    consultas.append(caminho)
+    if caminho.endswith("/classificacoes-tributarias/cbs-ibs"):
+        return httpx.Response(200, json=CLASSIFICACOES_FALSAS)
+    if caminho.endswith("/classificacoes-tributarias/ncm-aplicavel"):
+        valido = q["cClassTrib"] in VALIDAS_FALSAS.get(q["ncm"], {"000001"})
+        return httpx.Response(200, json={"cClassTrib": q["cClassTrib"], "ncm": q["ncm"], "valido": valido})
+    if caminho.endswith("/fundamentacoes-legais"):
+        return httpx.Response(
+            200,
+            json=[
+                {
+                    "codigoClassificacaoTributaria": c,
+                    "codigoSituacaoTributaria": cst,
+                    "textoCurto": f"Art. {c[-2:]}",
+                    "texto": f"Texto legal de {c} (teste). Segunda frase.",
+                    "referenciaNormativa": "LC 214/2025",
+                }
+                for c, cst in CST_FALSO.items()
+            ],
+        )
+    if caminho.endswith("/dados-abertos/ncm"):
+        info = NCM_FALSAS.get(q["ncm"])
+        if info is None:
+            return httpx.Response(404, json={"title": "NCM não encontrada", "instance": caminho})
+        return httpx.Response(200, json={"tributadoPeloImpostoSeletivo": False, **info})
+    if caminho.endswith("/observabilidade/erros") or caminho.endswith("/simples-nacional/erros"):
+        erro = ERROS_FALSOS.get(q["codigo"])
+        return httpx.Response(200, json=erro) if erro else httpx.Response(404)
+    return httpx.Response(404)
+
+
 @dataclass
 class MotoresFalsos:
     """estados_*: NCM (ou NBS) → estado do item. resposta_*: (status, corpo) para forçar uma falha."""
@@ -128,7 +217,12 @@ class MotoresFalsos:
     def chamadas_de(self, motor: str) -> list[dict[str, Any]]:
         return [corpo for m, corpo in self.chamadas if m == motor]
 
+    consultas: list[str] = field(default_factory=list)  # caminhos GET dos dados abertos
+    cache_dados: CacheConsultas = field(default_factory=CacheConsultas)
+
     def handler(self, request: httpx.Request) -> httpx.Response:
+        if request.method == "GET":
+            return dados_abertos_falsos(request, self.consultas)
         corpo = json.loads(request.content)
         if request.url.path.endswith(ROTA_RR):
             self.chamadas.append(("rr", corpo))
@@ -166,7 +260,20 @@ def motores_falsos() -> Iterator[MotoresFalsos]:
         async with httpx.AsyncClient(transport=httpx.MockTransport(falsos.handler)) as http:
             yield ClienteMotores(http, URL_RR, URL_SN, falsos.cache)
 
+    async def dados() -> AsyncIterator[DadosAbertos]:
+        async with httpx.AsyncClient(transport=httpx.MockTransport(falsos.handler)) as http:
+            yield DadosAbertos(http, URL_RR, URL_SN, falsos.cache_dados)
+
     app.dependency_overrides[configuracao] = lambda: Configuracao(modo="real")
     app.dependency_overrides[cliente_motores] = cliente
+    app.dependency_overrides[dados_abertos] = dados
     yield falsos
     app.dependency_overrides.clear()
+
+
+@pytest.fixture(autouse=True)
+def sem_limite_de_requisicoes(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Os limites por IP valem por processo; nos testes ficam desligados (test_seguranca liga de novo)."""
+    monkeypatch.setattr(main, "LIMITE_CHAT", LimitadorPorIp(0))
+    monkeypatch.setattr(main, "LIMITE_GERAL", LimitadorPorIp(0))
+    monkeypatch.setattr(main, "LIMITE_BUSCA", LimitadorPorIp(0))

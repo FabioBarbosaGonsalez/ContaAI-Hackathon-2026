@@ -9,14 +9,6 @@
         "tributadoPeloImpostoSeletivo": false,
         "classificacoes": [
           {
-            "cClassTrib": "000001",
-            "cst": "000",
-            "descricao": "Situações tributadas integralmente pelo IBS e CBS.",
-            "reducaoPct": "0.00",
-            "especificaDoProduto": false,
-            "fundamentacao": "LC 214/2025"
-          },
-          {
             "cClassTrib": "200003",
             "cst": "200",
             "descricao": "Vendas de produtos destinados à alimentação humana (Anexo I)",
@@ -39,11 +31,20 @@
             "reducaoPct": "60.00",
             "especificaDoProduto": true,
             "fundamentacao": "Art. 138, § 2º"
+          },
+          {
+            "cClassTrib": "000001",
+            "cst": "000",
+            "descricao": "Situações tributadas integralmente pelo IBS e CBS.",
+            "reducaoPct": "0.00",
+            "especificaDoProduto": false,
+            "fundamentacao": "LC 214/2025"
           }
         ]
       }
     ],
-    "aviso": "Candidatos para o usuário confirmar. A classificação fiscal é decisão do usuário ou do contador (P3)."
+    "aviso": "Candidatos para o usuário confirmar. A classificação fiscal é decisão do usuário ou do contador (P3).",
+    "fonte": null
   },
   "cerveja": {
     "consulta": "cerveja",
@@ -65,7 +66,8 @@
         ]
       }
     ],
-    "aviso": "Candidatos para o usuário confirmar. A classificação fiscal é decisão do usuário ou do contador (P3)."
+    "aviso": "Candidatos para o usuário confirmar. A classificação fiscal é decisão do usuário ou do contador (P3).",
+    "fonte": null
   },
   "chocolate": {
     "consulta": "chocolate",
@@ -87,7 +89,8 @@
         ]
       }
     ],
-    "aviso": "Candidatos para o usuário confirmar. A classificação fiscal é decisão do usuário ou do contador (P3)."
+    "aviso": "Candidatos para o usuário confirmar. A classificação fiscal é decisão do usuário ou do contador (P3).",
+    "fonte": null
   },
   "carne": {
     "consulta": "carne",
@@ -99,24 +102,25 @@
         "tributadoPeloImpostoSeletivo": false,
         "classificacoes": [
           {
-            "cClassTrib": "000001",
-            "cst": "000",
-            "descricao": "Situações tributadas integralmente pelo IBS e CBS.",
-            "reducaoPct": "0.00",
-            "especificaDoProduto": false,
-            "fundamentacao": "LC 214/2025"
-          },
-          {
             "cClassTrib": "200003",
             "cst": "200",
             "descricao": "Vendas de produtos destinados à alimentação humana (Anexo I)",
             "reducaoPct": "100.00",
             "especificaDoProduto": true,
             "fundamentacao": "Art. 125"
+          },
+          {
+            "cClassTrib": "000001",
+            "cst": "000",
+            "descricao": "Situações tributadas integralmente pelo IBS e CBS.",
+            "reducaoPct": "0.00",
+            "especificaDoProduto": false,
+            "fundamentacao": "LC 214/2025"
           }
         ]
       }
     ],
-    "aviso": "Candidatos para o usuário confirmar. A classificação fiscal é decisão do usuário ou do contador (P3)."
+    "aviso": "Candidatos para o usuário confirmar. A classificação fiscal é decisão do usuário ou do contador (P3).",
+    "fonte": null
   }
 }

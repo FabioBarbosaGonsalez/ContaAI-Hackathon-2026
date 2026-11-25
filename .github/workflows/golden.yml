@@ -2,7 +2,7 @@ name: Golden
 
 # Testes de referência contra os motores oficiais em execução (P5): sobe os dois motores com o
 # docker-compose.yml e roda "pytest -m golden" (motor × respostas gravadas, mocks e notas
-# reproduzíveis, carrinho real × referência).
+# reproduzíveis, carrinho real × referência, busca de NCM e as 20 perguntas do agente sem IA).
 #
 # Não é exigido pela proteção da main: o build dos motores leva de 5 a 10 minutos. Roda à mão
 # (Actions → Golden → Run workflow) e sozinho nos PRs que mexem nos motores, nas respostas
@@ -21,6 +21,9 @@ on:
       - "backend/app/motores/**"
       - "backend/app/precificacao/**"
       - "backend/app/cenarios/**"
+      - "backend/app/agente/**"
+      - "backend/app/classificacao/**"
+      - "backend/app/explicacao.py"
       - "backend/scripts/**"
       - "data/demo/**"
       - ".github/workflows/golden.yml"
