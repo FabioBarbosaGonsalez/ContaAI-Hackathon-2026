@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from decimal import ROUND_CEILING, ROUND_FLOOR, ROUND_HALF_UP, Decimal
+from typing import Literal
 
 from app.cenarios.premissas import aviso_simulacao, premissas, simulado
 from app.contrato import ErroMotor, PrecoAlvoRequisicao, PrecoAlvoResposta, Premissa, Regime, Tributos
@@ -106,12 +107,14 @@ async def custo_efetivo_unitario(motores: ClienteMotores, req: PrecoAlvoRequisic
     return req.custoUnitario + lei.tributo_cbs_ibs() / LOTE, True
 
 
-def _recusar_se_nao_calculado(a: Avaliacao) -> None:
+def _recusar_se_nao_calculado(a: Avaliacao) -> Decimal:
+    """Devolve o tributo do ponto; sem ele não há preço possível."""
     if a.tributo is None:
         motivo = a.leitura.motivoEstado or "veja os erros do motor"
         raise CalculoRecusado(
             f"O motor não calculou o item (estado {a.leitura.estado.value}): {motivo}.", a.leitura.erros
         )
+    return a.tributo
 
 
 async def ajuste_afim(
@@ -121,12 +124,12 @@ async def ajuste_afim(
     x1 = custo if custo > 0 else Decimal(1)
     x2 = 2 * x1
     a1 = await avaliar(x1)
-    _recusar_se_nao_calculado(a1)  # o item não é calculado nem no primeiro ponto: não há preço
+    t1 = _recusar_se_nao_calculado(a1)  # o item não é calculado nem no primeiro ponto: não há preço
     a2 = await avaliar(x2)
     if a2.tributo is None:
         return None, None
-    beta = (a2.tributo - a1.tributo) / (x2 - x1)
-    alfa = a1.tributo - beta * x1
+    beta = (a2.tributo - t1) / (x2 - x1)
+    alfa = t1 - beta * x1
     if regime == Regime.SIMPLES_TRADICIONAL:
         den, num = 1 - beta - m, custo + alfa
     else:
@@ -169,7 +172,7 @@ async def calcular_preco_alvo(req: PrecoAlvoRequisicao, motores: ClienteMotores)
     avaliar = Avaliador(motores, req)
 
     final, estimativa = await ajuste_afim(avaliar, regime, custo, m)
-    metodo = "afim"
+    metodo: Literal["afim", "bissecao"] = "afim"
     if final is None:
         final, metodo = await bissecao(avaliar, regime, custo, m, estimativa), "bissecao"
 

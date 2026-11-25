@@ -17,7 +17,7 @@ from typing import Any
 import httpx
 import pytest
 
-from app.api import middlewares
+from app.api import dependencias, middlewares
 from app.api.dependencias import cliente_motores, dados_abertos
 from app.config import Configuracao, configuracao
 from app.main import app
@@ -296,6 +296,14 @@ def banco_isolado(tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.
     configuracao.cache_clear()
     yield
     configuracao.cache_clear()
+
+
+@pytest.fixture(autouse=True)
+def caches_isolados(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Os caches dos motores e dos dados abertos valem por processo: cada teste começa com os seus, para que
+    uma resposta guardada num teste não faça outro passar (ex.: motor fora do ar respondido pelo cache)."""
+    monkeypatch.setattr(dependencias, "CACHE_MOTORES", CacheRespostas())
+    monkeypatch.setattr(dependencias, "CACHE_DADOS_ABERTOS", CacheConsultas())
 
 
 @pytest.fixture(autouse=True)

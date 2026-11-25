@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Annotated
+from typing import Annotated, Literal
 
 import httpx
 from fastapi import APIRouter, HTTPException, Path
@@ -77,7 +77,7 @@ async def saude(cfg: Cfg) -> SaudeResposta:
                 _checar(cli, Motor.SIMPLES_NACIONAL, f"{cfg.motor_sn_url}/versao", cfg.versao_sn),
             )
         )
-    status = "ok" if all(m.ok and m.coerente for m in motores) else "degradado"
+    status: Literal["ok", "degradado"] = "ok" if all(m.ok and m.coerente for m in motores) else "degradado"
     return SaudeResposta(status=status, modo=cfg.modo, motores=motores)
 
 

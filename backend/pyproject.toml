@@ -16,7 +16,9 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    "coverage[toml]>=7.6",
     "httpx2>=2.16",
+    "mypy>=1.13",
     "pytest>=8.2",
     "ruff>=0.6",
 ]
@@ -41,3 +43,20 @@ markers = [
     "golden: testes de referência contra os motores oficiais em execução (exigem docker compose up)",
     "llm: perguntas ao provedor de IA configurado no backend/.env (GASTAM crédito; rodar à mão)",
 ]
+
+[tool.mypy]
+# Checagem de tipos do app (o CI roda `uv run mypy`). O plugin do Pydantic confere os argumentos dos modelos.
+files = ["app"]
+python_version = "3.12"
+plugins = ["pydantic.mypy"]
+warn_unused_ignores = true
+warn_redundant_casts = true
+
+[tool.coverage.run]
+# Cobertura de linhas do app pelos testes do CI (sem os golden e os llm). Mínimo combinado: 90%.
+source = ["app"]
+
+[tool.coverage.report]
+fail_under = 90
+show_missing = true
+skip_covered = true

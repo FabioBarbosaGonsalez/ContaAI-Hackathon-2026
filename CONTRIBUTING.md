@@ -17,8 +17,9 @@
 ## Antes de abrir o PR
 
 ```bash
-ruff check . && ruff format --check .      # lint e formatação do Python (na raiz)
-cd backend && uv run pytest                # testes sem os motores (os mesmos do CI)
+uv run --project backend ruff check . && uv run --project backend ruff format --check .   # lint (na raiz)
+cd backend && uv run mypy                                     # tipos
+cd backend && uv run coverage run -m pytest && uv run coverage report   # testes do CI + cobertura (mínimo 90%)
 cd frontend && npm run lint && npm test    # quando o frontend existir
 ```
 
@@ -29,7 +30,7 @@ docker compose up -d
 cd backend && uv run pytest -m golden
 ```
 
-No Linux e no macOS, `make lint`, `make test` e `make golden` fazem o mesmo. No Windows sem `make`, use os comandos acima.
+No Linux e no macOS, `make lint`, `make tipos`, `make test`, `make cobertura`, `make auditoria` e `make golden` fazem o mesmo. O CI também roda o pip-audit (dependências) e o gitleaks (segredos no histórico); ver [docs/seguranca.md](docs/seguranca.md). No Windows sem `make`, use os comandos acima.
 
 No GitHub, o workflow **Golden** roda os mesmos testes de referência: sozinho nos PRs que mexem em `motores/`, `backend/app/motores/`, `backend/app/precificacao/`, `backend/app/cenarios/`, `backend/scripts/`, `backend/tests/golden/` ou `data/demo/`, e à mão em Actions → Golden → Run workflow. Ele não é exigido pela proteção da `main`, porque o build dos motores leva alguns minutos; confira o resultado antes de aprovar.
 

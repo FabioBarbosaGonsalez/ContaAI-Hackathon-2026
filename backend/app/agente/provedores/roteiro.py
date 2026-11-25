@@ -61,7 +61,7 @@ def br(valor: Any) -> str:
     texto = str(valor)
     negativo = texto.startswith("-")
     inteiro, _, decimais = texto.lstrip("-").partition(".")
-    grupos = []
+    grupos: list[str] = []
     while len(inteiro) > 3:
         grupos.insert(0, inteiro[-3:])
         inteiro = inteiro[:-3]

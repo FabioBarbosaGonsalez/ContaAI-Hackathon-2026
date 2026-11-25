@@ -67,8 +67,10 @@ Com `CONTAAI_TOKEN_DEMO` definido, as rotas que mudam o estado (importar, aplica
 
 ```bash
 cd backend
-uv sync --extra dev        # dependências (alternativa: pip install -e ".[dev]")
+uv sync --locked --extra dev   # dependências travadas no uv.lock (as mesmas do CI)
 uv run pytest              # testes que não precisam dos motores (os mesmos do CI)
+uv run mypy                # tipos
+uv run coverage run -m pytest && uv run coverage report   # cobertura (o CI exige 90% no app/)
 uv run pytest -m golden    # testes de referência contra os motores em execução
 uv run pytest -m llm       # as 20 perguntas com o provedor de IA do .env (GASTA crédito)
 ```
@@ -113,6 +115,7 @@ No Linux e no macOS, o [Makefile](Makefile) tem atalhos para os mesmos comandos:
 - [ADR 0007](docs/adr/0007-comparacao-de-regimes.md): comparação Simples tradicional × híbrido, crédito das compras e preço de empate
 - [ADR 0008](docs/adr/0008-nfe-historico-e-alertas.md): NF-e de compra, estado em SQLite com migrações, alertas de margem, painel do contador e proteções
 - [ADR 0009](docs/adr/0009-camada-http-e-erros.md): camada HTTP em routers, erros no formato da RFC 9457 e ordem dos middlewares
+- [Segurança](docs/seguranca.md): o que o projeto protege, como, e o que está em aberto; para relatar uma vulnerabilidade, [SECURITY.md](SECURITY.md)
 - [Contrato OpenAPI](docs/contrato/openapi.json): o que frontend e agente consomem
 - [Dados de demonstração](data/demo/README.md): distribuidora, carteira do contador, cliente B2B, notas de compra fictícias e sementes do estado
 - [Direção visual](.taste-skill/app/inventario.md): inventário, a pergunta de cada tela e o estilo sorteado pela skill design-taste-frontend

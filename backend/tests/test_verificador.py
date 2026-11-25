@@ -72,3 +72,10 @@ def test_decimal_com_quatro_casas_nao_vira_milhar() -> None:
     # Regressão: "5.5758" era lido como "5.575" (milhar) + "8".
     assert verificar("preço ao cliente R$ 5,5758", [{"precoCliente": "5.5758"}]).aprovada
     assert verificar("preço ao cliente R$ 5,58", [{"precoCliente": "5.5758"}]).aprovada
+
+
+def test_valor_nao_finito_na_fonte_nao_derruba_o_verificador() -> None:
+    """NaN e infinito (float no JSON de uma ferramenta) não têm casas decimais: não sustentam nenhum número."""
+    fonte = {"aliquota": "1.1612", "estranho": float("nan"), "outro": float("inf")}
+    assert verificar("alíquota efetiva de 1,16%", [fonte]).aprovada
+    assert not verificar("alíquota de 7,5%", [fonte]).aprovada
