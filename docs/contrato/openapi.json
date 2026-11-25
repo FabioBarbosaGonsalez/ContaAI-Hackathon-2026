@@ -263,6 +263,25 @@
               ],
               "title": "X-Contaai-Token"
             }
+          },
+          {
+            "name": "X-ContaAI-Espaco",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{32}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada.",
+              "title": "X-Contaai-Espaco"
+            },
+            "description": "Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada."
           }
         ],
         "requestBody": {
@@ -337,7 +356,7 @@
             }
           },
           "404": {
-            "description": "Empresa ou alerta não encontrado.",
+            "description": "Empresa ou alerta não encontrado, ou espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -444,6 +463,25 @@
               "title": "Abertos"
             },
             "description": "true: só os sem preço aplicado; false: só os aplicados."
+          },
+          {
+            "name": "X-ContaAI-Espaco",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{32}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada.",
+              "title": "X-Contaai-Espaco"
+            },
+            "description": "Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada."
           }
         ],
         "responses": {
@@ -468,7 +506,7 @@
             }
           },
           "404": {
-            "description": "Empresa ou alerta não encontrado.",
+            "description": "Empresa ou alerta não encontrado, ou espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -534,6 +572,25 @@
               ],
               "title": "X-Contaai-Token"
             }
+          },
+          {
+            "name": "X-ContaAI-Espaco",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{32}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada.",
+              "title": "X-Contaai-Espaco"
+            },
+            "description": "Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada."
           }
         ],
         "responses": {
@@ -558,7 +615,7 @@
             }
           },
           "404": {
-            "description": "Empresa ou alerta não encontrado.",
+            "description": "Empresa ou alerta não encontrado, ou espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -630,6 +687,25 @@
               "title": "Cnpj"
             },
             "description": "CNPJ da empresa (14 dígitos)."
+          },
+          {
+            "name": "X-ContaAI-Espaco",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{32}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada.",
+              "title": "X-Contaai-Espaco"
+            },
+            "description": "Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada."
           }
         ],
         "responses": {
@@ -654,7 +730,7 @@
             }
           },
           "404": {
-            "description": "Empresa ou alerta não encontrado.",
+            "description": "Empresa ou alerta não encontrado, ou espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -694,6 +770,27 @@
         "summary": "Contador Painel",
         "description": "Painel do contador (D1): empresas da carteira com os alertas abertos, a mais urgente primeiro.",
         "operationId": "contador_painel_contador_painel_get",
+        "parameters": [
+          {
+            "name": "X-ContaAI-Espaco",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{32}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada.",
+              "title": "X-Contaai-Espaco"
+            },
+            "description": "Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada."
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -701,6 +798,171 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PainelContadorResposta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaValidacao"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/espacos": {
+      "post": {
+        "tags": [
+          "espaços"
+        ],
+        "summary": "Criar Espaco",
+        "description": "Cria um espaço de avaliação. Não exige o token: o espaço é isolado, expira e tem teto por servidor e\nlimite por IP. Na primeira vez do processo, monta o banco-modelo com os motores (como a restauração).",
+        "operationId": "criar_espaco_espacos_post",
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EspacoResposta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "O motor recusou a operação (/problemas/motor-recusou, ex.: VSN-015) ou a entrada não segue o contrato (/problemas/entrada-invalida).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ProblemaMotor"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ProblemaValidacao"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "O motor devolveu uma resposta que o ContaAI não reconhece.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaMotor"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Teto de espaços atingido (/problemas/espacos-esgotados, com Retry-After), motor indisponível na montagem do banco-modelo ou sementes não encontradas.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaMotor"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por minuto atingido (header Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Rota que só funciona no modo real (CONTAAI_MODO=real).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/espacos/atual": {
+      "get": {
+        "tags": [
+          "espaços"
+        ],
+        "summary": "Espaco Atual",
+        "description": "O espaço do header, com a validade, para a tela mostrar quanto tempo falta.",
+        "operationId": "espaco_atual_espacos_atual_get",
+        "parameters": [
+          {
+            "name": "X-ContaAI-Espaco",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{32}$",
+              "description": "Id do espaço.",
+              "title": "X-Contaai-Espaco"
+            },
+            "description": "Id do espaço."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EspacoResposta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Rota que só funciona no modo real (CONTAAI_MODO=real).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaValidacao"
                 }
               }
             }
@@ -1094,7 +1356,7 @@
           "agente"
         ],
         "summary": "Chat",
-        "description": "Agente com tool use (E2). As ações voltam como propostas: nada é aplicado sem o clique do usuário.",
+        "description": "Agente com tool use (E2). As ações voltam como propostas: nada é aplicado sem o clique do usuário.\n\nO token vale também dentro de um espaço de avaliação: ele protege o crédito do provedor de IA, não o\nestado. Com X-ContaAI-Espaco, as ferramentas leem os alertas daquele espaço (ADR 0010).",
         "operationId": "chat_chat_post",
         "parameters": [
           {
@@ -1112,6 +1374,25 @@
               ],
               "title": "X-Contaai-Token"
             }
+          },
+          {
+            "name": "X-ContaAI-Espaco",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{32}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada.",
+              "title": "X-Contaai-Espaco"
+            },
+            "description": "Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada."
           }
         ],
         "requestBody": {
@@ -1209,7 +1490,7 @@
           "operação"
         ],
         "summary": "Demo Restaurar",
-        "description": "Volta o estado às sementes de data/demo (empresas fictícias e notas iniciais), desfazendo tudo o que foi\nimportado ou aplicado. Atômico: se um motor falhar no meio, o estado fica como estava. Exige o token da\ndemo quando ele está configurado.",
+        "description": "Volta o estado às sementes de data/demo (empresas fictícias e notas iniciais), desfazendo tudo o que foi\nimportado ou aplicado. Atômico: se um motor falhar no meio, o estado fica como estava.\n\nCom X-ContaAI-Espaco, restaura só aquele espaço de avaliação, pela cópia do banco-modelo (sem token e sem\nchamar os motores, se o modelo já estiver montado). Sem o header, restaura a demonstração compartilhada e\nexige o token da demo quando ele está configurado.",
         "operationId": "demo_restaurar_demo_restaurar_post",
         "parameters": [
           {
@@ -1227,6 +1508,25 @@
               ],
               "title": "X-Contaai-Token"
             }
+          },
+          {
+            "name": "X-ContaAI-Espaco",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{32}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada.",
+              "title": "X-Contaai-Espaco"
+            },
+            "description": "Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada."
           }
         ],
         "responses": {
@@ -1288,7 +1588,7 @@
             }
           },
           "404": {
-            "description": "Empresa ou alerta não encontrado.",
+            "description": "Empresa ou alerta não encontrado, ou espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2630,6 +2930,39 @@
           "titulo"
         ],
         "title": "ErroMotor"
+      },
+      "EspacoResposta": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$",
+            "title": "Id"
+          },
+          "criadoEm": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Criadoem"
+          },
+          "expiraEm": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expiraem"
+          },
+          "aviso": {
+            "type": "string",
+            "title": "Aviso"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "criadoEm",
+          "expiraEm",
+          "aviso"
+        ],
+        "title": "EspacoResposta",
+        "description": "Espaço de avaliação (ADR 0010): cópia própria dos dados fictícios da demonstração. Envie `id` no header\nX-ContaAI-Espaco nas rotas de notas, alertas, catálogo, painel, restauração e chat. O id é a chave do espaço:\nguarde-o só no navegador de quem avalia."
       },
       "EstadoItem": {
         "type": "string",

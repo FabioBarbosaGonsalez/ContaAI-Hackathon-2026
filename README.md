@@ -57,7 +57,14 @@ A nota 2 gera o alerta da cerveja: margem de 24,12% para 11,19%, alvo de 15%, pr
 - `GET /catalogo?cnpj=36817420000113`, `GET /alertas`, `POST /alertas/{id}/aplicar` e `GET /contador/painel`;
 - `POST /demo/restaurar`: volta tudo às sementes (pela documentação em `/docs` também).
 
-Com `CONTAAI_TOKEN_DEMO` definido, as rotas que mudam o estado (importar, aplicar e restaurar) pedem o header `X-ContaAI-Token`. Uma nota cujo destinatário não é uma das empresas fictícias é recusada antes de gravar qualquer coisa: dado real não entra no banco.
+**Espaço de avaliação (para a banca testar tudo sem afetar ninguém).** `POST /espacos` cria uma cópia própria dos dados fictícios e devolve um `id`. Enviado no header `X-ContaAI-Espaco`, ele faz as rotas de notas, alertas, catálogo, painel, restauração e chat usarem só aquele espaço. Dentro do espaço, importar, aplicar e restaurar não pedem o token da demo. O espaço vale 2 horas desde a criação (`CONTAAI_ESPACO_VALIDADE_MIN`), e o servidor guarda no máximo 50 ao mesmo tempo (`CONTAAI_ESPACOS_MAX`) ([ADR 0010](docs/adr/0010-espacos-de-avaliacao.md)).
+
+```bash
+ID=$(curl -s -X POST http://127.0.0.1:8000/espacos | python -c "import json,sys; print(json.load(sys.stdin)['id'])")
+curl -H "X-ContaAI-Espaco: $ID" -F "arquivo=@../data/demo/notas/nfe-compra-2.xml;type=text/xml" http://127.0.0.1:8000/nfe/importar
+```
+
+Com `CONTAAI_TOKEN_DEMO` definido, as rotas que mudam a demonstração compartilhada (importar, aplicar e restaurar sem o header do espaço) e o `/chat` pedem o header `X-ContaAI-Token`. Uma nota cujo destinatário não é uma das empresas fictícias é recusada antes de gravar qualquer coisa: dado real não entra no banco.
 
 `GET /cenarios/presets` (valores de 2027 com fonte) e `GET /saude` (estado e versões dos motores) são reais nos dois modos. O CORS libera só `http://localhost:3000`; para outra origem, use `CONTAAI_CORS_ORIGENS='["http://..."]'`.
 
@@ -115,6 +122,7 @@ No Linux e no macOS, o [Makefile](Makefile) tem atalhos para os mesmos comandos:
 - [ADR 0007](docs/adr/0007-comparacao-de-regimes.md): comparação Simples tradicional × híbrido, crédito das compras e preço de empate
 - [ADR 0008](docs/adr/0008-nfe-historico-e-alertas.md): NF-e de compra, estado em SQLite com migrações, alertas de margem, painel do contador e proteções
 - [ADR 0009](docs/adr/0009-camada-http-e-erros.md): camada HTTP em routers, erros no formato da RFC 9457 e ordem dos middlewares
+- [ADR 0010](docs/adr/0010-espacos-de-avaliacao.md): espaço de avaliação por visitante (um SQLite por espaço, cópia do banco-modelo, validade e teto)
 - [Segurança](docs/seguranca.md): o que o projeto protege, como, e o que está em aberto; para relatar uma vulnerabilidade, [SECURITY.md](SECURITY.md)
 - [Contrato OpenAPI](docs/contrato/openapi.json): o que frontend e agente consomem
 - [Dados de demonstração](data/demo/README.md): distribuidora, carteira do contador, cliente B2B, notas de compra fictícias e sementes do estado

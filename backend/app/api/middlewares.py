@@ -31,11 +31,14 @@ ROTAS_LIMITADAS = (
     "/nfe/importar",
     "/alertas/",
     "/demo/restaurar",
+    "/espacos",
 )
 # Um limitador por processo. Os testes trocam estes objetos (monkeypatch neste módulo).
 LIMITE_CHAT = LimitadorPorIp(configuracao().limite_chat_por_minuto)
 LIMITE_GERAL = LimitadorPorIp(configuracao().limite_geral_por_minuto)
 LIMITE_BUSCA = LimitadorPorIp(configuracao().limite_busca_por_minuto)
+# Criar um espaço grava um arquivo no disco: limite próprio, além do teto de espaços (ADR 0010).
+LIMITE_ESPACOS = LimitadorPorIp(configuracao().limite_espacos_por_minuto)
 
 ROTAS_DOCUMENTACAO = ("/docs", "/redoc", "/openapi.json")
 
@@ -67,6 +70,8 @@ async def limitar_requisicoes(request: Request, call_next: Proximo) -> Response:
         limitadores = [LIMITE_CHAT if caminho == "/chat" else LIMITE_GERAL]
         if caminho == "/busca/ncm":
             limitadores.append(LIMITE_BUSCA)
+        if caminho == "/espacos" and request.method == "POST":
+            limitadores.append(LIMITE_ESPACOS)
         for limitador in limitadores:
             permitido, espera = limitador.permitir(ip)
             if not permitido:

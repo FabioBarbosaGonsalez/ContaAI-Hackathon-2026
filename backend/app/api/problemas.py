@@ -36,6 +36,7 @@ from app.motores.cliente import FalhaMotor, MotorIndisponivel, OperacaoRecusada
 from app.nfe import consultas
 from app.nfe.importacao import NotaRecusada
 from app.nfe.leitor import NotaInvalida
+from app.persistencia.espacos import EspacoInexistente, EspacosEsgotados
 from app.persistencia.sementes import SementesInvalidas
 from app.precificacao.preco_alvo import CalculoRecusado
 
@@ -98,6 +99,20 @@ TIPOS: dict[str, TipoProblema] = {
             descricao="A NF-e é legível, mas não entra: 422 quando o destinatário não é uma empresa cadastrada, 409 "
             "quando a mesma nota (emitente, série e número) já entrou com outro conteúdo ou o estado mudou durante "
             "a importação. Nada foi gravado.",
+        ),
+        TipoProblema(
+            type=f"{PREFIXO}espaco-inexistente",
+            title="Espaço de avaliação inexistente ou expirado",
+            status=[404],
+            descricao="O id enviado em X-ContaAI-Espaco não corresponde a um espaço válido: nunca existiu ou já "
+            "expirou (os espaços duram um tempo fixo desde a criação). Crie outro com POST /espacos.",
+        ),
+        TipoProblema(
+            type=f"{PREFIXO}espacos-esgotados",
+            title="Sem espaço de avaliação livre",
+            status=[503],
+            descricao="O teto de espaços ao mesmo tempo foi atingido. O header Retry-After diz em quantos segundos "
+            "o mais antigo expira. Enquanto isso, a demonstração compartilhada segue disponível sem o header.",
         ),
         TipoProblema(
             type=f"{PREFIXO}ia-indisponivel",
@@ -235,6 +250,15 @@ async def _conflito(_: Request, exc: consultas.Conflito) -> JSONResponse:
     return simples(409, exc.mensagem)
 
 
+async def _espaco_inexistente(_: Request, exc: EspacoInexistente) -> JSONResponse:
+    return resposta(tipado("espaco-inexistente", 404, "Espaço de avaliação inexistente ou expirado. Crie outro."))
+
+
+async def _espacos_esgotados(_: Request, exc: EspacosEsgotados) -> JSONResponse:
+    detalhe = "Todos os espaços de avaliação estão em uso. Tente de novo depois do tempo indicado em Retry-After."
+    return resposta(tipado("espacos-esgotados", 503, detalhe), {"Retry-After": str(exc.espera_s)})
+
+
 async def _inesperado(_: Request, exc: Exception) -> JSONResponse:
     """Qualquer outra exceção: registra no log do servidor e responde sem pilha nem mensagem interna."""
     log.exception("Erro não tratado", exc_info=exc)
@@ -252,6 +276,8 @@ def registrar(app: FastAPI) -> None:
     app.add_exception_handler(ProvedorFalhou, _provedor)  # type: ignore[arg-type]
     app.add_exception_handler(consultas.NaoEncontrado, _nao_encontrado)  # type: ignore[arg-type]
     app.add_exception_handler(consultas.Conflito, _conflito)  # type: ignore[arg-type]
+    app.add_exception_handler(EspacoInexistente, _espaco_inexistente)  # type: ignore[arg-type]
+    app.add_exception_handler(EspacosEsgotados, _espacos_esgotados)  # type: ignore[arg-type]
     app.add_exception_handler(Exception, _inesperado)
 
 

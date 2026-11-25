@@ -26,7 +26,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.api import middlewares, problemas
 from app.api.dependencias import banco, http_interno, novo_cliente_motores, repositorio
-from app.api.rotas import agente, calculo, classificacao, explicacao, notas, operacao
+from app.api.rotas import agente, calculo, classificacao, espacos, explicacao, notas, operacao
 from app.config import Configuracao, configuracao
 from app.contrato import AVISO_LEGAL
 from app.motores.cliente import FalhaMotor
@@ -87,14 +87,14 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=configuracao().cors_origens,
     allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type", "X-ContaAI-Token"],
+    allow_headers=["Content-Type", "X-ContaAI-Token", "X-ContaAI-Espaco"],
     allow_credentials=False,
 )
 app.add_middleware(BaseHTTPMiddleware, dispatch=middlewares.cabecalhos_de_seguranca)
 
 problemas.registrar(app)
 
-for modulo in (calculo, notas, classificacao, explicacao, agente, operacao):
+for modulo in (calculo, notas, espacos, classificacao, explicacao, agente, operacao):
     app.include_router(modulo.rotas)
 
 

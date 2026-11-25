@@ -225,7 +225,7 @@ A migração `0001_inicial.sql` foi editada no pacote A (datas, `CHECK` e índic
   - `ContextoChat`: `cnpj`;
   - rotas novas.
 - **Abertos:**
-  - **Espaço por visitante (opção 2 da decisão 1):** se a URL pública for aberta a qualquer pessoa, vários jurados ao mesmo tempo mexem no mesmo estado. Hoje há o token e a restauração.
+  - **Espaço por visitante (opção 2 da decisão 1):** se a URL pública for aberta a qualquer pessoa, vários jurados ao mesmo tempo mexem no mesmo estado. Hoje há o token e a restauração. **Resolvido no [ADR 0010](0010-espacos-de-avaliacao.md):** espaço de avaliação por visitante.
   - **Sem usuário nem autorização por CNPJ:** o CNPJ é filtro, não permissão. O token é um só para a demo. Login e autorização ficam para depois do hackathon.
   - **"Margem antes" ao preço atual:** se o preço mudou entre as notas, o "antes" não é a margem histórica, e sim a do preço atual com o custo anterior. É rotulado na premissa "Margem do alerta".
   - **`criadoEm` com a hora real (2026)**, enquanto as datas da demo são de 2027. É verdadeiro e fica: a tela distingue "emitida em" de "criado em" (convenção no ADR 0003). Os mocks usam a hora da nota 2, em UTC.

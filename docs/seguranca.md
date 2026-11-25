@@ -51,6 +51,11 @@ Todos os dados são sintéticos (P10): empresas, CNPJs e notas fictícios. Não 
   - leitura de no máximo o limite + 1 byte;
   - só tipos de XML (415).
 - **Contrato:** todo modelo recusa campo desconhecido. CNPJ, id do alerta e código de erro têm padrão fixo. O texto do produto vindo da nota (`xProd`) é tratado como dado, nunca como instrução ao agente.
+- **Espaços de avaliação** ([ADR 0010](adr/0010-espacos-de-avaliacao.md)):
+  - o id é sorteado pelo servidor (128 bits) e vai num header, não na URL, e por isso não aparece no log de acesso;
+  - só vira nome de arquivo depois de conferido pelo padrão de 32 hexadecimais;
+  - criar tem limite próprio por IP (5 por minuto) e teto de espaços ao mesmo tempo;
+  - o espaço vence num tempo fixo e é apagado na limpeza.
 - **Estado:** a nota só entra se o destinatário for uma empresa cadastrada. Reimportar a mesma nota é idempotente (SHA-256). Os lançamentos de custo só aceitam acréscimo (gatilhos bloqueiam UPDATE). A restauração é atômica.
 
 ### Vazamento de informação ([ADR 0009](adr/0009-camada-http-e-erros.md))
@@ -98,7 +103,7 @@ Não usamos a `gitleaks-action`: desde a v2 ela deixou de ser MIT e exige chave 
 ## Em aberto
 
 - **Sem usuário nem autorização por CNPJ.** O CNPJ é filtro, não permissão. Há um token só para toda a demo. Login fica para depois do hackathon ([ADR 0008](adr/0008-nfe-historico-e-alertas.md)).
-- **Estado compartilhado:** vários avaliadores ao mesmo tempo mexem nos mesmos dados. O espaço de avaliação por visitante é o próximo PR.
+- **Esgotar os espaços de avaliação:** criar um espaço não pede o token, para a banca testar sem combinar nada. Quem fizer muitos pedidos de IPs diferentes pode ocupar o teto (50, configurável) até eles vencerem. A demonstração compartilhada segue funcionando, e o 503 diz em quanto tempo abre vaga ([ADR 0010](adr/0010-espacos-de-avaliacao.md)).
 - **Atrás de proxy, o limite por IP vira global.** Ler `X-Forwarded-For` só de um proxy nosso fica para o deploy (E6).
 - **Deploy (E6):** volume para o SQLite, container sem root e com sistema de arquivos só de leitura, limite de corpo no proxy e `/docs` desligado ou protegido.
 - **Erro 500 sem os cabeçalhos de segurança e de CORS**, porque o Starlette o monta por fora dos middlewares. O corpo não traz nada interno ([ADR 0009](adr/0009-camada-http-e-erros.md)).

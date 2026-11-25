@@ -40,6 +40,9 @@ class Configuracao(BaseSettings):
     semear_ao_subir: bool = True  # modo real com o banco vazio: carrega as sementes de data/demo na subida
     # Pasta com sementes.json, as empresas e as notas. No container do deploy, a pasta montada ou copiada.
     pasta_demo: Path = PASTA_DEMO
+    # Espaços de avaliação (D2, ADR 0010): um SQLite por visitante, na pasta "espacos" ao lado do banco.
+    espacos_max: int = Field(default=50, gt=0, description="Espaços válidos ao mesmo tempo (teto de disco).")
+    espaco_validade_min: int = Field(default=120, gt=0, description="Minutos de vida de um espaço, desde a criação.")
 
     # Agente (E2, ADR 0006). "roteiro" não usa IA nem chave: é o padrão gratuito e o dublê dos testes.
     llm_provedor: str = Field(default="roteiro", description="Nome registrado em app/agente/provedor.py.")
@@ -60,6 +63,7 @@ class Configuracao(BaseSettings):
     limite_geral_por_minuto: int = 120  # por IP, nas rotas que chamam os motores; 0 desliga
     # Uma busca de NCM nova faz até ~430 consultas ao motor (3 NCMs × ~144 classificações): limite próprio.
     limite_busca_por_minuto: int = 20  # por IP, em GET /busca/ncm; 0 desliga
+    limite_espacos_por_minuto: int = 5  # por IP, em POST /espacos; 0 desliga
 
     @field_validator("banco_caminho", "pasta_demo", mode="before")
     @classmethod

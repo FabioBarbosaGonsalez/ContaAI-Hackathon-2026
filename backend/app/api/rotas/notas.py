@@ -1,14 +1,28 @@
-"""Estado (E4, ADR 0008): NF-e de compra, alertas de margem, catálogo e painel do contador."""
+"""Estado (E4, ADR 0008): NF-e de compra, alertas de margem, catálogo e painel do contador.
+
+Toda rota aceita o header X-ContaAI-Espaco (ADR 0010): com ele, lê e grava no espaço de avaliação do visitante;
+sem ele, na demonstração compartilhada. No próprio espaço, as rotas que mudam o estado dispensam o token.
+"""
 
 from __future__ import annotations
 
+import asyncio
 from typing import Annotated
 
 from fastapi import APIRouter, File, HTTPException, Path, Query, Response, UploadFile
 
 from app import mocks
 from app.api import respostas
-from app.api.dependencias import Cfg, Motores, Token, exigir_token, marcar_mock, repositorio, so_no_modo_real
+from app.api.dependencias import (
+    Cfg,
+    EspacoId,
+    Motores,
+    Token,
+    abrir_estado,
+    exigir_token_fora_do_espaco,
+    marcar_mock,
+    so_no_modo_real,
+)
 from app.contrato import (
     AlertasResposta,
     AplicarAlertaResposta,
@@ -32,21 +46,24 @@ async def nfe_importar(
     motores: Motores,
     arquivo: Annotated[UploadFile, File(description="XML da NF-e de compra (modelo 55, leiaute 4.00)")],
     token: Token = None,
+    espaco: EspacoId = None,
 ) -> NfeImportarResposta:
     """Lê a nota, casa os itens, grava o histórico de custo e gera os alertas de margem (E4, plano 11.3)."""
+    estado = None
     if cfg.modo == "mock":
         marcar_mock(response)
     else:
-        exigir_token(cfg, token)
+        estado = await asyncio.to_thread(abrir_estado, cfg, espaco)
+        exigir_token_fora_do_espaco(cfg, token, estado)
     if (arquivo.content_type or "").split(";")[0].strip().lower() not in TIPOS_XML:
         raise HTTPException(status_code=415, detail="Envie o arquivo XML da NF-e.")
     # Lê no máximo o limite + 1 byte: não depende de UploadFile.size nem carrega mais que isso em memória.
     conteudo = await arquivo.read(cfg.tamanho_max_nfe_bytes + 1)
     if len(conteudo) > cfg.tamanho_max_nfe_bytes:
         raise HTTPException(status_code=413, detail="Arquivo maior que o limite para uma NF-e.")
-    if cfg.modo == "mock":
+    if estado is None:
         return mocks.carregar().nfe_importar
-    return await importar_nota(conteudo, repositorio(cfg), motores)
+    return await importar_nota(conteudo, estado.repositorio, motores)
 
 
 @rotas.get("/alertas", response_model=AlertasResposta, responses=respostas.ESTADO)
@@ -57,12 +74,13 @@ def listar_alertas(
     abertos: Annotated[
         bool | None, Query(description="true: só os sem preço aplicado; false: só os aplicados.")
     ] = None,
+    espaco: EspacoId = None,
 ) -> AlertasResposta:
     """Alertas de margem gerados pelas notas de compra, do mais recente para o mais antigo."""
     if cfg.modo == "mock":
         marcar_mock(response)
         return mocks.carregar().alertas
-    return AlertasResposta(alertas=consultas.alertas(repositorio(cfg), cnpj, abertos))
+    return AlertasResposta(alertas=consultas.alertas(abrir_estado(cfg, espaco).repositorio, cnpj, abertos))
 
 
 @rotas.post(
@@ -75,28 +93,32 @@ def listar_alertas(
     },
 )
 def aplicar_alerta(
-    cfg: Cfg, alerta_id: Annotated[str, Path(pattern=r"^alerta-[0-9a-f]{16}$")], token: Token = None
+    cfg: Cfg,
+    alerta_id: Annotated[str, Path(pattern=r"^alerta-[0-9a-f]{16}$")],
+    token: Token = None,
+    espaco: EspacoId = None,
 ) -> AplicarAlertaResposta:
     """Aplica o preço sugerido do alerta como preço de venda do item. Só com o clique do usuário (P3)."""
     so_no_modo_real(cfg)
-    exigir_token(cfg, token)
-    return consultas.aplicar(repositorio(cfg), alerta_id, agora_utc())
+    estado = abrir_estado(cfg, espaco)
+    exigir_token_fora_do_espaco(cfg, token, estado)
+    return consultas.aplicar(estado.repositorio, alerta_id, agora_utc())
 
 
 @rotas.get("/catalogo", response_model=CatalogoResposta, responses=respostas.ESTADO)
-def catalogo(cfg: Cfg, response: Response, cnpj: CNPJ) -> CatalogoResposta:
+def catalogo(cfg: Cfg, response: Response, cnpj: CNPJ, espaco: EspacoId = None) -> CatalogoResposta:
     """Itens da empresa com o preço de venda e o custo atuais e o histórico de custo. Não chama os motores:
     a margem de cada item sai do POST /carrinho/calcular com estes valores."""
     if cfg.modo == "mock":
         marcar_mock(response)
         return mocks.carregar().catalogo
-    return consultas.catalogo(repositorio(cfg), cnpj)
+    return consultas.catalogo(abrir_estado(cfg, espaco).repositorio, cnpj)
 
 
-@rotas.get("/contador/painel", response_model=PainelContadorResposta)
-def contador_painel(cfg: Cfg, response: Response) -> PainelContadorResposta:
+@rotas.get("/contador/painel", response_model=PainelContadorResposta, responses=respostas.ESPACO)
+def contador_painel(cfg: Cfg, response: Response, espaco: EspacoId = None) -> PainelContadorResposta:
     """Painel do contador (D1): empresas da carteira com os alertas abertos, a mais urgente primeiro."""
     if cfg.modo == "mock":
         marcar_mock(response)
         return mocks.carregar().contador_painel
-    return consultas.painel(repositorio(cfg))
+    return consultas.painel(abrir_estado(cfg, espaco).repositorio)
