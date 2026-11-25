@@ -33,9 +33,16 @@ TOKEN: Respostas = {401: {"description": "Token da demo ausente ou errado (heade
 LIMITE: Respostas = {429: {"description": "Limite de requisições por minuto atingido (header Retry-After)."}}
 SO_MODO_REAL: Respostas = {501: {"description": "Rota que só funciona no modo real (CONTAAI_MODO=real)."}}
 
+ESPACO: Respostas = {
+    404: {"description": "Espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente)."},
+}
+
 ESTADO: Respostas = {
     **TOKEN,
-    404: {"description": "Empresa ou alerta não encontrado."},
+    404: {
+        "description": "Empresa ou alerta não encontrado, ou espaço de avaliação inexistente ou expirado "
+        "(/problemas/espaco-inexistente)."
+    },
     **LIMITE,
 }
 

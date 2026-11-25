@@ -206,6 +206,10 @@ class Sessao:
         assert cursor.lastrowid is not None
         return cursor.lastrowid
 
+    def numeros_das_notas(self) -> list[str]:
+        """Número de cada nota importada, na ordem de importação."""
+        return [linha["numero"] for linha in self._c.execute("SELECT numero FROM notas ORDER BY id")]
+
     def numero_da_nota(self, cnpj: str, nota_id: int) -> str | None:
         linha = self._c.execute("SELECT numero FROM notas WHERE cnpj = ? AND id = ?", (cnpj, nota_id)).fetchone()
         return None if linha is None else linha["numero"]

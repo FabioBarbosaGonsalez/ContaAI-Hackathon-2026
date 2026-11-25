@@ -621,6 +621,17 @@ class PainelContadorResposta(_Modelo):
     aviso: str
 
 
+class EspacoResposta(_Modelo):
+    """Espaço de avaliação (ADR 0010): cópia própria dos dados fictícios da demonstração. Envie `id` no header
+    X-ContaAI-Espaco nas rotas de notas, alertas, catálogo, painel, restauração e chat. O id é a chave do espaço:
+    guarde-o só no navegador de quem avalia."""
+
+    id: str = Field(pattern=r"^[0-9a-f]{32}$")
+    criadoEm: datetime
+    expiraEm: datetime
+    aviso: str
+
+
 class RestaurarResposta(_Modelo):
     empresas: int
     notasImportadas: list[str] = Field(description="Número de cada nota inicial importada.")

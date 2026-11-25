@@ -9,7 +9,17 @@ import httpx
 from fastapi import APIRouter, HTTPException, Path
 
 from app.api import respostas
-from app.api.dependencias import Cfg, Motores, Token, exigir_token, http_interno, repositorio, so_no_modo_real
+from app.api.dependencias import (
+    Cfg,
+    EspacoId,
+    Motores,
+    Token,
+    abrir_estado,
+    espacos,
+    exigir_token_fora_do_espaco,
+    http_interno,
+    so_no_modo_real,
+)
 from app.api.problemas import TIPOS
 from app.contrato import Motor, ProblemaMotor, RestaurarResposta, SaudeMotor, SaudeResposta, TipoProblema
 from app.persistencia.repositorio import Repositorio
@@ -32,21 +42,30 @@ rotas = APIRouter(tags=["operação"])
         },
     },
 )
-async def demo_restaurar(cfg: Cfg, motores: Motores, token: Token = None) -> RestaurarResposta:
+async def demo_restaurar(cfg: Cfg, motores: Motores, token: Token = None, espaco: EspacoId = None) -> RestaurarResposta:
     """Volta o estado às sementes de data/demo (empresas fictícias e notas iniciais), desfazendo tudo o que foi
-    importado ou aplicado. Atômico: se um motor falhar no meio, o estado fica como estava. Exige o token da
-    demo quando ele está configurado."""
+    importado ou aplicado. Atômico: se um motor falhar no meio, o estado fica como estava.
+
+    Com X-ContaAI-Espaco, restaura só aquele espaço de avaliação, pela cópia do banco-modelo (sem token e sem
+    chamar os motores, se o modelo já estiver montado). Sem o header, restaura a demonstração compartilhada e
+    exige o token da demo quando ele está configurado."""
     so_no_modo_real(cfg)
-    exigir_token(cfg, token)
-    repo = repositorio(cfg)
-    recibos = await restaurar(repo, motores, cfg.pasta_demo)
-    empresas, alertas = await asyncio.to_thread(_contagem, repo)
-    return RestaurarResposta(empresas=empresas, notasImportadas=[r.nota.numero for r in recibos], alertas=alertas)
+    estado = await asyncio.to_thread(abrir_estado, cfg, espaco)
+    exigir_token_fora_do_espaco(cfg, token, estado)
+    if estado.espaco is None:
+        await restaurar(estado.repositorio, motores, cfg.pasta_demo)
+    else:
+        gerenciador = espacos(cfg)
+        await gerenciador.garantir_modelo(motores, cfg.pasta_demo)
+        await asyncio.to_thread(gerenciador.restaurar, estado.espaco.id)
+    return await asyncio.to_thread(_resumo, estado.repositorio)
 
 
-def _contagem(repo: Repositorio) -> tuple[int, int]:
+def _resumo(repo: Repositorio) -> RestaurarResposta:
     with repo.leitura() as s:
-        return len(s.empresas()), len(s.alertas())
+        return RestaurarResposta(
+            empresas=len(s.empresas()), notasImportadas=s.numeros_das_notas(), alertas=len(s.alertas())
+        )
 
 
 async def _checar(cli: httpx.AsyncClient, motor: Motor, url: str, fixada: str) -> SaudeMotor:

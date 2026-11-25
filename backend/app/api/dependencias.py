@@ -1,8 +1,11 @@
-"""Dependências das rotas: configuração, clientes dos motores e dos dados abertos, banco e token da demo."""
+"""Dependências das rotas: configuração, clientes dos motores e dos dados abertos, estado (banco da demonstração
+ou espaço de avaliação, ADR 0010) e token da demo."""
 
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
+from dataclasses import dataclass
+from datetime import timedelta
 from functools import lru_cache
 from pathlib import Path
 from typing import Annotated
@@ -14,12 +17,22 @@ from app.config import Configuracao, configuracao
 from app.motores.cache import CacheRespostas
 from app.motores.cliente import ClienteMotores
 from app.motores.dados_abertos import CacheConsultas, DadosAbertos
+from app.nfe.importacao import agora_utc
 from app.persistencia.banco import Banco
+from app.persistencia.espacos import PADRAO_ID, Espaco, Espacos
 from app.persistencia.repositorio import Repositorio
 from app.seguranca import token_confere
 
 Cfg = Annotated[Configuracao, Depends(configuracao)]
 Token = Annotated[str | None, Header(alias="X-ContaAI-Token")]
+EspacoId = Annotated[
+    str | None,
+    Header(
+        alias="X-ContaAI-Espaco",
+        pattern=PADRAO_ID,
+        description="Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada.",
+    ),
+]
 
 # Um cache por processo, compartilhado entre as requisições (app/motores/cache.py).
 CACHE_MOTORES = CacheRespostas(configuracao().cache_motores_itens)
@@ -61,6 +74,39 @@ def banco(caminho: Path) -> Banco:
 def repositorio(cfg: Configuracao) -> Repositorio:
     """Chamado só no ramo do modo real: no modo mock nenhuma rota cria o arquivo do banco."""
     return Repositorio(banco(cfg.banco_caminho))
+
+
+@lru_cache
+def _espacos(pasta: Path, validade_min: int, maximo: int) -> Espacos:
+    """Um gerenciador por pasta, no processo: guarda se o banco-modelo já foi montado."""
+    return Espacos(pasta, timedelta(minutes=validade_min), maximo)
+
+
+def espacos(cfg: Configuracao) -> Espacos:
+    return _espacos(cfg.banco_caminho.parent / "espacos", cfg.espaco_validade_min, cfg.espacos_max)
+
+
+@dataclass(frozen=True)
+class Estado:
+    """Onde a requisição lê e grava: a demonstração compartilhada (espaco None) ou um espaço de avaliação."""
+
+    repositorio: Repositorio
+    espaco: Espaco | None = None
+
+
+def abrir_estado(cfg: Configuracao, espaco_id: str | None) -> Estado:
+    """Só no ramo do modo real. Espaço desconhecido ou vencido: EspacoInexistente (404)."""
+    if espaco_id is None:
+        return Estado(repositorio(cfg))
+    gerenciador = espacos(cfg)
+    espaco = gerenciador.abrir(espaco_id, agora_utc())
+    return Estado(Repositorio(gerenciador.banco(espaco.id)), espaco)
+
+
+def exigir_token_fora_do_espaco(cfg: Configuracao, token: str | None, estado: Estado) -> None:
+    """No próprio espaço, mudar o estado não exige o token: o espaço é isolado e expira (ADR 0010)."""
+    if estado.espaco is None:
+        exigir_token(cfg, token)
 
 
 def exigir_token(cfg: Configuracao, token: str | None) -> None:

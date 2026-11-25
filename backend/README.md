@@ -11,7 +11,7 @@ FastAPI que orquestra os motores oficiais da Receita. Instruções no README da 
 | `app/precificacao/` | Carrinho real e preço-alvo (ajuste afim + bisseção) |
 | `app/regime/` | Comparação Simples tradicional × híbrido (E3) |
 | `app/nfe/` | Leitor seguro da NF-e, importação (casamento, crédito, histórico e alertas) e consultas do estado (E4) |
-| `app/persistencia/` | SQLite: migrações versionadas (`migracoes/`), repositório e sementes de `data/demo` (E4, ADR 0008) |
+| `app/persistencia/` | SQLite: migrações versionadas (`migracoes/`), repositório, sementes de `data/demo` (E4, ADR 0008) e espaços de avaliação (`espacos.py`, ADR 0010) |
 | `app/empresa.py` | Operação de cálculo de uma empresa cadastrada (data, local e premissas do cenário dela) |
 | `app/cenarios/` | Premissas, aviso de simulação e presets de 2027 com fonte |
 | `app/agente/` | Agente: formato interno, tomada do provedor de IA, provedor `roteiro`, ferramentas, loop e verificador |
