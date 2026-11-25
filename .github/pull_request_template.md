@@ -13,7 +13,7 @@
 
 ## Checklist
 
-- [ ] O CI passou (lint e testes)
+- [ ] O CI passou (lint, tipos, testes com cobertura, dependências e segredos)
 - [ ] Nenhum código nosso calcula alíquota, base ou tributo; os valores vêm dos motores oficiais (P1)
 - [ ] A IA não faz aritmética nem decide a classificação fiscal sozinha (P2, P3)
 - [ ] Premissas e aviso de simulação aparecem quando o resultado é de 2027 em diante (P6)

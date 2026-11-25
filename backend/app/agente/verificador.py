@@ -94,6 +94,13 @@ def numeros_das_fontes(fontes: Iterable[Any]) -> set[Decimal]:
     return numeros
 
 
+def _mais_casas(valor: Decimal, casas: int) -> bool:
+    """O valor da fonte tem mais casas que o número do texto (e pode ter sido arredondado para ele).
+    NaN e infinito não têm casas: nunca sustentam um número do texto."""
+    expoente = valor.as_tuple().exponent
+    return isinstance(expoente, int) and abs(expoente) > casas
+
+
 def _sustentado(token: str, fontes: set[Decimal]) -> bool:
     valores = leituras(token)
     if valores & fontes:
@@ -102,7 +109,7 @@ def _sustentado(token: str, fontes: set[Decimal]) -> bool:
     if casas == 0:
         return False
     passo = Decimal(1).scaleb(-casas)
-    arredondadas = {f.quantize(passo, ROUND_HALF_UP) for f in fontes if abs(f.as_tuple().exponent) > casas}
+    arredondadas = {f.quantize(passo, ROUND_HALF_UP) for f in fontes if _mais_casas(f, casas)}
     return bool(valores & arredondadas)
 
 

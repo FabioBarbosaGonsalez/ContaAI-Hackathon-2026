@@ -1,6 +1,6 @@
 # Atalhos do ContaAI. No Windows sem make, rode os comandos da direita direto no terminal.
 
-.PHONY: motores parar api real sementes golden llm gravar-golden notas mocks indice openapi test lint
+.PHONY: motores parar api real sementes golden llm gravar-golden notas mocks indice openapi test lint tipos cobertura auditoria
 
 motores:        ## sobe os dois motores oficiais (primeira vez demora: Maven + banco)
 	docker compose up -d --build motor-rr motor-sn
@@ -41,5 +41,14 @@ openapi:        ## reexporta o contrato para docs/contrato/openapi.json
 test:           ## testes do backend que não precisam dos motores (os mesmos do CI)
 	cd backend && uv run pytest
 
-lint:           ## lint e formatação do Python
-	ruff check . && ruff format --check .
+lint:           ## lint e formatação do Python (o ruff travado no backend/uv.lock)
+	uv run --project backend ruff check . && uv run --project backend ruff format --check .
+
+tipos:          ## checagem de tipos do app (mypy com o plugin do Pydantic)
+	cd backend && uv run mypy
+
+cobertura:      ## testes do CI com cobertura; falha abaixo de 90% no app/
+	cd backend && uv run coverage run -m pytest && uv run coverage report
+
+auditoria:      ## vulnerabilidades conhecidas nas dependências travadas (pip-audit, banco do PyPI)
+	cd backend && uv export --locked --all-extras --no-emit-project --format requirements-txt -o .req-auditoria.txt 		&& uvx pip-audit==2.10.1 -r .req-auditoria.txt --require-hashes --disable-pip --strict; 		status=$$?; rm -f .req-auditoria.txt; exit $$status

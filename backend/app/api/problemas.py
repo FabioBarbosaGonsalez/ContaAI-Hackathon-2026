@@ -15,7 +15,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Sequence
 from http import HTTPStatus
-from typing import Any
+from typing import Any, get_args
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -25,6 +25,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.agente.provedor import ProvedorFalhou
 from app.contrato import (
     CampoInvalido,
+    OrigemCampo,
     Problema,
     ProblemaCalculo,
     ProblemaMotor,
@@ -152,14 +153,17 @@ def _ponteiro(partes: Sequence[Any]) -> str:
     return "#" + "".join(f"/{p}" for p in escapadas)
 
 
+ORIGENS: dict[Any, OrigemCampo] = {o: o for o in get_args(OrigemCampo)}
+
+
 def campos_invalidos(erros: Sequence[Any]) -> list[CampoInvalido]:
     """Só local e mensagem: o valor enviado (`input`) e o contexto interno (`ctx`) não voltam."""
     campos = []
     for e in erros:
         loc = list(e.get("loc", ()))
-        origem = loc[0] if loc and loc[0] in ("body", "query", "path", "header", "cookie") else "body"
-        resto = loc[1:] if loc and loc[0] == origem else loc
-        campos.append(CampoInvalido(origem=origem, campo=_ponteiro(resto), detalhe=str(e.get("msg", ""))))
+        origem = ORIGENS.get(loc[0]) if loc else None
+        resto = loc[1:] if origem else loc  # sem origem conhecida, o local inteiro fica no ponteiro
+        campos.append(CampoInvalido(origem=origem or "body", campo=_ponteiro(resto), detalhe=str(e.get("msg", ""))))
     return campos
 
 

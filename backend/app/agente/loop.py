@@ -16,7 +16,7 @@ import asyncio
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Literal
 
 from app.agente import ferramentas
 from app.agente.ferramentas import Ambiente
@@ -198,7 +198,7 @@ async def responder_chat(req: ChatRequisicao, provedor: ProvedorLLM, cfg: Config
     sistema = instrucoes(req.contexto)
     mensagens = [Mensagem(papel=m.papel, texto=m.texto) for m in req.mensagens]
     rastro = Rastro()
-    verificacao_final = "aprovada"
+    verificacao_final: Literal["aprovada", "resposta_segura"] = "aprovada"
     try:
         async with asyncio.timeout(cfg.llm_tempo_total_s):
             texto = await _conversar(provedor, cfg, sistema, mensagens, amb, rastro)

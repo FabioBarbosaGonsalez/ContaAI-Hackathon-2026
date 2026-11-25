@@ -818,8 +818,11 @@ class Problema(_Modelo):
     detail: str | None = Field(default=None, description="Explicação desta ocorrência, para a pessoa ler.")
 
 
+OrigemCampo = Literal["body", "query", "path", "header", "cookie"]
+
+
 class CampoInvalido(_Modelo):
-    origem: Literal["body", "query", "path", "header", "cookie"]
+    origem: OrigemCampo
     campo: str = Field(description='JSON Pointer do campo dentro da origem (ex.: "#/itens/0/ncm"); "#" = inteiro.')
     detalhe: str
 

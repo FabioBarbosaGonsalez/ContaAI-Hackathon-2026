@@ -13,19 +13,30 @@ from typing import Any, Protocol
 
 
 class ImpostoSeletivoItem(Protocol):
-    cst: str
-    cClassTrib: str
-    litrosPorUnidade: Decimal | None
+    """Só leitura (propriedades): assim qualquer modelo com esses campos se encaixa, inclusive os que têm
+    um tipo mais específico, como ItemEntrada.impostoSeletivo (ImpostoSeletivoEntrada)."""
+
+    @property
+    def cst(self) -> str: ...
+    @property
+    def cClassTrib(self) -> str: ...
+    @property
+    def litrosPorUnidade(self) -> Decimal | None: ...
 
 
 class ItemClassificado(Protocol):
-    """ncm ou nbs (o catálogo de demonstração só tem ncm; ver _nbs)."""
+    """ncm ou nbs (o catálogo de demonstração só tem ncm; ver _nbs). Só leitura, como ImpostoSeletivoItem."""
 
-    ncm: str | None
-    cst: str
-    cClassTrib: str
-    unidade: str
-    impostoSeletivo: ImpostoSeletivoItem | None
+    @property
+    def ncm(self) -> str | None: ...
+    @property
+    def cst(self) -> str: ...
+    @property
+    def cClassTrib(self) -> str: ...
+    @property
+    def unidade(self) -> str: ...
+    @property
+    def impostoSeletivo(self) -> ImpostoSeletivoItem | None: ...
 
 
 @dataclass(frozen=True)
