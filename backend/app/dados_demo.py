@@ -81,7 +81,8 @@ class ItemCatalogo(_Modelo):
     classificacaoFonte: str
     impostoSeletivo: ImpostoSeletivoDemo | None
     unidade: Literal["UN", "KG"]
-    codigoFornecedor: str
+    cnpjFornecedor: str = Field(pattern=r"^\d{14}$", description="O código do fornecedor só é único dentro dele.")
+    codigoFornecedor: str = Field(min_length=1, max_length=60)
     precoVenda: Decimal = Field(gt=0)
     margemAlvoPct: Decimal = Field(gt=0, lt=100)
     papelNaDemo: str

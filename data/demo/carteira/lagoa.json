@@ -1,0 +1,73 @@
+{
+  "_aviso": "Dados fictícios para demonstração (princípio P10). Empresa, CNPJ (com dígito verificador propositalmente inválido), preços, margens e quantidades não representam empresas nem preços reais. Classificações, descrições de NCM e premissas trazem a fonte ao lado. Terceira empresa da carteira do contador (D1, ADR 0008), no Simples híbrido.",
+  "empresa": {
+    "razaoSocial": "Empório Lagoa EPP (fictício)",
+    "cnpj": "41736592000102",
+    "regimeAtual": "simples_hibrido",
+    "uf": "RS",
+    "municipio": 4314902,
+    "municipioNome": "Porto Alegre",
+    "simples": {
+      "anexo": "I",
+      "cAtivSN": "01",
+      "descricaoAtividade": "Revenda de mercadorias, venda de mercadorias industrializadas pelo contribuinte",
+      "fonte": "GET /calculadora/simples-nacional/atividades?data=2027-03-15&anexos=I&tpDoc=55 (motor SN 1.0.2)"
+    }
+  },
+  "cenario": {
+    "descricao": "Simulação de março de 2027",
+    "data": "2027-03-16",
+    "aliquotasNominais": {
+      "cbs": "8.8",
+      "ibsEstadual": "0.05",
+      "ibsMunicipal": "0.05",
+      "fonte": "Entradas do exemplo oficial (docs/exemplos.md da calculadora RR 1.7.2). Não são alíquotas oficiais (P6)."
+    },
+    "impostoSeletivoAdValorem": {
+      "valor": "10.0",
+      "fonte": "Entrada do exemplo oficial. O motor RR exige a alíquota do IS para NCM sujeita ao IS mesmo na revenda (erro REG-035: 'ainda não foi definida em lei'). Na revenda (cClassTrib do IS 200007) o valor do IS sai zero."
+    },
+    "premissasDas": {
+      "anexo": "I",
+      "pCBSSN": "1.1612",
+      "pIBSSN": "0.0129",
+      "fonte": "Valores de exemplo do esquema OpenAPI do motor SN 1.0.2 (AliquotasEfetivasInput). Não são alíquotas de nenhum contribuinte (P8)."
+    },
+    "cargaAtualPct": null,
+    "cargaAtualNota": "Carga atual informada pelo usuário, só para comparação. Fica vazia até alguém informar."
+  },
+  "catalogo": [
+    {
+      "id": "chocolate-barra",
+      "descricao": "Chocolate não recheado, barra 90 g",
+      "ncm": "18063210",
+      "ncmDescricaoOficial": "Chocolate e outras preparações alimentícias que contenham cacau - Não recheados - Chocolate",
+      "cst": "000",
+      "cClassTrib": "000001",
+      "classificacaoFonte": "Nenhuma classificação com redução específica do produto nos dados abertos (comparação com NCM de máquina 84381000); tributação integral.",
+      "impostoSeletivo": null,
+      "unidade": "UN",
+      "cnpjFornecedor": "71604258000156",
+      "codigoFornecedor": "AE-CHO-90",
+      "precoVenda": "6.49",
+      "margemAlvoPct": "20",
+      "papelNaDemo": "Empresa sem alerta na carteira do contador"
+    },
+    {
+      "id": "arroz-5kg",
+      "descricao": "Arroz polido não parboilizado, pacote 5 kg",
+      "ncm": "10063021",
+      "ncmDescricaoOficial": "Arroz semibranqueado ou branqueado, mesmo polido ou brunido (glaciado*) - Não parboilizado - Polido ou brunido",
+      "cst": "200",
+      "cClassTrib": "200003",
+      "classificacaoFonte": "Exemplo oficial (docs/exemplos.md). Redução específica do produto confirmada nos dados abertos: Anexo I da LC 214/2025, redução de 100%.",
+      "impostoSeletivo": null,
+      "unidade": "UN",
+      "cnpjFornecedor": "71604258000156",
+      "codigoFornecedor": "AE-ARZ-5",
+      "precoVenda": "28.50",
+      "margemAlvoPct": "15",
+      "papelNaDemo": "Empresa sem alerta na carteira do contador"
+    }
+  ]
+}

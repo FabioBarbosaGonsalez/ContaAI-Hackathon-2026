@@ -45,7 +45,7 @@ As asserções que a skill pede estão nos testes do backend (`backend/tests/tes
 - diferença de caixa = tributo tradicional − tributo líquido híbrido;
 - mesmo preço total nos dois regimes, a menos de centavos.
 
-**Um fato, uma variável.** A margem da cerveja (11,19%) aparece no catálogo e no alerta, e o preço sugerido (R$ 3,97) aparece no alerta e no preço-alvo. Nos mocks, os dois saem do mesmo cálculo e já foram conferidos iguais. Na E5, cada um deve vir de um só campo.
+**Um fato, uma variável.** A margem da cerveja (11,19%) aparece no catálogo e no alerta, e o preço sugerido (R$ 3,97) aparece no alerta e no preço-alvo. Nos mocks, os dois saem do mesmo cálculo e já foram conferidos iguais. Na E5, cada um deve vir de um só campo. Desde a E4, o preço e o custo atuais de cada item vêm do `GET /catalogo` (estado no SQLite, ADR 0008): o preço atual do alerta é o do catálogo, e o custo novo do alerta é o custo atual do catálogo (teste em `test_contrato.py`).
 
 ## 2. Uma pergunta e um achado por tela (§2.2)
 
@@ -83,11 +83,12 @@ Valores do cenário de demonstração (simulação de março de 2027, premissas 
 ### Importar nota (detail: a NF-e)
 - **Pergunta:** o que mudou no custo com esta nota?
 - **Achado:** cerveja +17,31% (de R$ 2,60 para R$ 3,05) e margem para 11,19%; chocolate sem mudança.
-- **Tarefa:** importar a próxima nota; aplicar o preço sugerido.
+- **Tarefa:** importar a próxima nota; aplicar o preço sugerido (`POST /alertas/{id}/aplicar`, desde a E4).
 - **Blocos:**
-  - itens casados, com custo antigo e novo e a variação;
+  - itens casados, com custo antigo e novo e a variação; uma nota mais antiga que o custo atual aparece como "entrou no histórico, custo mantido" (`atualizaCusto`);
   - o crédito lido da nota (fonte: grupo IBSCBS) ou calculado pelo motor;
-  - itens sem par, como pergunta;
+  - itens sem par, como pergunta, com o motivo que a API devolve (código sem cadastro, NCM ou unidade diferente);
+  - a mesma nota de novo: "já importada", com o recibo da primeira vez (`jaImportada`);
   - alertas gerados.
 
 ### Explicação (painel lateral)
@@ -97,7 +98,9 @@ Valores do cenário de demonstração (simulação de março de 2027, premissas 
 
 ### Painel do contador (inbox, D1)
 - **Pergunta:** qual cliente meu precisa de atenção este mês?
-- **Achado:** depende de 3 CNPJs fictícios, que entram na E4 (E4-04). Não há dado para isso ainda e nada foi inventado.
+- **Achado** (sementes da E4, ADR 0008): a Mercearia Vale Verde ME (fictícia) tem 2 alertas abertos depois da nota 2002, de 15/03/2027: biscoito de 26,84% para 12,91% (sugerido R$ 5,12) e chocolate (sugerido R$ 6,77). A Serra Azul ganha o alerta da cerveja quando a nota 1002 é importada; o Empório Lagoa (Simples híbrido) não tem alerta.
+- **Tarefa:** abrir a empresa com mais alertas; o seletor de CNPJ da barra superior leva ao painel dela.
+- **Dados:** `GET /contador/painel` (empresas ordenadas por alertas abertos, com o alerta mais recente de cada uma).
 
 ## 3. Estilo, cara e elemento-assinatura (§2.3)
 

@@ -38,13 +38,16 @@ from app.contrato import (
 from app.explicacao import explicar_item
 from app.motores.cliente import ClienteMotores, FalhaMotor, OperacaoRecusada
 from app.motores.dados_abertos import DadosAbertos
+from app.nfe import consultas
+from app.persistencia.repositorio import Repositorio
 from app.precificacao.carrinho import calcular_carrinho
 from app.precificacao.preco_alvo import CalculoRecusado, calcular_preco_alvo
 from app.regime.comparar import comparar_regimes
 
 log = logging.getLogger("contaai.agente")
 
-INDISPONIVEL_E4 = "Os alertas de margem a partir da NF-e entram na E4. Ainda não há alertas reais."
+SEM_ESTADO = "Os alertas de margem só existem no modo real, com o estado da empresa (ADR 0008)."
+MAX_ALERTAS = 10
 SEM_CONTEXTO = (
     "Sem contexto da operação (data, UF, município, regime e itens confirmados) não há o que calcular. "
     "Peça ao usuário para confirmar os itens na tela."
@@ -57,6 +60,7 @@ class Ambiente:
     dados_abertos: DadosAbertos
     contexto: ContextoChat | None
     data_sem_contexto: date | None = None  # data das consultas quando não há contexto (padrão: hoje)
+    repositorio: Repositorio | None = None  # estado (E4): alertas das notas de compra
     usos: dict[str, int] = field(default_factory=dict)  # chamadas por ferramenta nesta mensagem
 
     @property
@@ -254,8 +258,25 @@ async def _comparar_regimes(args: CompararRegimesArgs, amb: Ambiente) -> dict[st
     return _json(await comparar_regimes(req, amb.motores))
 
 
-async def _listar_alertas(_: SemArgs, __: Ambiente) -> dict[str, Any]:
-    return {"indisponivel": INDISPONIVEL_E4}
+class ListarAlertasArgs(_Args):
+    abertos: bool = Field(default=True, description="true: só os alertas sem preço aplicado.")
+
+
+async def _listar_alertas(args: ListarAlertasArgs, amb: Ambiente) -> dict[str, Any]:
+    """Alertas da empresa do contexto (ou de todas, sem CNPJ no contexto), os mais recentes primeiro."""
+    if amb.repositorio is None:
+        return {"indisponivel": SEM_ESTADO}
+    cnpj = amb.contexto.cnpj if amb.contexto is not None else None
+    try:
+        lista = consultas.alertas(amb.repositorio, cnpj, args.abertos or None)
+    except consultas.NaoEncontrado as e:
+        raise FalhaFerramenta(e.mensagem) from None
+    # descricaoItem vem do cadastro; o texto da nota (xProd) não entra no resultado (dado não confiável).
+    return {
+        "total": len(lista),
+        "alertas": [_json(a, exclude={"premissas"}) for a in lista[:MAX_ALERTAS]],
+        "premissas": [_json(p) for p in (lista[0].premissas if lista else [])],
+    }
 
 
 FERRAMENTAS: dict[str, Ferramenta] = {
@@ -314,8 +335,9 @@ FERRAMENTAS: dict[str, Ferramenta] = {
         ),
         Ferramenta(
             "listar_alertas",
-            "Lista os alertas de margem gerados por notas de compra (disponível na E4).",
-            SemArgs,
+            "Lista os alertas de margem gerados pelas notas de compra importadas: item, margem antes e depois, "
+            "alvo, preço atual e sugerido e a nota de origem.",
+            ListarAlertasArgs,
             _listar_alertas,
         ),
     ]

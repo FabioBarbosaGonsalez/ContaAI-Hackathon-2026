@@ -1,0 +1,65 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<NFe xmlns="http://www.portalfiscal.inf.br/nfe">
+  <infNFe versao="4.00" Id="NFe00000000000000000000000000000000000000001003">
+    <ide>
+      <cUF>43</cUF>
+      <natOp>Venda de mercadoria</natOp>
+      <mod>55</mod>
+      <serie>1</serie>
+      <nNF>1003</nNF>
+      <dhEmi>2027-03-18T09:00:00-03:00</dhEmi>
+      <tpNF>1</tpNF>
+      <cMunFG>4314902</cMunFG>
+      <tpAmb>2</tpAmb>
+    </ide>
+    <emit>
+      <CNPJ>71604258000156</CNPJ>
+      <xNome>Atacado Exemplo Ltda (fictício)</xNome>
+      <CRT>3</CRT>
+    </emit>
+    <dest>
+      <CNPJ>36817420000113</CNPJ>
+      <xNome>Distribuidora Serra Azul ME (fictícia)</xNome>
+    </dest>
+    <det nItem="1">
+      <prod>
+        <cProd>AE-CHO-90</cProd>
+        <xProd>Chocolate não recheado, barra 90 g</xProd>
+        <NCM>18063210</NCM>
+        <uCom>UN</uCom>
+        <qCom>400</qCom>
+        <vUnCom>4.10</vUnCom>
+        <vProd>1640.00</vProd>
+      </prod>
+      <imposto />
+    </det>
+    <det nItem="2">
+      <prod>
+        <cProd>AE-REF-2L</cProd>
+        <xProd>Refrigerante de cola, garrafa 2 L</xProd>
+        <NCM>22021000</NCM>
+        <uCom>UN</uCom>
+        <qCom>240</qCom>
+        <vUnCom>6.20</vUnCom>
+        <vProd>1488.00</vProd>
+      </prod>
+      <imposto />
+    </det>
+    <det nItem="3">
+      <prod>
+        <cProd>AE-BIS-140</cProd>
+        <xProd>Biscoito doce, pacote 140 g</xProd>
+        <NCM>19059090</NCM>
+        <uCom>UN</uCom>
+        <qCom>100</qCom>
+        <vUnCom>3.10</vUnCom>
+        <vProd>310.00</vProd>
+      </prod>
+      <imposto />
+    </det>
+    <total />
+    <infAdic>
+      <infCpl>DOCUMENTO FICTICIO PARA DEMONSTRACAO - SEM VALOR FISCAL. Dados sinteticos do projeto ContaAI.</infCpl>
+    </infAdic>
+  </infNFe>
+</NFe>

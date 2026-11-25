@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
 from pydantic import AliasChoices, Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from app.dados_demo import PASTA_DEMO
 
 
 class Configuracao(BaseSettings):
@@ -14,9 +17,9 @@ class Configuracao(BaseSettings):
 
     modo: Literal["mock", "real"] = Field(
         default="mock",
-        description="mock: rotas respondem com app/mocks. real: rotas já implementadas calculam pelos motores "
-        "(E1: carrinho e preço-alvo; E2: busca de NCM, explicação, erros e chat; E3: comparação de regimes); as "
-        "demais respondem 501 até a sua etapa.",
+        description="mock: rotas respondem com app/mocks (as que mudam o estado respondem 501). real: as rotas "
+        "calculam pelos motores (E1: carrinho e preço-alvo; E2: busca de NCM, explicação, erros e chat; E3: "
+        "comparação de regimes; E4: NF-e, alertas, catálogo e painel, com o estado no SQLite).",
     )
     motor_rr_url: str = Field(
         default="http://127.0.0.1:8080/api", validation_alias=AliasChoices("CONTAAI_MOTOR_RR_URL", "MOTOR_RR_URL")
@@ -32,6 +35,11 @@ class Configuracao(BaseSettings):
     timeout_calculo_s: float = 20.0  # chamadas de cálculo (a primeira depois da subida é mais lenta)
     cache_motores_itens: int = 512  # respostas dos motores guardadas em memória (0 desliga)
     tamanho_max_nfe_bytes: int = 1_000_000
+    # Estado (E4, ADR 0008). Fora do git (.gitignore: .dados/ e *.db). No deploy, um volume do container.
+    banco_caminho: Path = Field(default=Path(__file__).resolve().parents[1] / ".dados" / "contaai.db")
+    semear_ao_subir: bool = True  # modo real com o banco vazio: carrega as sementes de data/demo na subida
+    # Pasta com sementes.json, as empresas e as notas. No container do deploy, a pasta montada ou copiada.
+    pasta_demo: Path = PASTA_DEMO
 
     # Agente (E2, ADR 0006). "roteiro" não usa IA nem chave: é o padrão gratuito e o dublê dos testes.
     llm_provedor: str = Field(default="roteiro", description="Nome registrado em app/agente/provedor.py.")
@@ -52,6 +60,13 @@ class Configuracao(BaseSettings):
     limite_geral_por_minuto: int = 120  # por IP, nas rotas que chamam os motores; 0 desliga
     # Uma busca de NCM nova faz até ~430 consultas ao motor (3 NCMs × ~144 classificações): limite próprio.
     limite_busca_por_minuto: int = 20  # por IP, em GET /busca/ncm; 0 desliga
+
+    @field_validator("banco_caminho", "pasta_demo", mode="before")
+    @classmethod
+    def caminho_do_banco(cls, valor: object) -> object:
+        if isinstance(valor, str) and not valor.strip():
+            raise ValueError("Caminho vazio: remova a linha do .env para usar o padrão.")
+        return valor
 
     @field_validator("llm_modelo", "llm_chave", "llm_url", "token_demo", mode="before")
     @classmethod

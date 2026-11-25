@@ -1,0 +1,94 @@
+{
+  "_aviso": "Dados fictícios para demonstração (princípio P10). Empresa, CNPJ (com dígito verificador propositalmente inválido), preços, margens e quantidades não representam empresas nem preços reais. Classificações, descrições de NCM e premissas trazem a fonte ao lado. Segunda empresa da carteira do contador (D1, ADR 0008).",
+  "empresa": {
+    "razaoSocial": "Mercearia Vale Verde ME (fictícia)",
+    "cnpj": "52918364000170",
+    "regimeAtual": "simples_tradicional",
+    "uf": "RS",
+    "municipio": 4314902,
+    "municipioNome": "Porto Alegre",
+    "simples": {
+      "anexo": "I",
+      "cAtivSN": "01",
+      "descricaoAtividade": "Revenda de mercadorias, venda de mercadorias industrializadas pelo contribuinte",
+      "fonte": "GET /calculadora/simples-nacional/atividades?data=2027-03-15&anexos=I&tpDoc=55 (motor SN 1.0.2)"
+    }
+  },
+  "cenario": {
+    "descricao": "Simulação de março de 2027",
+    "data": "2027-03-16",
+    "aliquotasNominais": {
+      "cbs": "8.8",
+      "ibsEstadual": "0.05",
+      "ibsMunicipal": "0.05",
+      "fonte": "Entradas do exemplo oficial (docs/exemplos.md da calculadora RR 1.7.2). Não são alíquotas oficiais (P6)."
+    },
+    "impostoSeletivoAdValorem": {
+      "valor": "10.0",
+      "fonte": "Entrada do exemplo oficial. O motor RR exige a alíquota do IS para NCM sujeita ao IS mesmo na revenda (erro REG-035: 'ainda não foi definida em lei'). Na revenda (cClassTrib do IS 200007) o valor do IS sai zero."
+    },
+    "premissasDas": {
+      "anexo": "I",
+      "pCBSSN": "1.1612",
+      "pIBSSN": "0.0129",
+      "fonte": "Valores de exemplo do esquema OpenAPI do motor SN 1.0.2 (AliquotasEfetivasInput). Não são alíquotas de nenhum contribuinte (P8)."
+    },
+    "cargaAtualPct": null,
+    "cargaAtualNota": "Carga atual informada pelo usuário, só para comparação. Fica vazia até alguém informar."
+  },
+  "catalogo": [
+    {
+      "id": "biscoito-pacote",
+      "descricao": "Biscoito doce, pacote 140 g",
+      "ncm": "19053100",
+      "ncmDescricaoOficial": "Bolachas e biscoitos, adicionados de edulcorantes",
+      "cst": "000",
+      "cClassTrib": "000001",
+      "classificacaoFonte": "Nenhuma classificação com redução específica do produto nos dados abertos (comparação com NCM de máquina 84381000, ADR 0003). Conferido no motor RR 1.7.2 em 2027-03-16: 200003 (Anexo I) e 200034 (Anexo VII) são recusadas com REG-011, e a NCM não é tributada pelo IS. Tributação integral.",
+      "impostoSeletivo": null,
+      "unidade": "UN",
+      "cnpjFornecedor": "71604258000156",
+      "codigoFornecedor": "AE-BIS-140",
+      "precoVenda": "4.69",
+      "margemAlvoPct": "20",
+      "papelNaDemo": "Alerta de margem na carteira do contador (nota 2 da Vale Verde)"
+    },
+    {
+      "id": "chocolate-barra",
+      "descricao": "Chocolate não recheado, barra 90 g",
+      "ncm": "18063210",
+      "ncmDescricaoOficial": "Chocolate e outras preparações alimentícias que contenham cacau - Não recheados - Chocolate",
+      "cst": "000",
+      "cClassTrib": "000001",
+      "classificacaoFonte": "Nenhuma classificação com redução específica do produto nos dados abertos (comparação com NCM de máquina 84381000); tributação integral.",
+      "impostoSeletivo": null,
+      "unidade": "UN",
+      "cnpjFornecedor": "71604258000156",
+      "codigoFornecedor": "AE-CHO-90",
+      "precoVenda": "6.29",
+      "margemAlvoPct": "20",
+      "papelNaDemo": "Alerta de margem na carteira do contador (nota 2 da Vale Verde)"
+    },
+    {
+      "id": "cerveja-lata",
+      "descricao": "Cerveja de malte, lata 350 ml",
+      "ncm": "22030000",
+      "ncmDescricaoOficial": "Cervejas de malte.",
+      "cst": "000",
+      "cClassTrib": "000001",
+      "classificacaoFonte": "Exemplo oficial (docs/exemplos.md); 000001 = tributação integral, com crédito para o adquirente (dados abertos).",
+      "impostoSeletivo": {
+        "cst": "200",
+        "cClassTrib": "200007",
+        "litrosPorUnidade": "0.35",
+        "motivo": "Revenda: o IS incide uma única vez sobre o bem (CF, art. 153, §6º, II, incluído pela EC 132/2023). Catálogo oficial do IS: 200007, 'Venda de bem ou serviço tributado pelo IS em operação anterior'."
+      },
+      "unidade": "UN",
+      "cnpjFornecedor": "71604258000156",
+      "codigoFornecedor": "AE-CRV-350",
+      "precoVenda": "3.99",
+      "margemAlvoPct": "15",
+      "papelNaDemo": "Item sem mudança de custo"
+    }
+  ]
+}

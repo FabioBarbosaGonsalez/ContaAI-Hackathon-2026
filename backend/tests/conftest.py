@@ -272,6 +272,16 @@ def motores_falsos() -> Iterator[MotoresFalsos]:
 
 
 @pytest.fixture(autouse=True)
+def banco_isolado(tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
+    """Cada teste usa um banco próprio numa pasta temporária: nunca o backend/.dados do desenvolvedor."""
+    caminho = tmp_path_factory.mktemp("estado") / "contaai.db"
+    monkeypatch.setenv("CONTAAI_BANCO_CAMINHO", str(caminho))
+    configuracao.cache_clear()
+    yield
+    configuracao.cache_clear()
+
+
+@pytest.fixture(autouse=True)
 def sem_limite_de_requisicoes(monkeypatch: pytest.MonkeyPatch) -> None:
     """Os limites por IP valem por processo; nos testes ficam desligados (test_seguranca liga de novo)."""
     monkeypatch.setattr(main, "LIMITE_CHAT", LimitadorPorIp(0))

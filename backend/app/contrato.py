@@ -9,6 +9,9 @@ Convenções:
   preço cobrado do cliente (CBS/IBS dentro do DAS); no híbrido, a CBS/IBS é cobrada por fora.
 - Nenhum valor de tributo é calculado pelo backend: todos vêm dos motores (P1). O backend só soma,
   subtrai e calcula margens e preços com as fórmulas do ADR 0003.
+- Datas e horas em ISO 8601, sempre com fuso (ADR 0003, revisado na E4). Instantes do sistema
+  (criadoEm, aplicadoEm) saem em UTC. Datas copiadas de um documento (dataEmissao da NF-e, a data dos
+  lançamentos de custo) saem como vieram, com o fuso da nota. A ordem é sempre a do instante.
 """
 
 from __future__ import annotations
@@ -351,8 +354,8 @@ class ClienteB2B(_Modelo):
 class RegimeCompararRequisicao(_Operacao):
     """Venda a um cliente do regime regular, comparada nos dois lados do Simples (plano 11.2, ADR 0007).
 
-    O crédito das compras vem de creditoCompraUnitario (grupo IBSCBS da NF-e; a leitura da nota é a
-    E4) ou, ausente, do motor RR sobre o custo. Por isso todo item precisa do custo.
+    O crédito das compras vem de creditoCompraUnitario (grupo IBSCBS da NF-e; desde a E4, o GET /catalogo
+    traz o da última nota de cada item) ou, ausente, do motor RR sobre o custo. Por isso todo item precisa do custo.
     """
 
     cliente: ClienteB2B
@@ -477,21 +480,29 @@ class Emitente(_Modelo):
 
 
 class NotaResumo(_Modelo):
+    serie: str | None = None
     numero: str
     dataEmissao: datetime
     emitente: Emitente
+    destinatario: Emitente | None = Field(default=None, description="A empresa cadastrada que recebeu a nota.")
+    homologacao: bool = Field(default=False, description="Nota de ambiente de homologação (tpAmb 2), como as da demo.")
     temGrupoIbsCbs: bool
 
 
 class ItemNotaCasado(_Modelo):
+    nItem: int | None = None
     itemId: str
     codigoFornecedor: str
     ncm: str
-    descricaoNota: str
+    descricaoNota: str = Field(description="xProd da nota: texto do fornecedor, tratado como dado não confiável.")
     quantidade: Decimal
     custoAnterior: Decimal | None
     custoNovo: Decimal
     variacaoPct: Porcentagem | None
+    atualizaCusto: bool = Field(
+        default=True,
+        description="Falso quando a nota é mais antiga que o custo atual: entra no histórico sem mudar o custo.",
+    )
     creditoCompraUnitario: Decimal | None
     fonteCredito: Literal["nfe", "motor"] | None
 
@@ -499,9 +510,11 @@ class ItemNotaCasado(_Modelo):
 class ItemNotaSemPar(_Modelo):
     """Item que não casou com o catálogo: vira pergunta ao usuário (plano 11.3)."""
 
+    nItem: int | None = None
     codigoFornecedor: str
     ncm: str
-    descricaoNota: str
+    descricaoNota: str = Field(description="xProd da nota: texto do fornecedor, tratado como dado não confiável.")
+    motivo: str | None = Field(default=None, description="Por que não casou (código sem cadastro, NCM ou unidade).")
 
 
 class OrigemAlerta(_Modelo):
@@ -511,21 +524,31 @@ class OrigemAlerta(_Modelo):
     emitente: str
 
 
-class Alerta(_Modelo):
+class Alerta(_Simulacao):
     id: str
+    cnpj: str | None = Field(default=None, description="Empresa do alerta (painel do contador, D1).")
     itemId: str
     descricaoItem: str
     regime: Regime
     margemAntesPct: Porcentagem
     margemDepoisPct: Porcentagem
     margemAlvoPct: Porcentagem
+    custoAnterior: Decimal | None = None
+    custoNovo: Decimal | None = None
     precoAtual: Decimal
-    precoSugerido: Decimal
+    precoSugerido: Decimal | None = Field(
+        description="Preço-alvo (POST /item/preco-alvo) com o custo novo. Vazio quando a margem-alvo é impossível."
+    )
+    motivoSemPreco: str | None = None
     origem: OrigemAlerta
     criadoEm: datetime
+    aplicadoEm: datetime | None = Field(default=None, description="Quando o preço sugerido foi aplicado.")
 
 
-class NfeImportarResposta(_Modelo):
+class NfeImportarResposta(_Simulacao):
+    jaImportada: bool = Field(
+        default=False, description="A mesma nota (mesmo arquivo) já tinha sido importada: nada foi gravado de novo."
+    )
     nota: NotaResumo
     itensCasados: list[ItemNotaCasado]
     itensSemPar: list[ItemNotaSemPar]
@@ -534,6 +557,74 @@ class NfeImportarResposta(_Modelo):
 
 class AlertasResposta(_Modelo):
     alertas: list[Alerta]
+
+
+class AplicarAlertaResposta(_Modelo):
+    """O preço sugerido virou o preço de venda do item (lançamento de preço com origem no alerta)."""
+
+    alerta: Alerta
+    precoAnterior: Decimal
+    precoNovo: Decimal
+
+
+# ---------------------------------------------------------------------------
+# GET /catalogo, GET /contador/painel e POST /demo/restaurar (E4, ADR 0008)
+
+
+class LancamentoCustoSaida(_Modelo):
+    data: datetime = Field(description="Emissão da nota de compra.")
+    notaNumero: str | None = None
+    custoUnitario: Decimal
+    creditoCompraUnitario: Decimal | None
+    fonteCredito: Literal["nfe", "motor"] | None
+
+
+class ItemCatalogoEstado(ItemBase):
+    """O item com o estado atual: preço de venda e custo vêm do último lançamento de cada um."""
+
+    ncmDescricaoOficial: str
+    classificacaoFonte: str
+    margemAlvoPct: Porcentagem
+    precoVenda: Decimal = Field(description="Preço de venda atual por unidade (vUnCom).")
+    custoAtual: LancamentoCustoSaida | None = Field(description="Último custo pela data da nota; vazio sem compra.")
+    historicoCusto: list[LancamentoCustoSaida] = Field(description="Do mais recente para o mais antigo (até 10).")
+
+
+class EmpresaResumo(_Modelo):
+    cnpj: str
+    razaoSocial: str
+    regimeAtual: Regime
+    uf: str
+    municipio: int
+    municipioNome: str
+    dataCenario: date
+
+
+class CatalogoResposta(_Modelo):
+    empresa: EmpresaResumo
+    itens: list[ItemCatalogoEstado]
+    aviso: str = Field(description="Dados fictícios de demonstração (P10).")
+
+
+class EmpresaNoPainel(_Modelo):
+    empresa: EmpresaResumo
+    alertasAbertos: int
+    alertasAplicados: int
+    ultimaNota: datetime | None
+    alertaMaisRecente: Alerta | None
+
+
+class PainelContadorResposta(_Modelo):
+    """Painel do contador (D1): as empresas da carteira, a que tem mais alertas abertos primeiro."""
+
+    empresas: list[EmpresaNoPainel]
+    aviso: str
+
+
+class RestaurarResposta(_Modelo):
+    empresas: int
+    notasImportadas: list[str] = Field(description="Número de cada nota inicial importada.")
+    alertas: int
 
 
 # ---------------------------------------------------------------------------
@@ -629,6 +720,9 @@ class ContextoChat(_Operacao):
 
     regime: Regime
     itens: list[ItemEntrada] = Field(default=[], max_length=200)
+    cnpj: str | None = Field(
+        default=None, pattern=r"^\d{14}$", description="Empresa da tela: os alertas do chat são os dela (E4)."
+    )
 
     @model_validator(mode="after")
     def validar_contexto(self) -> ContextoChat:

@@ -12,11 +12,13 @@ from pathlib import Path
 import httpx
 import pytest
 
-from app.dados_demo import PASTA_DEMO, carregar_cliente_b2b, carregar_distribuidora
+from app.dados_demo import PASTA_DEMO, Distribuidora, carregar_cliente_b2b, carregar_distribuidora
 
 NFE = "http://www.portalfiscal.inf.br/nfe"
 NS = {"n": NFE}
-NOTAS = sorted((PASTA_DEMO / "notas").glob("*.xml"))
+NOTAS = sorted((PASTA_DEMO / "notas").glob("nfe-compra-*.xml"))  # as duas compras da Serra Azul
+TODAS_AS_NOTAS = sorted(PASTA_DEMO.rglob("*.xml"))  # inclui o item sem par e a carteira do contador (E4)
+EMPRESAS = [PASTA_DEMO / "distribuidora.json", *sorted((PASTA_DEMO / "carteira").glob("*.json"))]
 BACKEND = Path(__file__).resolve().parents[1]
 MOTOR_RR_URL = os.environ.get("MOTOR_RR_URL", "http://127.0.0.1:8080/api")
 
@@ -51,8 +53,9 @@ def test_dados_validam_no_modelo_e_sao_coerentes() -> None:
 
 
 def test_cnpjs_sao_propositalmente_invalidos() -> None:
-    cnpjs = [carregar_distribuidora().empresa.cnpj, carregar_cliente_b2b().cliente.cnpj]
-    for caminho in NOTAS:
+    cnpjs = [carregar_cliente_b2b().cliente.cnpj]
+    cnpjs += [Distribuidora.model_validate_json(p.read_text(encoding="utf-8")).empresa.cnpj for p in EMPRESAS]
+    for caminho in TODAS_AS_NOTAS:
         inf = infnfe(caminho)
         cnpjs += [inf.findtext("n:emit/n:CNPJ", namespaces=NS), inf.findtext("n:dest/n:CNPJ", namespaces=NS)]
     for cnpj in cnpjs:
@@ -101,7 +104,7 @@ def test_cerveja_sobe_de_custo_na_nota_2_e_usa_o_is_da_revenda() -> None:
 
 
 def test_notas_sao_marcadas_como_ficticias() -> None:
-    for caminho in NOTAS:
+    for caminho in TODAS_AS_NOTAS:
         inf = infnfe(caminho)
         assert inf.findtext("n:ide/n:tpAmb", namespaces=NS) == "2"  # homologação
         assert "SEM VALOR FISCAL" in inf.findtext("n:infAdic/n:infCpl", namespaces=NS)
@@ -132,5 +135,32 @@ def test_notas_sao_reproduziveis_pelo_motor(tmp_path: Path) -> None:
     subprocess.run(
         [sys.executable, "scripts/gerar_notas_demo.py"], cwd=BACKEND, env=env, check=True, capture_output=True
     )
-    for caminho in NOTAS:
-        assert (tmp_path / caminho.name).read_bytes() == caminho.read_bytes(), caminho.name
+    for caminho in TODAS_AS_NOTAS:
+        relativo = caminho.relative_to(PASTA_DEMO)
+        assert (tmp_path / relativo).read_bytes() == caminho.read_bytes(), str(relativo)
+
+
+def test_carteira_do_contador_usa_so_itens_ja_verificados() -> None:
+    """D1 (ADR 0008): as empresas novas reaproveitam a classificação e as fontes dos itens da Serra Azul."""
+    base = {i.id: i for i in carregar_distribuidora().catalogo}
+    cnpjs = set()
+    for caminho in EMPRESAS:
+        empresa = Distribuidora.model_validate_json(caminho.read_text(encoding="utf-8"))
+        cnpjs.add(empresa.empresa.cnpj)
+        assert "fictíc" in empresa.aviso
+        for item in empresa.catalogo:
+            original = base[item.id]
+            campos = {"ncm", "cst", "cClassTrib", "classificacaoFonte", "impostoSeletivo", "codigoFornecedor"}
+            assert item.model_dump(include=campos) == original.model_dump(include=campos), item.id
+    assert len(cnpjs) == 3
+
+
+def test_sementes_apontam_para_arquivos_existentes() -> None:
+    from app.persistencia.sementes import carregar_manifesto
+
+    manifesto = carregar_manifesto()
+    for nome in [*manifesto.empresas, *manifesto.notasIniciais]:
+        assert (PASTA_DEMO / nome).is_file(), nome
+    # A nota 2 e a do item sem par ficam de fora para a demonstração ao vivo e para a banca.
+    assert "notas/nfe-compra-2.xml" not in manifesto.notasIniciais
+    assert "notas/nfe-item-sem-par.xml" not in manifesto.notasIniciais

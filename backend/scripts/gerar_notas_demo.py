@@ -1,11 +1,14 @@
-"""Gera as NF-e de compra fictícias de data/demo/notas/ (E0-06).
+"""Gera as NF-e de compra fictícias de data/demo/ (E0-06; carteira e item sem par na E4, ADR 0008).
 
-- nfe-compra-1.xml (2027-03-02): sem grupo IBSCBS. Exercita o caminho em que o crédito
+- notas/nfe-compra-1.xml (2027-03-02): sem grupo IBSCBS. Exercita o caminho em que o crédito
   das compras é calculado pelo motor sobre o custo (plano, E3).
-- nfe-compra-2.xml (2027-03-16): a cerveja sobe de custo. Os grupos IS e IBSCBS de cada
+- notas/nfe-compra-2.xml (2027-03-16): a cerveja sobe de custo. Os grupos IS e IBSCBS de cada
   item e os totais são gerados pelo próprio motor RR (POST /calculadora/regime-geral e
   POST /calculadora/xml/generate?tipo=nfe) e validados no XSD oficial
   (POST /calculadora/xml/validate?tipo=nfe&subtipo=grupo) antes de gravar.
+- notas/nfe-item-sem-par.xml (2027-03-18): um item que casa, um código sem cadastro e um código
+  com NCM diferente da do cadastro, para testar os itens sem par (plano, seção 16).
+- carteira/notas/*.xml: notas das outras duas empresas da carteira do contador (D1), com grupos.
 
 As notas seguem a ordem do leiaute oficial da NF-e 4.00 nos elementos incluídos, mas NÃO são
 documentos fiscais válidos: não têm assinatura digital nem todos os campos obrigatórios, são de
@@ -28,7 +31,7 @@ from pathlib import Path
 import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from app.dados_demo import PASTA_DEMO, Distribuidora, carregar_distribuidora  # noqa: E402
+from app.dados_demo import PASTA_DEMO, Distribuidora  # noqa: E402
 from app.motores.requisicoes import AliquotasPremissa, Linha, operacao_rr  # noqa: E402
 
 MOTOR_RR_URL = os.environ.get("MOTOR_RR_URL", "http://127.0.0.1:8080/api")
@@ -37,10 +40,12 @@ ET.register_namespace("", NS)
 
 FORNECEDOR = {"cnpj": "71604258000156", "xNome": "Atacado Exemplo Ltda (fictício)", "CRT": "3"}
 
-# (código do fornecedor, item do catálogo, quantidade, valor unitário) — valores fictícios
+# (código do fornecedor, item do catálogo, quantidade, valor unitário) — valores fictícios.
+# Item fora do catálogo: (código, None, quantidade, valor unitário, xProd, NCM, unidade).
 NOTAS = [
     {
-        "arquivo": "nfe-compra-1.xml",
+        "empresa": "distribuidora.json",
+        "arquivo": "notas/nfe-compra-1.xml",
         "nNF": "1001",
         "dhEmi": "2027-03-02T09:00:00-03:00",
         "grupoTributacao": False,
@@ -53,7 +58,8 @@ NOTAS = [
         ],
     },
     {
-        "arquivo": "nfe-compra-2.xml",
+        "empresa": "distribuidora.json",
+        "arquivo": "notas/nfe-compra-2.xml",
         "nNF": "1002",
         "dhEmi": "2027-03-16T09:00:00-03:00",
         "grupoTributacao": True,
@@ -63,7 +69,58 @@ NOTAS = [
             ("AE-BIS-140", "biscoito-pacote", "2600", "3.10"),
         ],
     },
+    {
+        "empresa": "distribuidora.json",
+        "arquivo": "notas/nfe-item-sem-par.xml",
+        "nNF": "1003",
+        "dhEmi": "2027-03-18T09:00:00-03:00",
+        "grupoTributacao": False,
+        "itens": [
+            ("AE-CHO-90", "chocolate-barra", "400", "4.10"),
+            # NCM 22021000 e 19059090 existem no índice oficial do motor RR 1.7.2 (banco V0073).
+            ("AE-REF-2L", None, "240", "6.20", "Refrigerante de cola, garrafa 2 L", "22021000", "UN"),
+            ("AE-BIS-140", None, "100", "3.10", "Biscoito doce, pacote 140 g", "19059090", "UN"),
+        ],
+    },
+    {
+        "empresa": "carteira/vale-verde.json",
+        "arquivo": "carteira/notas/nfe-vale-verde-1.xml",
+        "nNF": "2001",
+        "dhEmi": "2027-03-04T10:00:00-03:00",
+        "grupoTributacao": True,
+        "itens": [
+            ("AE-BIS-140", "biscoito-pacote", "1200", "3.10"),
+            ("AE-CHO-90", "chocolate-barra", "400", "4.10"),
+            ("AE-CRV-350", "cerveja-lata", "720", "2.60"),
+        ],
+    },
+    {
+        "empresa": "carteira/vale-verde.json",
+        "arquivo": "carteira/notas/nfe-vale-verde-2.xml",
+        "nNF": "2002",
+        "dhEmi": "2027-03-15T10:00:00-03:00",
+        "grupoTributacao": True,
+        "itens": [
+            ("AE-BIS-140", "biscoito-pacote", "1200", "3.70"),
+            ("AE-CHO-90", "chocolate-barra", "400", "4.90"),
+        ],
+    },
+    {
+        "empresa": "carteira/lagoa.json",
+        "arquivo": "carteira/notas/nfe-lagoa-1.xml",
+        "nNF": "3001",
+        "dhEmi": "2027-03-05T11:00:00-03:00",
+        "grupoTributacao": True,
+        "itens": [
+            ("AE-CHO-90", "chocolate-barra", "300", "4.10"),
+            ("AE-ARZ-5", "arroz-5kg", "200", "21.50"),
+        ],
+    },
 ]
+
+
+def carregar_empresa(nome: str) -> Distribuidora:
+    return Distribuidora.model_validate_json((PASTA_DEMO / nome).read_text(encoding="utf-8"))
 
 
 def q(tag: str) -> str:
@@ -98,7 +155,8 @@ def grupo_do_motor(cli: httpx.Client, demo: Distribuidora, nota: dict) -> ET.Ele
         impostoSeletivoAdValorem=demo.cenario.impostoSeletivoAdValorem.valor,
     )
     linhas = [
-        Linha(demo.item(item_id), Decimal(qtd), Decimal(qtd) * Decimal(vun)) for _, item_id, qtd, vun in nota["itens"]
+        Linha(demo.item(item_id), Decimal(qtd), Decimal(qtd) * Decimal(vun))
+        for _, item_id, qtd, vun, *_ in nota["itens"]
     ]
     operacao = operacao_rr(
         linhas, date.fromisoformat(nota["dhEmi"][:10]), demo.empresa.uf, demo.empresa.municipio, aliquotas
@@ -136,14 +194,18 @@ def montar_nota(cli: httpx.Client, demo: Distribuidora, nota: dict, cuf: str) ->
     sub(dest, "xNome", demo.empresa.razaoSocial)
 
     grupo = grupo_do_motor(cli, demo, nota) if nota["grupoTributacao"] else None
-    for numero, (cprod, item_id, qtd, vun) in enumerate(nota["itens"], start=1):
-        cat = demo.item(item_id)
+    for numero, (cprod, item_id, qtd, vun, *fora) in enumerate(nota["itens"], start=1):
+        if item_id is None:
+            descricao, ncm, unidade = fora
+        else:
+            cat = demo.item(item_id)
+            descricao, ncm, unidade = cat.descricao, cat.ncm, cat.unidade
         det = sub(inf, "det", nItem=str(numero))
         prod = sub(det, "prod")
         sub(prod, "cProd", cprod)
-        sub(prod, "xProd", cat.descricao)
-        sub(prod, "NCM", cat.ncm)
-        sub(prod, "uCom", cat.unidade)
+        sub(prod, "xProd", descricao)
+        sub(prod, "NCM", ncm)
+        sub(prod, "uCom", unidade)
         sub(prod, "qCom", qtd)
         sub(prod, "vUnCom", vun)
         sub(prod, "vProd", f"{Decimal(qtd) * Decimal(vun):.2f}")
@@ -188,14 +250,14 @@ def validar_grupos(cli: httpx.Client, arvore: ET.ElementTree) -> None:
 
 
 def main() -> None:
-    demo = carregar_distribuidora()
     # CONTAAI_SAIDA_NOTAS permite gravar em outra pasta (o teste de reprodutibilidade usa isso).
-    destino = Path(os.environ.get("CONTAAI_SAIDA_NOTAS") or PASTA_DEMO / "notas")
-    destino.mkdir(exist_ok=True)
+    destino = Path(os.environ.get("CONTAAI_SAIDA_NOTAS") or PASTA_DEMO)
     with httpx.Client(timeout=30) as cli:
-        cuf = codigo_uf(cli, demo.empresa.uf)
         for nota in NOTAS:
+            demo = carregar_empresa(nota["empresa"])
+            cuf = codigo_uf(cli, demo.empresa.uf)
             arvore = montar_nota(cli, demo, nota, cuf)
+            (destino / nota["arquivo"]).parent.mkdir(parents=True, exist_ok=True)
             if nota["grupoTributacao"]:
                 validar_grupos(cli, arvore)
             # Bytes, não texto: no Windows o modo texto grava CRLF e o repositório guarda LF (.gitattributes).

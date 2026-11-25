@@ -181,9 +181,10 @@ def test_comparar_regimes_sem_das_explica_sem_numero(motores_falsos) -> None:
     assert "R$" not in r.resposta and "contador" in r.resposta
 
 
-def test_alertas_ainda_indisponiveis_sem_numero(motores_falsos) -> None:
+def test_alertas_sem_nota_importada_respondem_sem_numero(motores_falsos) -> None:
     r = perguntar("O que mudou este mês?", contexto())
-    assert r.ferramentasChamadas == ["listar_alertas"] and "E4" in r.resposta
+    assert r.ferramentasChamadas == ["listar_alertas"] and "Nenhum alerta" in r.resposta
+    assert "R$" not in r.resposta and "%" not in r.resposta
 
 
 # ---------------------------------------------------------------------------
