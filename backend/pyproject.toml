@@ -16,6 +16,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    "httpx2>=2.16",
     "pytest>=8.2",
     "ruff>=0.6",
 ]
@@ -29,6 +30,9 @@ packages = ["app"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# A pasta backend/ no caminho de importação: os testes importam app.* e tests.apoio_* sem depender
+# da instalação editável.
+pythonpath = ["."]
 # Os testes "golden" falam com os motores rodando (docker compose up). Ficam fora do
 # pytest padrão (e do CI) e rodam com: make golden  ou  uv run pytest -m golden
 # Os testes "llm" chamam o provedor de IA de verdade e gastam crédito: uv run pytest -m llm

@@ -5,6 +5,9 @@ chamados aqui com os dados de demonstração (data/demo). Margens, preço-alvo e
 usam as fórmulas do ADR 0003 sobre esses valores, só com soma, subtração e divisão (P1).
 
 É a implementação de referência que as etapas E1 a E4 substituem pelo código de produção, com testes.
+Carrinho, preço-alvo, explicação, chat e comparação de regimes já saem do código de produção (E1 a E3,
+ADR 0007). O carrinho e o preço-alvo de referência continuam aqui como conferência: se a produção
+divergir deles, nenhum mock é gravado. NF-e e alertas seguem na referência até a E4.
 
 Uso (motores de pé): cd backend && uv run python scripts/gerar_mocks.py
 """
@@ -28,6 +31,7 @@ from app.contrato import (  # noqa: E402
     AVISO_LEGAL,
     Alerta,
     AlertasResposta,
+    AliquotasNominais,
     BuscaNcmResposta,
     CandidatoNcm,
     CarrinhoResposta,
@@ -38,17 +42,19 @@ from app.contrato import (  # noqa: E402
     ErroDescricao,
     ExplicarResposta,
     Fundamentacao,
+    ImpostoSeletivoEntrada,
     ItemCalculado,
+    ItemEntrada,
     ItemNotaCasado,
-    LadoHibrido,
-    LadoTradicional,
     Motor,
     NfeImportarResposta,
     NotaResumo,
     OrigemAlerta,
     PrecoAlvoResposta,
     Premissa,
+    PremissasDas,
     Regime,
+    RegimeCompararRequisicao,
     RegimeCompararResposta,
     Totais,
     Tributos,
@@ -433,70 +439,148 @@ def preco_alvo(
 
 
 # ---------------------------------------------------------------------------
-# POST /regime/comparar (mesmo preço total ao cliente nos dois regimes)
+# POST /regime/comparar: código de produção (app/regime/comparar.py, E3) com a venda mensal ao cliente B2B
 
 
-def regime_comparar(motores: Motores, custos: dict[str, Custo]) -> RegimeCompararResposta:
-    venda = [(DEMO.item(i.itemId), i.quantidade) for i in CLIENTE.compraMensal.itens]
-    valores = [(qtd * cat.precoVenda).quantize(C2) for cat, qtd in venda]
-    total = sum(valores, Decimal("0.00"))
+def operacao_demo() -> dict[str, Any]:
+    """Data, local e premissas do cenário de demonstração, rotuladas como no GET /explicar da demo."""
+    return {
+        "data": CEN.data,
+        "uf": EMP.uf,
+        "municipio": EMP.municipio,
+        "aliquotasNominais": AliquotasNominais(
+            cbs=CEN.aliquotasNominais.cbs,
+            ibsEstadual=CEN.aliquotasNominais.ibsEstadual,
+            ibsMunicipal=CEN.aliquotasNominais.ibsMunicipal,
+            impostoSeletivoAdValorem=CEN.impostoSeletivoAdValorem.valor,
+            fonte="Cenário de demonstração (data/demo): entradas do exemplo oficial da calculadora RR",
+        ),
+        "premissasDas": PremissasDas(
+            anexo=CEN.premissasDas.anexo,
+            cAtivSN=EMP.simples.cAtivSN,
+            pCBSSN=CEN.premissasDas.pCBSSN,
+            pIBSSN=CEN.premissasDas.pIBSSN,
+            fonte="Cenário de demonstração (data/demo): valores de exemplo do esquema do motor SN",
+        ),
+    }
 
-    trad = motores.sn([Linha(cat, qtd, v) for (cat, qtd), v in zip(venda, valores, strict=True)], CEN.data)
-    tributo_trad = sum((lei.tributo_cbs_ibs() for lei in trad), Decimal("0.00"))
 
-    def debitos(bases: list[Decimal]) -> list[Decimal]:
-        leis = motores.rr([Linha(cat, qtd, b) for (cat, qtd), b in zip(venda, bases, strict=True)], CEN.data)
-        return [lei.tributo_cbs_ibs() + (lei.tributos.impostoSeletivo or Decimal(0)) for lei in leis]
-
-    d1, d2 = debitos(valores), debitos([2 * v for v in valores])
-    bases = []
-    for v, t1, t2 in zip(valores, d1, d2, strict=True):
-        beta = (t2 - t1) / v
-        alfa = t1 - beta * v
-        bases.append(((v - alfa) / (1 + beta)).quantize(C2, ROUND_HALF_UP))  # b + T(b) = preço total
-    d_final = debitos(bases)
-    debito = sum(d_final, Decimal("0.00"))
-    preco_hib = sum(bases, Decimal("0.00")) + debito
-    credito_compras = sum(
-        ((qtd * custos[cat.id].creditoUnitario).quantize(C2, ROUND_HALF_UP) for cat, qtd in venda), Decimal("0.00")
+def item_demo(cat: ItemCatalogo, quantidade: Decimal, custo: Custo | None) -> ItemEntrada:
+    """Item do catálogo com o custo da nota. O crédito por unidade só vai quando a nota trouxe o grupo
+    IBSCBS (fonte "nfe"); sem o grupo, a produção calcula no motor RR sobre o custo, como faria sem a nota."""
+    return ItemEntrada(
+        id=cat.id,
+        descricao=cat.descricao,
+        ncm=cat.ncm,
+        cst=cat.cst,
+        cClassTrib=cat.cClassTrib,
+        impostoSeletivo=ImpostoSeletivoEntrada(
+            cst=cat.impostoSeletivo.cst,
+            cClassTrib=cat.impostoSeletivo.cClassTrib,
+            litrosPorUnidade=cat.impostoSeletivo.litrosPorUnidade,
+        )
+        if cat.impostoSeletivo
+        else None,
+        unidade=cat.unidade,
+        quantidade=quantidade,
+        valorUnitario=cat.precoVenda,
+        custoUnitario=custo.custoUnitario if custo else None,
+        creditoCompraUnitario=custo.creditoUnitario if custo and custo.fonte == "nfe" else None,
     )
-    tributo_liquido = debito - credito_compras
-    return RegimeCompararResposta(
-        criterio="mesmo_preco_total_ao_cliente",
+
+
+def requisicao_comparar_demo(custos: dict[str, Custo]) -> RegimeCompararRequisicao:
+    """A compra mensal do cliente B2B (data/demo) aos preços do catálogo e com o custo da última nota."""
+    return RegimeCompararRequisicao(
+        **operacao_demo(),
         cliente=ClienteB2B(nome=CLIENTE.cliente.razaoSocial, regime="regime_regular"),
-        valorVenda=total,
-        tradicional=LadoTradicional(
-            precoCliente=total,
-            tributo=tributo_trad,
-            creditoCliente=tributo_trad,
-            custoLiquidoCliente=total - tributo_trad,
-        ),
-        hibrido=LadoHibrido(
-            precoCliente=preco_hib,
-            valorProdutos=sum(bases, Decimal("0.00")),
-            debito=debito,
-            creditoCompras=credito_compras,
-            tributoLiquido=tributo_liquido,
-            creditoCliente=debito,
-            custoLiquidoCliente=preco_hib - debito,
-        ),
-        diferencaCaixa=tributo_trad - tributo_liquido,
-        fonteTradicional="motor",
-        simplificacoes=[
-            "O restante do DAS (IRPJ, CSLL, CPP etc.) é tratado como igual nos dois regimes; só a parcela de CBS/IBS muda (plano, 11.2).",
-            "Mesmo preço total ao cliente nos dois regimes: no híbrido, a base é o valor que somado à CBS/IBS dá esse "
-            "preço (pode diferir em centavos pelo arredondamento ao centavo de cada linha).",
-            "Crédito das compras proporcional às quantidades vendidas, pelo crédito por unidade da última nota de cada item.",
-            "No Simples tradicional o crédito das compras não é aproveitado (LC 214/2025, art. 47, §9º, I).",
-            "No Simples tradicional o arroz paga as alíquotas efetivas do anexo, sem a redução da cesta básica "
-            "(premissa da equipe; validar com o contador). O resultado da comparação depende dela.",
-            "ICMS fora das contas.",
-        ],
-        simulado=True,
-        avisoSimulacao=f"{aviso_simulacao(Regime.SIMPLES_HIBRIDO)} e alíquotas efetivas do Simples assumidas",
-        premissas=premissas(Regime.SIMPLES_TRADICIONAL),
-        versoes=versoes(motores.headers_rr, motores.headers_sn),
+        itens=[item_demo(DEMO.item(c.itemId), c.quantidade, custos[c.itemId]) for c in CLIENTE.compraMensal.itens],
     )
+
+
+def regime_comparar(custos: dict[str, Custo]) -> RegimeCompararResposta:
+    import asyncio
+
+    from app.motores.cliente import ClienteMotores
+    from app.regime.comparar import comparar_regimes
+
+    async def rodar() -> RegimeCompararResposta:
+        async with httpx.AsyncClient(timeout=60, trust_env=False) as http:
+            motores = ClienteMotores(http, MOTOR_RR_URL, MOTOR_SN_URL)
+            return await comparar_regimes(requisicao_comparar_demo(custos), motores)
+
+    return asyncio.run(rodar())
+
+
+# Carrinho, preço-alvo e explicação: código de produção (E1 e E2), conferido contra a referência acima
+
+
+CAMPOS_CARRINHO = {"id", "estado", "tributos", "reducaoPct", "aliquotaEfetiva", "valorProdutos", "precoCliente"}
+CAMPOS_CARRINHO |= {"custoEfetivo", "margemPct", "memoria", "erros"}
+CAMPOS_PRECO_ALVO = {"valorUnitario", "precoCliente", "tributosUnitarios", "custoEfetivoUnitario", "margemObtidaPct"}
+CAMPOS_PRECO_ALVO |= {"chamadas", "metodo", "loteReferencia", "memoria"}
+
+
+class Divergencia(Exception):
+    """A produção não bate com a implementação de referência: nenhum mock é gravado."""
+
+
+def producao(
+    custos: dict[str, Custo],
+    referencia_carrinho: dict[Regime, CarrinhoResposta],
+    referencia_preco: dict[Regime, PrecoAlvoResposta],
+) -> tuple[dict[str, CarrinhoResposta], dict[str, PrecoAlvoResposta], dict[str, dict[str, ExplicarResposta]]]:
+    import asyncio
+
+    from app.contrato import CarrinhoRequisicao, ItemBase, PrecoAlvoRequisicao
+    from app.explicacao import explicar_item
+    from app.main import requisicao_demo
+    from app.motores.cliente import ClienteMotores
+    from app.motores.dados_abertos import DadosAbertos
+    from app.precificacao.carrinho import calcular_carrinho
+    from app.precificacao.preco_alvo import calcular_preco_alvo
+
+    cerveja = DEMO.item("cerveja-lata")
+
+    async def rodar() -> tuple[dict, dict, dict]:
+        async with httpx.AsyncClient(timeout=60, trust_env=False) as http:
+            motores = ClienteMotores(http, MOTOR_RR_URL, MOTOR_SN_URL)
+            da = DadosAbertos(http, MOTOR_RR_URL, MOTOR_SN_URL)
+            car, preco, expl = {}, {}, {}
+            for regime in Regime:
+                req = CarrinhoRequisicao(
+                    **operacao_demo(),
+                    regime=regime,
+                    itens=[item_demo(c, LOTE, custos.get(c.id)) for c in DEMO.catalogo],
+                )
+                car[regime] = await calcular_carrinho(req, motores)
+                item = item_demo(cerveja, LOTE, custos[cerveja.id])
+                preco[regime] = await calcular_preco_alvo(
+                    PrecoAlvoRequisicao(
+                        **operacao_demo(),
+                        regime=regime,
+                        item=ItemBase.model_validate(item.model_dump(include=set(ItemBase.model_fields))),
+                        custoUnitario=item.custoUnitario,
+                        creditoCompraUnitario=item.creditoCompraUnitario,
+                        margemAlvoPct=cerveja.margemAlvoPct,
+                    ),
+                    motores,
+                )
+            for cat in DEMO.catalogo:
+                expl[cat.id] = {r.value: await explicar_item(requisicao_demo(cat.id, r), motores, da) for r in Regime}
+            return car, preco, expl
+
+    car, preco, expl = asyncio.run(rodar())
+    for regime in Regime:
+        for real, ref in zip(car[regime].itens, referencia_carrinho[regime].itens, strict=True):
+            if real.model_dump(include=CAMPOS_CARRINHO) != ref.model_dump(include=CAMPOS_CARRINHO):
+                raise Divergencia(f"carrinho {regime.value}, item {real.id}")
+        if car[regime].totais != referencia_carrinho[regime].totais:
+            raise Divergencia(f"totais do carrinho {regime.value}")
+        real_p = preco[regime].model_dump(include=CAMPOS_PRECO_ALVO)
+        if real_p != referencia_preco[regime].model_dump(include=CAMPOS_PRECO_ALVO):
+            raise Divergencia(f"preço-alvo {regime.value}")
+    return {r.value: c for r, c in car.items()}, {r.value: p for r, p in preco.items()}, expl
 
 
 # ---------------------------------------------------------------------------
@@ -742,28 +826,24 @@ def main() -> None:
             antes_ultima.update(custos)
 
         car_trad, leit_trad = carrinho(motores, Regime.SIMPLES_TRADICIONAL, atuais)
-        car_hib, leit_hib = carrinho(motores, Regime.SIMPLES_HIBRIDO, atuais)
-        cerveja = DEMO.item("cerveja-lata")
+        car_hib, _ = carrinho(motores, Regime.SIMPLES_HIBRIDO, atuais)
         importacao = importar(motores, notas[-1], antes_ultima, custos_por_nota[-1], leit_trad)
         busca = busca_ncm(motores)
 
+        cerveja = DEMO.item("cerveja-lata")
+        ref_preco = {r: preco_alvo(motores, r, cerveja, atuais[cerveja.id], cerveja.margemAlvoPct) for r in Regime}
+        car, preco, expl = producao(
+            atuais, {Regime.SIMPLES_TRADICIONAL: car_trad, Regime.SIMPLES_HIBRIDO: car_hib}, ref_preco
+        )
+
         print("Mocks gravados em backend/app/mocks/:")
-        gravar(
-            "carrinho.json",
-            {r.value: c for r, c in ((Regime.SIMPLES_TRADICIONAL, car_trad), (Regime.SIMPLES_HIBRIDO, car_hib))},
-        )
-        gravar(
-            "preco-alvo.json",
-            {r.value: preco_alvo(motores, r, cerveja, atuais[cerveja.id], cerveja.margemAlvoPct) for r in Regime},
-        )
-        gravar("regime-comparar.json", regime_comparar(motores, atuais))
+        gravar("carrinho.json", car)
+        gravar("preco-alvo.json", preco)
+        gravar("regime-comparar.json", regime_comparar(atuais))
         gravar("nfe-importar.json", importacao)
         gravar("alertas.json", AlertasResposta(alertas=importacao.alertas))
         gravar("busca-ncm.json", busca)
-        gravar(
-            "explicar.json",
-            explicar(motores, {Regime.SIMPLES_TRADICIONAL: leit_trad, Regime.SIMPLES_HIBRIDO: leit_hib}),
-        )
+        gravar("explicar.json", expl)
         gravar("erros.json", erros(motores))
         gravar("chat.json", chat())
 

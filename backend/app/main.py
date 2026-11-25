@@ -3,7 +3,7 @@
 Modo mock (CONTAAI_MODO=mock, padrão): as rotas seguem o contrato (app/contrato.py) e respondem com
 os mocks gerados a partir dos motores oficiais, com o header X-ContaAI-Mock: 1.
 Modo real: as rotas já implementadas calculam pelos motores (E1: carrinho e preço-alvo; E2: busca de
-NCM, explicação, erros e chat); as demais respondem 501 até a sua etapa, para nunca devolver número
+NCM, explicação, erros e chat; E3: comparação de regimes); as demais respondem 501 até a sua etapa, para nunca devolver número
 de mock como se fosse cálculo. GET /saude e GET /cenarios/presets são iguais nos dois modos.
 
 Rodar: cd backend && uv run uvicorn app.main:app --reload   (documentação em /docs)
@@ -65,6 +65,7 @@ from app.motores.cliente import ClienteMotores, FalhaMotor, MotorIndisponivel, O
 from app.motores.dados_abertos import CacheConsultas, DadosAbertos
 from app.precificacao.carrinho import calcular_carrinho
 from app.precificacao.preco_alvo import CalculoRecusado, calcular_preco_alvo
+from app.regime.comparar import comparar_regimes
 from app.seguranca import LimitadorPorIp, token_confere
 
 app = FastAPI(
@@ -109,7 +110,15 @@ async def limitar_upload_nfe(request: Request, call_next: Callable[[Request], Aw
 
 
 # Rotas que chamam os motores (ou o provedor de IA) e por isso têm limite por IP (ADR 0006).
-ROTAS_LIMITADAS = ("/carrinho/calcular", "/item/preco-alvo", "/busca/ncm", "/explicar", "/erros/", "/chat")
+ROTAS_LIMITADAS = (
+    "/carrinho/calcular",
+    "/item/preco-alvo",
+    "/regime/comparar",
+    "/busca/ncm",
+    "/explicar",
+    "/erros/",
+    "/chat",
+)
 LIMITE_CHAT = LimitadorPorIp(configuracao().limite_chat_por_minuto)
 LIMITE_GERAL = LimitadorPorIp(configuracao().limite_geral_por_minuto)
 LIMITE_BUSCA = LimitadorPorIp(configuracao().limite_busca_por_minuto)
@@ -250,9 +259,26 @@ def cenarios_presets() -> PresetsResposta:
     return presets()
 
 
-@app.post("/regime/comparar", response_model=RegimeCompararResposta, tags=["cálculo"])
-def regime_comparar(req: RegimeCompararRequisicao, m: Mock) -> RegimeCompararResposta:
-    return m.regime_comparar
+RESPOSTAS_COMPARAR: dict[int | str, dict[str, Any]] = {
+    **RESPOSTAS_MOTOR,
+    422: {
+        "model": RecusaCalculo | FalhaMotorResposta,
+        "description": "Sem comparação possível (RecusaCalculo: item que um dos motores não calcula ou base do "
+        "híbrido que não fecha) ou recusa do motor (FalhaMotorResposta). A validação de entrada (data antes de "
+        "2027, item sem custo, sem premissasDas) também usa 422, no formato padrão do FastAPI.",
+    },
+}
+
+
+@app.post("/regime/comparar", response_model=RegimeCompararResposta, tags=["cálculo"], responses=RESPOSTAS_COMPARAR)
+async def regime_comparar(
+    req: RegimeCompararRequisicao, cfg: Cfg, response: Response, motores: Motores
+) -> RegimeCompararResposta:
+    """Simples tradicional × híbrido para uma venda a um cliente do regime regular (E3, ADR 0007)."""
+    if cfg.modo == "mock":
+        response.headers["X-ContaAI-Mock"] = "1"
+        return mocks.carregar().regime_comparar
+    return await comparar_regimes(req, motores)
 
 
 @app.post("/nfe/importar", response_model=NfeImportarResposta, tags=["notas"])

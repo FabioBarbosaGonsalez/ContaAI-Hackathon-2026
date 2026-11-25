@@ -59,6 +59,18 @@
     </det>
     <det nItem="4">
       <prod>
+        <cProd>AE-BIS-140</cProd>
+        <xProd>Biscoito doce, pacote 140 g</xProd>
+        <NCM>19053100</NCM>
+        <uCom>UN</uCom>
+        <qCom>2600</qCom>
+        <vUnCom>3.10</vUnCom>
+        <vProd>8060.00</vProd>
+      </prod>
+      <imposto />
+    </det>
+    <det nItem="5">
+      <prod>
         <cProd>AE-CRN-KG</cProd>
         <xProd>Carne bovina desossada, resfriada (kg)</xProd>
         <NCM>02013000</NCM>

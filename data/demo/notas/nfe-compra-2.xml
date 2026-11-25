@@ -96,31 +96,64 @@
         </IBSCBS>
       </imposto>
     </det>
+    <det nItem="3">
+      <prod>
+        <cProd>AE-BIS-140</cProd>
+        <xProd>Biscoito doce, pacote 140 g</xProd>
+        <NCM>19053100</NCM>
+        <uCom>UN</uCom>
+        <qCom>2600</qCom>
+        <vUnCom>3.10</vUnCom>
+        <vProd>8060.00</vProd>
+      </prod>
+      <imposto>
+        <IBSCBS>
+          <CST>000</CST>
+          <cClassTrib>000001</cClassTrib>
+          <gIBSCBS>
+            <vBC>8060.00</vBC>
+            <gIBSUF>
+              <pIBSUF>0.05</pIBSUF>
+              <vIBSUF>4.03</vIBSUF>
+            </gIBSUF>
+            <gIBSMun>
+              <pIBSMun>0.05</pIBSMun>
+              <vIBSMun>4.03</vIBSMun>
+            </gIBSMun>
+            <vIBS>8.06</vIBS>
+            <gCBS>
+              <pCBS>8.80</pCBS>
+              <vCBS>709.28</vCBS>
+            </gCBS>
+          </gIBSCBS>
+        </IBSCBS>
+      </imposto>
+    </det>
     <total>
       <ISTot>
         <vIS>0.00</vIS>
       </ISTot>
       <IBSCBSTot>
-        <vBCIBSCBS>7672.00</vBCIBSCBS>
+        <vBCIBSCBS>15732.00</vBCIBSCBS>
         <gIBS>
           <gIBSUF>
             <vDif>0.00</vDif>
             <vDevTrib>0.00</vDevTrib>
-            <vIBSUF>3.84</vIBSUF>
+            <vIBSUF>7.87</vIBSUF>
           </gIBSUF>
           <gIBSMun>
             <vDif>0.00</vDif>
             <vDevTrib>0.00</vDevTrib>
-            <vIBSMun>3.84</vIBSMun>
+            <vIBSMun>7.87</vIBSMun>
           </gIBSMun>
-          <vIBS>7.68</vIBS>
+          <vIBS>15.74</vIBS>
           <vCredPres>0.00</vCredPres>
           <vCredPresCondSus>0.00</vCredPresCondSus>
         </gIBS>
         <gCBS>
           <vDif>0.00</vDif>
           <vDevTrib>0.00</vDevTrib>
-          <vCBS>675.14</vCBS>
+          <vCBS>1384.42</vCBS>
           <vCredPres>0.00</vCredPres>
           <vCredPresCondSus>0.00</vCredPresCondSus>
         </gCBS>

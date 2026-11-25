@@ -48,6 +48,7 @@ NOTAS = [
             ("AE-ARZ-5", "arroz-5kg", "500", "21.50"),
             ("AE-CRV-350", "cerveja-lata", "1440", "2.60"),
             ("AE-CHO-90", "chocolate-barra", "800", "4.10"),
+            ("AE-BIS-140", "biscoito-pacote", "2600", "3.10"),
             ("AE-CRN-KG", "carne-bovina-kg", "120", "31.00"),
         ],
     },
@@ -59,6 +60,7 @@ NOTAS = [
         "itens": [
             ("AE-CRV-350", "cerveja-lata", "1440", "3.05"),
             ("AE-CHO-90", "chocolate-barra", "800", "4.10"),
+            ("AE-BIS-140", "biscoito-pacote", "2600", "3.10"),
         ],
     },
 ]

@@ -8,7 +8,6 @@ import re
 import subprocess
 import sys
 from collections.abc import Iterator
-from decimal import Decimal
 from pathlib import Path
 
 import pytest
@@ -29,6 +28,7 @@ from app.contrato import (
 )
 from app.dados_demo import PASTA_DEMO, ItemCatalogo, carregar_distribuidora
 from app.main import app
+from tests.apoio_regime import assert_comparacao_fecha
 
 BACKEND = Path(__file__).resolve().parents[1]
 RAIZ = BACKEND.parent
@@ -130,19 +130,15 @@ def test_regime_comparar_fecha_as_contas() -> None:
     pedido = {
         **OPERACAO,
         "cliente": {"nome": "Mercado Bom Preço Ltda (fictício)", "regime": "regime_regular"},
-        "itens": [item_entrada(DEMO.item(i)) for i in ("arroz-5kg", "cerveja-lata", "chocolate-barra")],
+        "itens": [
+            {**item_entrada(DEMO.item(i)), "custoUnitario": "1.00"}
+            for i in ("arroz-5kg", "cerveja-lata", "chocolate-barra")
+        ],
     }
     r = cliente.post("/regime/comparar", json=pedido)
     assert_mock(r)
     c = RegimeCompararResposta.model_validate(r.json())
-    assert c.tradicional.creditoCliente == c.tradicional.tributo
-    assert c.tradicional.custoLiquidoCliente == c.tradicional.precoCliente - c.tradicional.tributo
-    assert c.hibrido.tributoLiquido == c.hibrido.debito - c.hibrido.creditoCompras
-    assert c.hibrido.creditoCliente == c.hibrido.debito
-    assert c.hibrido.precoCliente == c.hibrido.valorProdutos + c.hibrido.debito
-    assert c.diferencaCaixa == c.tradicional.tributo - c.hibrido.tributoLiquido
-    assert abs(c.hibrido.precoCliente - c.valorVenda) < Decimal("0.10")  # mesmo preço, a menos de centavos
-    assert c.premissas and c.simplificacoes
+    assert_comparacao_fecha(c)
 
 
 def test_nfe_importar_gera_o_alerta_da_cerveja() -> None:

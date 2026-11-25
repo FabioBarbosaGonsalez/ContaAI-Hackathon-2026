@@ -11,7 +11,7 @@ Os dois motores exigem Java 25 (`<java.version>25</java.version>` nos `pom.xml` 
 ## Decisão
 
 - Um Dockerfile multi-stage por motor (`motores/regime-regular`, `motores/simples-nacional`), baseado em `eclipse-temurin:25-jdk` para compilar e `eclipse-temurin:25-jre` para rodar. Ninguém precisa instalar Java.
-- O código vem do GitHub da Receita na tag fixada, e o build **falha se a tag não apontar para o commit verificado** (`RR_SHA`, `SN_SHA`).
+- O código vem do GitHub da Receita na tag fixada, e o build **falha se a tag não apontar para o commit verificado** (`RR_SHA`, `SN_SHA`). **Atualizado em 2026-11-25:** o build passou a buscar o commit verificado pelo SHA (`git fetch origin <SHA>`), e não mais pela tag, porque a Receita republicou a tag `1.7.2` do RR (ver abaixo).
 - O banco é gerado com o comando do README oficial (`mvnw flyway:migrate -Dflyway.configFiles=./flyway/flyway-pro.conf`) a partir do repositório do Regime Regular, como manda o README do Simples Nacional. As etapas `fonte-rr` e `banco` são idênticas nos dois Dockerfiles, e o BuildKit gera o banco uma vez só.
 - A JVM roda com `-XX:-UseBASE64Intrinsics`, mitigação indicada nos CHANGELOGs oficiais (aviso de segurança do OpenJDK de 2026-11-17).
 - A imagem final roda com usuário de sistema sem privilégios (`motor`) e o banco é aberto em modo somente leitura (`mode=ro` no `application-offline.yml` oficial).
@@ -35,3 +35,13 @@ Tudo gratuito: imagens Eclipse Temurin (Adoptium), Maven Central e o código MIT
 
 - Primeira subida: alguns minutos (dependências Maven e banco). As seguintes usam o cache.
 - Trocar a versão de um motor exige mudar `*_TAG` e `*_SHA`, regravar os testes de referência (`make gravar-golden`) e revisar a diferença num PR próprio (P5).
+
+## Tag 1.7.2 republicada pela Receita (2026-11-25)
+
+- **O que aconteceu:** o golden do PR #5 falhou no build do motor RR: "A tag 1.7.2 aponta para 39363aa…, esperado 32df719…". A trava funcionou.
+- **Conferido na API do GitHub:** a release 1.7.2 foi republicada em 2026-11-25 às 13:44 (UTC) pelo mesmo robô de CI das releases anteriores, com a mesma mensagem ("release: calculadora-rtc-regime-regular 1.7.2"). O commit novo vem 2 à frente do verificado, sem nenhum atrás, e só remove dois arquivos:
+  - `src/main/java/br/gov/serpro/rtc/core/util/ArredondamentoUtils.java` (198 linhas);
+  - `src/main/java/br/gov/serpro/rtc/domain/service/exception/CaptchaException.java`.
+- **O que decidimos:** os Dockerfiles passam a baixar o commit verificado (32df719) pelo SHA. O build volta a ser idêntico ao testado, sem aceitar uma tag que mudou depois da verificação. Imagens reconstruídas do zero (`--no-cache`), com 46 golden verdes. O motor SN (tag 1.0.2, commit f90b652) não mudou e também passou a ser baixado pelo SHA.
+- **Em aberto:** adotar o commit novo da 1.7.2 exige um PR próprio, com os testes de referência regravados e conferidos (P5). A remoção de um utilitário de arredondamento merece essa conferência antes, mesmo que o código removido pareça não ser usado.
+

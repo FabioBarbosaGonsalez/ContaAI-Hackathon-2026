@@ -15,8 +15,8 @@ class Configuracao(BaseSettings):
     modo: Literal["mock", "real"] = Field(
         default="mock",
         description="mock: rotas respondem com app/mocks. real: rotas já implementadas calculam pelos motores "
-        "(E1: carrinho e preço-alvo; E2: busca de NCM, explicação, erros e chat); as demais respondem 501 até a "
-        "sua etapa.",
+        "(E1: carrinho e preço-alvo; E2: busca de NCM, explicação, erros e chat; E3: comparação de regimes); as "
+        "demais respondem 501 até a sua etapa.",
     )
     motor_rr_url: str = Field(
         default="http://127.0.0.1:8080/api", validation_alias=AliasChoices("CONTAAI_MOTOR_RR_URL", "MOTOR_RR_URL")

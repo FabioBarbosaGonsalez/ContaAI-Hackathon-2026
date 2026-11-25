@@ -226,13 +226,11 @@ def test_recusa_do_sn_vira_422_com_os_erros_do_motor(motores_falsos) -> None:
             ],
         },
     )
-    r = cliente.post("/carrinho/calcular", json=pedido("simples_tradicional", [item("a", "1", "1")], data="2026-11-24"))
+    r = cliente.post("/carrinho/calcular", json=pedido("simples_tradicional", [item("a", "1", "1")]))
     # NCM "1" é inválida: o contrato recusa antes de chamar o motor
     assert r.status_code == 422 and motores_falsos.chamadas == []
 
-    r = cliente.post(
-        "/carrinho/calcular", json=pedido("simples_tradicional", [item("a", "10000001", "10.00")], data="2026-11-24")
-    )
+    r = cliente.post("/carrinho/calcular", json=pedido("simples_tradicional", [item("a", "10000001", "10.00")]))
     assert r.status_code == 422
     falha = FalhaMotorResposta.model_validate(r.json())
     assert falha.motor == "simples_nacional" and [e.codigo for e in falha.erros] == ["VSN-015"]
@@ -266,6 +264,44 @@ def test_tradicional_recusa_o_que_ainda_nao_trata(motores_falsos, itens, trecho:
     r = cliente.post("/carrinho/calcular", json=pedido("simples_tradicional", itens))
     assert r.status_code == 422 and trecho in r.text
     assert motores_falsos.chamadas == []
+
+
+@pytest.mark.parametrize(
+    ("rota", "corpo"),
+    [
+        (
+            "/carrinho/calcular",
+            lambda: pedido("simples_tradicional", [item("a", "10000001", "10.00")], data="2026-11-25"),
+        ),
+        (
+            "/item/preco-alvo",
+            lambda: {
+                **{k: v for k, v in pedido("simples_tradicional", [], data="2026-11-25").items() if k != "itens"},
+                "item": {
+                    k: v for k, v in item("a", "10000001", "10.00").items() if k not in ("quantidade", "valorUnitario")
+                },
+                "custoUnitario": "6.00",
+                "margemAlvoPct": "20",
+            },
+        ),
+        (
+            "/explicar",
+            lambda: {
+                **{k: v for k, v in pedido("simples_tradicional", [], data="2026-11-25").items() if k != "itens"},
+                "item": item("a", "10000001", "10.00"),
+            },
+        ),
+    ],
+)
+def test_tradicional_antes_de_2027_e_recusado_com_mensagem_clara(motores_falsos, rota: str, corpo) -> None:
+    r = cliente.post(rota, json=corpo())
+    assert r.status_code == 422 and "só é calculado a partir de 2027" in r.text and "VSN-015" in r.text
+    assert motores_falsos.chamadas == []  # recusa antes de chamar o motor
+
+
+def test_hibrido_em_2026_continua_calculando(motores_falsos) -> None:
+    c = calcular(pedido("simples_hibrido", [item("a", "10000001", "10.00")], data="2026-11-25"))
+    assert c.itens[0].precoCliente is not None
 
 
 def test_modo_mock_continua_servindo_o_mock() -> None:

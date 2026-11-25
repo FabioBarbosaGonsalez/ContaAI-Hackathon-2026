@@ -85,4 +85,4 @@ O critério de saída da E1 é a tabela da distribuidora vir da API (E1-02, ADR 
 ## Consequências
 
 - A E1 está completa: carrinho, preço-alvo e premissas de 2027 reais, com o mesmo contrato dos mocks.
-- `scripts/gerar_mocks.py` segue como referência para as rotas das etapas E3 e E4 (comparação de regimes, NF-e, alertas). Para a entrada da demonstração, o preço-alvo real é igual ao mock.
+- `scripts/gerar_mocks.py` segue como referência para as rotas das etapas E3 e E4 (comparação de regimes, NF-e, alertas). Para a entrada da demonstração, o preço-alvo real é igual ao mock. (Desde a E3, os mocks de carrinho, preço-alvo e explicação saem do código de produção, conferidos contra a referência: [ADR 0007](0007-comparacao-de-regimes.md).)

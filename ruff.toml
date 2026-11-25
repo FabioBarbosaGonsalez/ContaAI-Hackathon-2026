@@ -10,5 +10,5 @@ ignore = ["E501"]   # linhas longas de texto em scripts de documento
 "docs/gerar_plano.py" = ["E402"]
 
 [lint.isort]
-# O backend roda de backend/, mas o lint roda da raiz: app é código do projeto.
-known-first-party = ["app"]
+# O backend roda de backend/, mas o lint roda da raiz: app e tests (backend/tests) são código do projeto.
+known-first-party = ["app", "tests"]

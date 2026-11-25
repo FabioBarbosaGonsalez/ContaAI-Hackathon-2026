@@ -12,12 +12,12 @@ Roteiro de telas de app da skill design-taste-frontend (`references/app-screens.
   - **Comparação de regimes:** venda (R$), tributo, crédito do cliente e custo líquido do cliente em cada regime (R$), crédito das compras (R$), diferença de caixa (R$/mês).
   - **Premissas:** nome, valor e fonte, impressas junto de todo resultado simulado.
 - **Magnitudes da demonstração** (dos dados em `data/demo/` e dos mocks):
-  - 4 itens no catálogo, 2 notas de compra e 1 cliente B2B;
-  - venda mensal de R$ 19.901,00;
+  - 5 itens no catálogo, 2 notas de compra e 1 cliente B2B;
+  - venda mensal de R$ 19.898,65;
   - preços de R$ 3,79 (lata) a R$ 39,90 (kg) e margens de 11,19% a 28,97%;
   - CBS/IBS por 100 unidades de R$ 0,00 (arroz no híbrido, redução de 100%) a R$ 53,31 (chocolate no híbrido).
   - Valores pequenos ficam pequenos: R$ 0,05 de IBS é R$ 0,05.
-  - O tamanho real do catálogo de uma distribuidora pequena não foi medido; as telas não podem depender de 4 itens.
+  - O tamanho real do catálogo de uma distribuidora pequena não foi medido; as telas não podem depender de 5 itens.
 - **Pessoas:**
   - **Dono(a) da distribuidora:** abre o app quando chega uma nota de compra (algumas vezes por semana) e antes de mexer em preço; usa o computador do escritório, e o celular para ver um alerta.
   - **Contador:** abre o painel com vários CNPJs uma vez por mês, no computador (D1).
@@ -72,12 +72,13 @@ Valores do cenário de demonstração (simulação de março de 2027, premissas 
 
 ### Decisão de regime (detail: a venda ao Mercado Bom Preço)
 - **Pergunta:** para vender ao Bom Preço, tradicional ou híbrido?
-- **Achado:** no híbrido o Mercado Bom Preço leva R$ 714,39 de crédito por mês, contra R$ 233,66 no tradicional; e a distribuidora fica com R$ 100,50 a mais de caixa por mês. Isso vale para estas premissas.
+- **Achado:** no híbrido o Mercado Bom Preço leva R$ 1.626,26 de crédito por mês, contra R$ 233,63 no tradicional; em troca, a distribuidora paga R$ 125,79 a mais de imposto por mês. Isso vale para estas premissas. (Até a E3 a cesta tinha arroz, e o achado dependia da premissa da redução dentro do DAS; ADR 0007.)
 - **Tarefa:** levar ao contador. A tela nunca diz "opte pelo híbrido" (seção 10 do plano).
 - **Blocos:**
   - a régua do crédito (elemento-assinatura, seção 3 abaixo), que é o maior bloco;
   - o caixa da empresa: débito − crédito das compras contra o tributo no DAS;
-  - premissas e simplificações, sempre visíveis.
+  - premissas e simplificações, sempre visíveis;
+  - desde a E3 (ADR 0007), a API traz ainda as linhas por item, com a origem do crédito das compras (`fonteCredito`), e o preço de empate com um concorrente do regime regular (`empateTradicional`: R$ 18.489,49 na demo, ou R$ 1.409,16 a menos). É um bloco secundário, abaixo da régua. A tela é construída na E5.
 
 ### Importar nota (detail: a NF-e)
 - **Pergunta:** o que mudou no custo com esta nota?

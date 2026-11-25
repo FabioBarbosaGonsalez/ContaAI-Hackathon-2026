@@ -10,7 +10,7 @@
   "compraMensal": {
     "descricao": "Cesta mensal fictícia, perto dos R$ 20 mil por mês do plano (seção 13), aos preços do catálogo da distribuidora",
     "itens": [
-      { "itemId": "arroz-5kg", "quantidade": "400" },
+      { "itemId": "biscoito-pacote", "quantidade": "2485" },
       { "itemId": "cerveja-lata", "quantidade": "1200" },
       { "itemId": "chocolate-barra", "quantidade": "700" }
     ]

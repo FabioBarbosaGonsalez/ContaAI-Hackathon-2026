@@ -8,21 +8,26 @@
 
 from __future__ import annotations
 
+import asyncio
 import importlib.util
 import json
 import sys
+from datetime import date
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 
 from app import mocks
 from app.config import Configuracao, configuracao
-from app.contrato import CarrinhoResposta, EstadoItem, Regime
+from app.contrato import CarrinhoResposta, EstadoItem, ItemEntrada, Regime
 from app.dados_demo import carregar_distribuidora
 from app.main import app
+from app.motores.cliente import ClienteMotores, OperacaoRecusada
+from app.motores.requisicoes import DasPremissa, Linha
 
 pytestmark = pytest.mark.golden
 
@@ -143,7 +148,23 @@ def test_tradicional_bate_com_a_resposta_gravada_do_sn() -> None:
     assert [e.codigo for e in carne.erros] == ["VSN-047"]
 
 
-def test_sn_recusa_2026_e_a_api_repassa() -> None:
+def test_sn_recusa_2026_e_a_api_recusa_antes_com_mensagem_clara() -> None:
+    # O motivo da recusa: o motor SN devolve VSN-015 para a NF-e (tpDoc 55) em 2026.
+    async def chamar_motor() -> list[str]:
+        async with httpx.AsyncClient(timeout=30, trust_env=False) as http:
+            cfg = Configuracao()  # URLs dos motores do ambiente (padrão: 127.0.0.1:8080 e :8082)
+            motores = ClienteMotores(http, cfg.motor_rr_url, cfg.motor_sn_url)
+            item = ItemEntrada.model_validate(
+                linha("c", "5.99", "1", "UN", ncm="18063210", cst="000", cClassTrib="000001")
+            )
+            das = DasPremissa(anexo="I", cAtivSN="01", pCBSSN=Decimal("1.1612"), pIBSSN=Decimal("0.0129"))
+            try:
+                await motores.simples_nacional([Linha(item, Decimal(1), Decimal("5.99"))], date(2026, 11, 24), das)
+            except OperacaoRecusada as e:
+                return [x.codigo for x in e.erros]
+            return []
+
+    assert asyncio.run(chamar_motor()) == ["VSN-015"]
     r = cliente.post(
         "/carrinho/calcular",
         json={
@@ -155,7 +176,7 @@ def test_sn_recusa_2026_e_a_api_repassa() -> None:
             "itens": [linha("c", "5.99", "1", "UN", ncm="18063210", cst="000", cClassTrib="000001")],
         },
     )
-    assert r.status_code == 422 and r.json()["erros"][0]["codigo"] == "VSN-015"
+    assert r.status_code == 422 and "só é calculado a partir de 2027" in r.text
     assert "127.0.0.1" not in r.text
 
 
