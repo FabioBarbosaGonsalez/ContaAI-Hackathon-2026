@@ -423,6 +423,7 @@ RESPOSTAS_NFE: dict[int | str, dict[str, Any]] = {
 async def nfe_importar(
     cfg: Cfg,
     response: Response,
+    motores: Motores,
     arquivo: Annotated[UploadFile, File(description="XML da NF-e de compra (modelo 55, leiaute 4.00)")],
     token: Token = None,
 ) -> NfeImportarResposta:
@@ -439,9 +440,7 @@ async def nfe_importar(
         raise HTTPException(status_code=413, detail="Arquivo maior que o limite para uma NF-e.")
     if cfg.modo == "mock":
         return mocks.carregar().nfe_importar
-    async with httpx.AsyncClient(timeout=cfg.timeout_calculo_s, trust_env=False) as http:
-        motores = ClienteMotores(http, cfg.motor_rr_url, cfg.motor_sn_url, CACHE_MOTORES)
-        return await importar_nota(conteudo, repositorio(cfg), motores)
+    return await importar_nota(conteudo, repositorio(cfg), motores)
 
 
 @app.get("/alertas", response_model=AlertasResposta, tags=["notas"], responses=RESPOSTAS_ESTADO)

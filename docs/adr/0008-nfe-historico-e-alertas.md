@@ -212,6 +212,7 @@ A migração `0001_inicial.sql` foi editada no pacote A (datas, `CHECK` e índic
 6. **Preço aplicado × data simulada:** com o preço atual ordenado pela data de vigência, o preço da semente (01/03/2027, data simulada) vencia um preço aplicado hoje (2026). Achado no teste de ponta a ponta. O preço atual passou a ser o último lançado.
 7. **Testes no banco do desenvolvedor:** o primeiro teste do chat com a ferramenta real gravou em `backend/.dados/`. Agora cada teste tem um banco temporário (`banco_isolado`).
 8. **Expat mínimo:** de 2.4.1 (o que eu disse no mapeamento) para 2.6.0 (doc oficial, "large tokens").
+9. **Rota de importação fora dos motores falsos** (achado no CI do PR): `POST /nfe/importar` criava o próprio cliente dos motores em vez de usar a dependência `Motores`. Na máquina de desenvolvimento, com os motores de pé, os testes passavam chamando os motores reais; no CI, sem motores, 14 testes deram 503. A rota passou a usar a dependência. O `conftest` ganhou a trava `sem_motores_reais`: fora dos testes golden e llm, as URLs dos motores apontam para uma porta que recusa conexão. Com a trava e sem a correção, as mesmas 14 falhas aparecem na máquina local.
 
 ## Consequências
 
