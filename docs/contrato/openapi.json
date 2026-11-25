@@ -164,6 +164,7 @@
           "cálculo"
         ],
         "summary": "Regime Comparar",
+        "description": "Simples tradicional × híbrido para uma venda a um cliente do regime regular (E3, ADR 0007).",
         "operationId": "regime_comparar_regime_comparar_post",
         "requestBody": {
           "content": {
@@ -187,11 +188,39 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Sem comparação possível (RecusaCalculo: item que um dos motores não calcula ou base do híbrido que não fecha) ou recusa do motor (FalhaMotorResposta). A validação de entrada (data antes de 2027, item sem custo, sem premissasDas) também usa 422, no formato padrão do FastAPI.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/RecusaCalculo"
+                    },
+                    {
+                      "$ref": "#/components/schemas/FalhaMotorResposta"
+                    }
+                  ],
+                  "title": "Response 422 Regime Comparar Regime Comparar Post"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "O motor devolveu uma resposta que o ContaAI não reconhece.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Motor indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FalhaMotorResposta"
                 }
               }
             }
@@ -1511,6 +1540,56 @@
         ],
         "title": "Emitente"
       },
+      "EmpateTradicional": {
+        "properties": {
+          "hipotese": {
+            "type": "string",
+            "title": "Hipotese"
+          },
+          "precoCliente": {
+            "type": "string",
+            "title": "Precocliente",
+            "description": "Preço total no tradicional que empata o custo líquido do cliente."
+          },
+          "descontoNecessario": {
+            "type": "string",
+            "title": "Descontonecessario",
+            "description": "valorVenda − precoCliente. Positivo: quanto o tradicional precisa baixar o preço."
+          },
+          "tributo": {
+            "type": "string",
+            "title": "Tributo",
+            "description": "CBS + IBS dentro do DAS sobre o preço de empate (motor SN)."
+          },
+          "creditoCliente": {
+            "type": "string",
+            "title": "Creditocliente"
+          },
+          "custoLiquidoCliente": {
+            "type": "string",
+            "title": "Custoliquidocliente",
+            "description": "precoCliente − creditoCliente."
+          },
+          "custoLiquidoAlvo": {
+            "type": "string",
+            "title": "Custoliquidoalvo",
+            "description": "O custo líquido do cliente no concorrente (= hibrido)."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "hipotese",
+          "precoCliente",
+          "descontoNecessario",
+          "tributo",
+          "creditoCliente",
+          "custoLiquidoCliente",
+          "custoLiquidoAlvo"
+        ],
+        "title": "EmpateTradicional",
+        "description": "Preço no Simples tradicional que dá ao cliente o mesmo custo líquido de um concorrente do regime\nregular que cobra o mesmo preço total (plano 11.2, \"argumento de venda\"; ADR 0007)."
+      },
       "ErroDescricao": {
         "properties": {
           "codigo": {
@@ -2050,6 +2129,81 @@
         ],
         "title": "ItemCalculado"
       },
+      "ItemComparado": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "descricao": {
+            "type": "string",
+            "title": "Descricao"
+          },
+          "quantidade": {
+            "type": "string",
+            "title": "Quantidade"
+          },
+          "valorVenda": {
+            "type": "string",
+            "title": "Valorvenda",
+            "description": "quantidade × valorUnitario: o preço total da linha ao cliente."
+          },
+          "tributoTradicional": {
+            "type": "string",
+            "title": "Tributotradicional",
+            "description": "CBS + IBS dentro do DAS da linha (motor SN)."
+          },
+          "valorProdutosHibrido": {
+            "type": "string",
+            "title": "Valorprodutoshibrido"
+          },
+          "debitoHibrido": {
+            "type": "string",
+            "title": "Debitohibrido",
+            "description": "CBS + IBS por fora da linha (motor RR)."
+          },
+          "impostoSeletivoHibrido": {
+            "type": "string",
+            "title": "Impostoseletivohibrido"
+          },
+          "precoClienteHibrido": {
+            "type": "string",
+            "title": "Precoclientehibrido"
+          },
+          "creditoCompras": {
+            "type": "string",
+            "title": "Creditocompras",
+            "description": "CBS + IBS da compra das unidades vendidas."
+          },
+          "fonteCredito": {
+            "type": "string",
+            "enum": [
+              "nfe",
+              "motor",
+              "custo_zero"
+            ],
+            "title": "Fontecredito",
+            "description": "nfe: creditoCompraUnitario informado (grupo IBSCBS da nota); motor: motor RR sobre o custo, com a hipótese de fornecedor no regime regular; custo_zero: custo informado como zero."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "descricao",
+          "quantidade",
+          "valorVenda",
+          "tributoTradicional",
+          "valorProdutosHibrido",
+          "debitoHibrido",
+          "impostoSeletivoHibrido",
+          "precoClienteHibrido",
+          "creditoCompras",
+          "fonteCredito"
+        ],
+        "title": "ItemComparado",
+        "description": "Uma linha da venda nos dois regimes. Os totais dos lados são a soma destas linhas."
+      },
       "ItemEntrada": {
         "properties": {
           "id": {
@@ -2169,7 +2323,7 @@
               }
             ],
             "title": "Creditocompraunitario",
-            "description": "CBS + IBS da compra por unidade, lida do grupo IBSCBS da NF-e. Só é usada no Simples tradicional, onde entra no custo. Ausente: o backend calcula no motor RR sobre o custo, na data e com as alíquotas da operação, com a hipótese exibida de fornecedor no regime regular."
+            "description": "CBS + IBS da compra por unidade, lida do grupo IBSCBS da NF-e. No carrinho e no preço-alvo só é usada no Simples tradicional, onde entra no custo; na comparação de regimes é o crédito das compras do híbrido. Ausente: o backend calcula no motor RR sobre o custo, na data e com as alíquotas da operação, com a hipótese exibida de fornecedor no regime regular."
           }
         },
         "additionalProperties": false,
@@ -2305,17 +2459,23 @@
         "properties": {
           "precoCliente": {
             "type": "string",
-            "title": "Precocliente"
+            "title": "Precocliente",
+            "description": "valorProdutos + débito + impostoSeletivo."
           },
           "valorProdutos": {
             "type": "string",
             "title": "Valorprodutos",
-            "description": "Base tal que valorProdutos + débito = preço total ao cliente."
+            "description": "Base de cada linha achada para que base + CBS/IBS + IS dê o preço da venda (ajuste afim)."
           },
           "debito": {
             "type": "string",
             "title": "Debito",
             "description": "CBS + IBS por fora sobre a venda (motor RR)."
+          },
+          "impostoSeletivo": {
+            "type": "string",
+            "title": "Impostoseletivo",
+            "description": "IS devolvido pelo motor RR. Entra no preço, mas não no débito nem no crédito do cliente (ADR 0007)."
           },
           "creditoCompras": {
             "type": "string",
@@ -2330,11 +2490,12 @@
           "creditoCliente": {
             "type": "string",
             "title": "Creditocliente",
-            "description": "Igual ao débito (crédito integral)."
+            "description": "Igual ao débito: CBS + IBS destacados (crédito integral)."
           },
           "custoLiquidoCliente": {
             "type": "string",
-            "title": "Custoliquidocliente"
+            "title": "Custoliquidocliente",
+            "description": "precoCliente − creditoCliente."
           }
         },
         "additionalProperties": false,
@@ -2343,6 +2504,7 @@
           "precoCliente",
           "valorProdutos",
           "debito",
+          "impostoSeletivo",
           "creditoCompras",
           "tributoLiquido",
           "creditoCliente",
@@ -2364,11 +2526,12 @@
           "creditoCliente": {
             "type": "string",
             "title": "Creditocliente",
-            "description": "Igual ao tributo pago no Simples (LC 214/2025, art. 47, §9, II)."
+            "description": "Igual ao tributo pago no Simples (LC 214/2025, art. 47, §9º, II)."
           },
           "custoLiquidoCliente": {
             "type": "string",
-            "title": "Custoliquidocliente"
+            "title": "Custoliquidocliente",
+            "description": "precoCliente − creditoCliente."
           }
         },
         "additionalProperties": false,
@@ -2986,7 +3149,7 @@
             "maxItems": 200,
             "minItems": 1,
             "title": "Itens",
-            "description": "A venda. valorUnitario é o preço total cobrado do cliente (igual nos dois regimes)."
+            "description": "A venda. valorUnitario é o preço total cobrado do cliente (igual nos dois regimes). custoUnitario é obrigatório: sem ele não há crédito das compras."
           }
         },
         "additionalProperties": false,
@@ -2998,7 +3161,8 @@
           "cliente",
           "itens"
         ],
-        "title": "RegimeCompararRequisicao"
+        "title": "RegimeCompararRequisicao",
+        "description": "Venda a um cliente do regime regular, comparada nos dois lados do Simples (plano 11.2, ADR 0007).\n\nO crédito das compras vem de creditoCompraUnitario (grupo IBSCBS da NF-e; a leitura da nota é a\nE4) ou, ausente, do motor RR sobre o custo. Por isso todo item precisa do custo."
       },
       "RegimeCompararResposta": {
         "properties": {
@@ -3034,6 +3198,11 @@
           "cliente": {
             "$ref": "#/components/schemas/ClienteB2B"
           },
+          "data": {
+            "type": "string",
+            "format": "date",
+            "title": "Data"
+          },
           "valorVenda": {
             "type": "string",
             "title": "Valorvenda"
@@ -3047,7 +3216,30 @@
           "diferencaCaixa": {
             "type": "string",
             "title": "Diferencacaixa",
-            "description": "Caixa no híbrido − caixa no tradicional = tributo tradicional − tributo líquido híbrido. Positivo: o híbrido deixa mais dinheiro com a empresa."
+            "description": "Caixa no híbrido − caixa no tradicional, a preço igual = tributo tradicional − tributo líquido híbrido. Positivo: o híbrido deixa mais dinheiro com a empresa."
+          },
+          "diferencaPrecoCliente": {
+            "type": "string",
+            "title": "Diferencaprecocliente",
+            "description": "hibrido.precoCliente − valorVenda: centavos que sobram do arredondamento da base de cada linha."
+          },
+          "itens": {
+            "items": {
+              "$ref": "#/components/schemas/ItemComparado"
+            },
+            "type": "array",
+            "title": "Itens"
+          },
+          "empateTradicional": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EmpateTradicional"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Ausente quando o preço de empate não fecha no motor SN dentro da tolerância por linha."
           },
           "fonteTradicional": {
             "type": "string",
@@ -3073,10 +3265,13 @@
           "premissas",
           "criterio",
           "cliente",
+          "data",
           "valorVenda",
           "tradicional",
           "hibrido",
           "diferencaCaixa",
+          "diferencaPrecoCliente",
+          "itens",
           "fonteTradicional",
           "simplificacoes",
           "versoes"

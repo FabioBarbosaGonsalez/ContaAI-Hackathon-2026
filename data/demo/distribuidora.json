@@ -88,6 +88,21 @@
       "papelNaDemo": "Referência de alíquota cheia"
     },
     {
+      "id": "biscoito-pacote",
+      "descricao": "Biscoito doce, pacote 140 g",
+      "ncm": "19053100",
+      "ncmDescricaoOficial": "Bolachas e biscoitos, adicionados de edulcorantes",
+      "cst": "000",
+      "cClassTrib": "000001",
+      "classificacaoFonte": "Nenhuma classificação com redução específica do produto nos dados abertos (comparação com NCM de máquina 84381000, ADR 0003). Conferido no motor RR 1.7.2 em 2027-03-16: 200003 (Anexo I) e 200034 (Anexo VII) são recusadas com REG-011, e a NCM não é tributada pelo IS. Tributação integral.",
+      "impostoSeletivo": null,
+      "unidade": "UN",
+      "codigoFornecedor": "AE-BIS-140",
+      "precoVenda": "4.49",
+      "margemAlvoPct": "20",
+      "papelNaDemo": "Venda ao cliente B2B sem redução de alíquota (no lugar do arroz, ADR 0007)"
+    },
+    {
       "id": "carne-bovina-kg",
       "descricao": "Carne bovina desossada, resfriada (kg)",
       "ncm": "02013000",

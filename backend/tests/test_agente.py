@@ -161,10 +161,27 @@ def test_erro_do_catalogo_oficial(motores_falsos) -> None:
     assert r.ferramentasChamadas == ["explicar_erro"] and "NCM não vinculada" in r.resposta
 
 
-def test_regime_e_alertas_ainda_indisponiveis_sem_numero(motores_falsos) -> None:
-    r = perguntar("Vale ir para o híbrido para vender ao Bom Preço?", contexto())
-    assert r.ferramentasChamadas == ["comparar_regimes"] and "E3" in r.resposta and "contador" in r.resposta
-    assert "R$" not in r.resposta
+def test_comparar_regimes_cita_so_numeros_do_resultado_e_nao_recomenda(motores_falsos) -> None:
+    r = perguntar(
+        "Vale ir para o híbrido para vender ao Bom Preço?", contexto(itens=["cerveja-lata", "chocolate-barra"])
+    )
+    assert r.ferramentasChamadas == ["comparar_regimes"] and r.verificacao == "aprovada"
+    assert "R$" in r.resposta and "crédito" in r.resposta and "contador" in r.resposta
+    assert "opte" not in r.resposta.lower() and r.simulado
+    assert any(p.nome == "Opção pelo Simples híbrido" for p in r.premissas)
+    assert len(motores_falsos.chamadas_de("sn")) == 3  # venda e preço de empate
+    assert "concorrente do regime regular" in r.resposta
+
+
+def test_comparar_regimes_sem_das_explica_sem_numero(motores_falsos) -> None:
+    ctx = contexto(itens=["cerveja-lata"])
+    del ctx["premissasDas"]
+    r = perguntar("Vale ir para o híbrido?", ctx)
+    assert r.ferramentasChamadas == ["comparar_regimes"] and "premissasDas" in r.resposta
+    assert "R$" not in r.resposta and "contador" in r.resposta
+
+
+def test_alertas_ainda_indisponiveis_sem_numero(motores_falsos) -> None:
     r = perguntar("O que mudou este mês?", contexto())
     assert r.ferramentasChamadas == ["listar_alertas"] and "E4" in r.resposta
 

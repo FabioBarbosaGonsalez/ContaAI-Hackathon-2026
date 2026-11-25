@@ -121,10 +121,23 @@ class ItemEntrada(ItemBase):
     creditoCompraUnitario: Decimal | None = Field(
         default=None,
         ge=0,
-        description="CBS + IBS da compra por unidade, lida do grupo IBSCBS da NF-e. Só é usada no Simples tradicional, "
-        "onde entra no custo. Ausente: o backend calcula no motor RR sobre o custo, na data e com as alíquotas da "
-        "operação, com a hipótese exibida de fornecedor no regime regular.",
+        description="CBS + IBS da compra por unidade, lida do grupo IBSCBS da NF-e. No carrinho e no preço-alvo só é "
+        "usada no Simples tradicional, onde entra no custo; na comparação de regimes é o crédito das compras do "
+        "híbrido. Ausente: o backend calcula no motor RR sobre o custo, na data e com as alíquotas da operação, com "
+        "a hipótese exibida de fornecedor no regime regular.",
     )
+
+
+RECUSA_TRADICIONAL_2026 = (
+    "O Simples tradicional só é calculado a partir de 2027: em 2026 o motor do Simples não calcula a NF-e "
+    "(erro VSN-015, conferido no motor SN 1.0.2). Use uma data de 2027 ou o Simples híbrido."
+)
+
+
+def validar_data_do_tradicional(data: date) -> None:
+    """Recusa clara antes de chamar o motor, em vez do erro cru do VSN-015 (ADR 0004 e ADR 0007)."""
+    if data.year < 2027:
+        raise ValueError(RECUSA_TRADICIONAL_2026)
 
 
 def validar_itens_do_tradicional(itens: list[ItemEntrada] | list[ItemBase]) -> None:
@@ -227,6 +240,7 @@ class CarrinhoRequisicao(_Operacao):
         if self.regime == Regime.SIMPLES_TRADICIONAL:
             if self.premissasDas is None:
                 raise ValueError("No Simples tradicional informe premissasDas (alíquotas efetivas do anexo).")
+            validar_data_do_tradicional(self.data)
             validar_itens_do_tradicional(self.itens)
         return self
 
@@ -297,6 +311,7 @@ class PrecoAlvoRequisicao(_Operacao):
         if self.regime == Regime.SIMPLES_TRADICIONAL:
             if self.premissasDas is None:
                 raise ValueError("No Simples tradicional informe premissasDas (alíquotas efetivas do anexo).")
+            validar_data_do_tradicional(self.data)
             validar_itens_do_tradicional([self.item])
         return self
 
@@ -334,46 +349,116 @@ class ClienteB2B(_Modelo):
 
 
 class RegimeCompararRequisicao(_Operacao):
+    """Venda a um cliente do regime regular, comparada nos dois lados do Simples (plano 11.2, ADR 0007).
+
+    O crédito das compras vem de creditoCompraUnitario (grupo IBSCBS da NF-e; a leitura da nota é a
+    E4) ou, ausente, do motor RR sobre o custo. Por isso todo item precisa do custo.
+    """
+
     cliente: ClienteB2B
     itens: list[ItemEntrada] = Field(
         min_length=1,
         max_length=200,
-        description="A venda. valorUnitario é o preço total cobrado do cliente (igual nos dois regimes).",
+        description="A venda. valorUnitario é o preço total cobrado do cliente (igual nos dois regimes). "
+        "custoUnitario é obrigatório: sem ele não há crédito das compras.",
     )
 
     @model_validator(mode="after")
-    def validar_das_obrigatorio(self) -> RegimeCompararRequisicao:
+    def validar_comparacao(self) -> RegimeCompararRequisicao:
+        if self.data.year < 2027:
+            raise ValueError(
+                "A comparação de regimes começa em 2027: em 2026 o motor do Simples não calcula a NF-e (VSN-015), "
+                "então não há lado tradicional."
+            )
         if self.premissasDas is None:
             raise ValueError("Informe premissasDas: sem elas não há lado tradicional para comparar.")
+        ids = [i.id for i in self.itens]
+        if len(set(ids)) != len(ids):
+            raise ValueError("Os itens da venda precisam ter id único.")
+        sem_custo = [i.id for i in self.itens if i.custoUnitario is None]
+        if sem_custo:
+            raise ValueError(
+                f"Informe custoUnitario dos itens {', '.join(sem_custo)}: sem o custo não há crédito das compras e o "
+                "lado híbrido sairia pior do que é."
+            )
+        validar_itens_do_tradicional(self.itens)
         return self
 
 
 class LadoTradicional(_Modelo):
     precoCliente: Decimal
     tributo: Decimal = Field(description="CBS + IBS dentro do DAS sobre a venda (motor SN).")
-    creditoCliente: Decimal = Field(description="Igual ao tributo pago no Simples (LC 214/2025, art. 47, §9, II).")
-    custoLiquidoCliente: Decimal
+    creditoCliente: Decimal = Field(description="Igual ao tributo pago no Simples (LC 214/2025, art. 47, §9º, II).")
+    custoLiquidoCliente: Decimal = Field(description="precoCliente − creditoCliente.")
 
 
 class LadoHibrido(_Modelo):
-    precoCliente: Decimal
-    valorProdutos: Decimal = Field(description="Base tal que valorProdutos + débito = preço total ao cliente.")
+    precoCliente: Decimal = Field(description="valorProdutos + débito + impostoSeletivo.")
+    valorProdutos: Decimal = Field(
+        description="Base de cada linha achada para que base + CBS/IBS + IS dê o preço da venda (ajuste afim)."
+    )
     debito: Decimal = Field(description="CBS + IBS por fora sobre a venda (motor RR).")
+    impostoSeletivo: Decimal = Field(
+        description="IS devolvido pelo motor RR. Entra no preço, mas não no débito nem no crédito do cliente (ADR 0007)."
+    )
     creditoCompras: Decimal = Field(description="CBS + IBS das compras dos itens vendidos (NF-e ou motor RR).")
     tributoLiquido: Decimal = Field(description="debito − creditoCompras.")
-    creditoCliente: Decimal = Field(description="Igual ao débito (crédito integral).")
-    custoLiquidoCliente: Decimal
+    creditoCliente: Decimal = Field(description="Igual ao débito: CBS + IBS destacados (crédito integral).")
+    custoLiquidoCliente: Decimal = Field(description="precoCliente − creditoCliente.")
+
+
+class ItemComparado(_Modelo):
+    """Uma linha da venda nos dois regimes. Os totais dos lados são a soma destas linhas."""
+
+    id: str
+    descricao: str
+    quantidade: Decimal
+    valorVenda: Decimal = Field(description="quantidade × valorUnitario: o preço total da linha ao cliente.")
+    tributoTradicional: Decimal = Field(description="CBS + IBS dentro do DAS da linha (motor SN).")
+    valorProdutosHibrido: Decimal
+    debitoHibrido: Decimal = Field(description="CBS + IBS por fora da linha (motor RR).")
+    impostoSeletivoHibrido: Decimal
+    precoClienteHibrido: Decimal
+    creditoCompras: Decimal = Field(description="CBS + IBS da compra das unidades vendidas.")
+    fonteCredito: Literal["nfe", "motor", "custo_zero"] = Field(
+        description="nfe: creditoCompraUnitario informado (grupo IBSCBS da nota); motor: motor RR sobre o custo, "
+        "com a hipótese de fornecedor no regime regular; custo_zero: custo informado como zero."
+    )
+
+
+class EmpateTradicional(_Modelo):
+    """Preço no Simples tradicional que dá ao cliente o mesmo custo líquido de um concorrente do regime
+    regular que cobra o mesmo preço total (plano 11.2, "argumento de venda"; ADR 0007)."""
+
+    hipotese: str
+    precoCliente: Decimal = Field(description="Preço total no tradicional que empata o custo líquido do cliente.")
+    descontoNecessario: Decimal = Field(
+        description="valorVenda − precoCliente. Positivo: quanto o tradicional precisa baixar o preço."
+    )
+    tributo: Decimal = Field(description="CBS + IBS dentro do DAS sobre o preço de empate (motor SN).")
+    creditoCliente: Decimal
+    custoLiquidoCliente: Decimal = Field(description="precoCliente − creditoCliente.")
+    custoLiquidoAlvo: Decimal = Field(description="O custo líquido do cliente no concorrente (= hibrido).")
 
 
 class RegimeCompararResposta(_Simulacao):
     criterio: Literal["mesmo_preco_total_ao_cliente"]
     cliente: ClienteB2B
+    data: date
     valorVenda: Decimal
     tradicional: LadoTradicional
     hibrido: LadoHibrido
     diferencaCaixa: Decimal = Field(
-        description="Caixa no híbrido − caixa no tradicional = tributo tradicional − tributo líquido híbrido. "
-        "Positivo: o híbrido deixa mais dinheiro com a empresa."
+        description="Caixa no híbrido − caixa no tradicional, a preço igual = tributo tradicional − tributo líquido "
+        "híbrido. Positivo: o híbrido deixa mais dinheiro com a empresa."
+    )
+    diferencaPrecoCliente: Decimal = Field(
+        description="hibrido.precoCliente − valorVenda: centavos que sobram do arredondamento da base de cada linha."
+    )
+    itens: list[ItemComparado]
+    empateTradicional: EmpateTradicional | None = Field(
+        default=None,
+        description="Ausente quando o preço de empate não fecha no motor SN dentro da tolerância por linha.",
     )
     fonteTradicional: Literal["motor"] = Field(
         description="Sempre o motor SN (ADR 0001); a premissa fica em premissas."
@@ -501,6 +586,7 @@ class ExplicarRequisicao(_Operacao):
         if self.regime == Regime.SIMPLES_TRADICIONAL:
             if self.premissasDas is None:
                 raise ValueError("No Simples tradicional informe premissasDas (alíquotas efetivas do anexo).")
+            validar_data_do_tradicional(self.data)
             validar_itens_do_tradicional([self.item])
         return self
 

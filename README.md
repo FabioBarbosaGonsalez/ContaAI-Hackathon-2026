@@ -38,7 +38,7 @@ uv run uvicorn app.main:app --reload   # documentação interativa em http://127
 As rotas seguem o contrato ([docs/contrato/openapi.json](docs/contrato/openapi.json), [ADR 0003](docs/adr/0003-contrato-da-api.md)). Há dois modos:
 
 - **mock** (padrão): todas as rotas respondem com mocks gerados a partir dos motores oficiais, com o header `X-ContaAI-Mock: 1`.
-- **real** (`CONTAAI_MODO=real`, motores de pé): `POST /carrinho/calcular` e `POST /item/preco-alvo` calculam pelos motores ([ADR 0004](docs/adr/0004-nucleo-de-calculo.md), [ADR 0005](docs/adr/0005-preco-alvo-e-premissas.md)); `GET /busca/ncm`, `GET`/`POST /explicar`, `GET /erros/{codigo}` e `POST /chat` também ([ADR 0006](docs/adr/0006-agente.md)). As rotas que ainda não calculam (regimes, NF-e e alertas) respondem 501 nesse modo. Falhas dos motores voltam como 422 (operação recusada, com os erros do motor), 502 ou 503, sem expor endereço interno.
+- **real** (`CONTAAI_MODO=real`, motores de pé): `POST /carrinho/calcular` e `POST /item/preco-alvo` calculam pelos motores ([ADR 0004](docs/adr/0004-nucleo-de-calculo.md), [ADR 0005](docs/adr/0005-preco-alvo-e-premissas.md)); `GET /busca/ncm`, `GET`/`POST /explicar`, `GET /erros/{codigo}` e `POST /chat` também ([ADR 0006](docs/adr/0006-agente.md)), e `POST /regime/comparar` ([ADR 0007](docs/adr/0007-comparacao-de-regimes.md)). As rotas que ainda não calculam (NF-e e alertas) respondem 501 nesse modo. Falhas dos motores voltam como 422 (operação recusada, com os erros do motor), 502 ou 503, sem expor endereço interno.
 
 `GET /cenarios/presets` (valores de 2027 com fonte) e `GET /saude` (estado e versões dos motores) são reais nos dois modos. O CORS libera só `http://localhost:3000`; para outra origem, use `CONTAAI_CORS_ORIGENS='["http://..."]'`.
 
@@ -91,6 +91,7 @@ No Linux e no macOS, o [Makefile](Makefile) tem atalhos para os mesmos comandos:
 - [ADR 0004](docs/adr/0004-nucleo-de-calculo.md): clientes dos motores, carrinho real, comportamento verificado dos motores e revisão da arquitetura
 - [ADR 0005](docs/adr/0005-preco-alvo-e-premissas.md): preço-alvo (afim + bisseção), cache e premissas de 2027 com presets de fonte verificada
 - [ADR 0006](docs/adr/0006-agente.md): agente com IA trocável, ferramentas, verificador anti-alucinação, busca de NCM e proteção da demo
+- [ADR 0007](docs/adr/0007-comparacao-de-regimes.md): comparação Simples tradicional × híbrido, crédito das compras e preço de empate
 - [Contrato OpenAPI](docs/contrato/openapi.json): o que frontend e agente consomem
 - [Dados de demonstração](data/demo/README.md): distribuidora, cliente B2B e notas de compra fictícias
 - [Direção visual](.taste-skill/app/inventario.md): inventário, a pergunta de cada tela e o estilo sorteado pela skill design-taste-frontend
@@ -103,7 +104,9 @@ Etapa 0 (fundação) concluída: motores oficiais em containers, testes de refer
 
 Etapa 1 (núcleo de cálculo) concluída: clientes tipados dos motores, carrinho real, preço-alvo em 3 chamadas com bisseção de reserva e cache, e premissas de 2027 com presets de fonte verificada.
 
-Etapa 2 (agente) concluída: loop de tool use independente do provedor, provedor `roteiro` sem IA, cadastro por chat com confirmação, correção do REG-011 e do VSN-047, explicação pela memória de cálculo e pela lei, busca de NCM nos dados abertos e verificador anti-alucinação (20 perguntas, 0 número fora do JSON). Pendente: escolher o provedor de IA e escrever o adaptador. Próxima: Etapa 3, diferencial B2B.
+Etapa 2 (agente) concluída: loop de tool use independente do provedor, provedor `roteiro` sem IA, cadastro por chat com confirmação, correção do REG-011 e do VSN-047, explicação pela memória de cálculo e pela lei, busca de NCM nos dados abertos e verificador anti-alucinação (20 perguntas, 0 número fora do JSON). Pendente: escolher o provedor de IA e escrever o adaptador.
+
+Etapa 3 (diferencial B2B) concluída no backend: `POST /regime/comparar` real, com os três números (diferença de caixa, crédito que o cliente leva e custo líquido do cliente), o crédito das compras por item (NF-e ou motor), o detalhamento por linha, o preço de empate com um concorrente do regime regular e a ferramenta `comparar_regimes` do agente. A tela de decisão passou para a Etapa 5 (decisão do usuário, ADR 0007). Próxima: Etapa 4, recorrência (NF-e e alertas).
 
 ## Créditos e licenças
 

@@ -32,6 +32,18 @@
       "variacaoPct": "0.00",
       "creditoCompraUnitario": "0.3649",
       "fonteCredito": "nfe"
+    },
+    {
+      "itemId": "biscoito-pacote",
+      "codigoFornecedor": "AE-BIS-140",
+      "ncm": "19053100",
+      "descricaoNota": "Biscoito doce, pacote 140 g",
+      "quantidade": "2600",
+      "custoAnterior": "3.10",
+      "custoNovo": "3.10",
+      "variacaoPct": "0.00",
+      "creditoCompraUnitario": "0.2759",
+      "fonteCredito": "nfe"
     }
   ],
   "itensSemPar": [],

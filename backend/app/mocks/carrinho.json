@@ -6,17 +6,17 @@
       {
         "nome": "Alíquotas nominais de 2027",
         "valor": "CBS 8,8% · IBS estadual 0,05% · IBS municipal 0,05%",
-        "fonte": "Entradas do exemplo oficial (docs/exemplos.md da calculadora RR 1.7.2). Não são alíquotas oficiais (P6)."
+        "fonte": "Cenário de demonstração (data/demo): entradas do exemplo oficial da calculadora RR. Informadas pelo usuário (P6). Não são alíquotas oficiais."
       },
       {
-        "nome": "Imposto Seletivo da cerveja",
-        "valor": "não incide na revenda (cClassTrib do IS 200007); alíquota exigida pelo motor: 10%",
-        "fonte": "Entrada do exemplo oficial. O motor RR exige a alíquota do IS para NCM sujeita ao IS mesmo na revenda (erro REG-035: 'ainda não foi definida em lei'). Na revenda (cClassTrib do IS 200007) o valor do IS sai zero."
+        "nome": "Alíquota do Imposto Seletivo",
+        "valor": "10%",
+        "fonte": "Informada pelo usuário (P7). O motor RR exige a alíquota do IS para NCM sujeita ao IS enquanto ela não está definida em lei (erro REG-035). Sem efeito nos itens sem nova incidência do IS (CST 200 do IS, ex.: revenda 200007)."
       },
       {
-        "nome": "Alíquotas efetivas do Simples (anexo I)",
+        "nome": "Alíquotas efetivas do Simples (anexo I, atividade 01)",
         "valor": "CBS 1,1612% · IBS 0,0129%",
-        "fonte": "Valores de exemplo do esquema OpenAPI do motor SN 1.0.2 (AliquotasEfetivasInput). Não são alíquotas de nenhum contribuinte (P8)."
+        "fonte": "Cenário de demonstração (data/demo): valores de exemplo do esquema do motor SN. Informadas pelo usuário: saem da apuração do Simples do contribuinte (P8, ADR 0001)."
       },
       {
         "nome": "Crédito das compras no Simples tradicional",
@@ -24,24 +24,19 @@
         "fonte": "LC 214/2025, art. 47, §9º, I: o optante do Simples não se credita de IBS e CBS."
       },
       {
-        "nome": "Cesta básica dentro do DAS",
-        "valor": "sem redução: o arroz paga as alíquotas efetivas do anexo",
-        "fonte": "Premissa da equipe. A LC 214 zera a cesta básica (art. 125), mas não diz se vale dentro do DAS, e o motor do Simples só aplica as alíquotas informadas. Validar com o contador (ADR 0003)."
+        "nome": "Redução de alíquota dentro do DAS",
+        "valor": "sem redução: Arroz polido não parboilizado, pacote 5 kg, Carne bovina desossada, resfriada (kg) paga(m) as alíquotas efetivas do anexo",
+        "fonte": "Premissa da equipe. O motor do Simples aplica as alíquotas efetivas informadas, sem a redução do cClassTrib do regime regular; não verificamos na lei se a redução vale dentro do DAS. Validar com o contador (ADR 0003)."
       },
       {
-        "nome": "Crédito das compras sem grupo IBSCBS na nota",
-        "valor": "calculado no motor RR sobre o custo",
-        "fonte": "Hipótese de fornecedor no regime regular (plano, E3)."
+        "nome": "Crédito das compras sem valor informado",
+        "valor": "calculado no motor RR sobre o custo: Arroz polido não parboilizado, pacote 5 kg, Carne bovina desossada, resfriada (kg)",
+        "fonte": "Hipótese de fornecedor no regime regular, na data e com as alíquotas da operação (plano, E3)."
       },
       {
         "nome": "ICMS",
         "valor": "fora das contas",
-        "fonte": "Simplificação da demonstração. Em 2027 o ICMS ainda existe e é deduzido da base do IBS/CBS (docs/exemplos.md da calculadora RR)."
-      },
-      {
-        "nome": "Lote de referência",
-        "valor": "100 unidades por item",
-        "fonte": "Valores por unidade = linha ÷ 100."
+        "fonte": "Simplificação do produto. Em 2027 o ICMS ainda existe e é deduzido da base do IBS/CBS (docs/exemplos.md da calculadora RR)."
       }
     ],
     "regime": "simples_tradicional",
@@ -138,6 +133,36 @@
         "erros": []
       },
       {
+        "id": "biscoito-pacote",
+        "descricao": "Biscoito doce, pacote 140 g",
+        "motor": "simples_nacional",
+        "estado": "CALCULADO",
+        "motivoEstado": null,
+        "quantidade": "100",
+        "valorUnitario": "4.49",
+        "valorProdutos": "449.00",
+        "tributos": {
+          "cbs": "5.21",
+          "ibs": "0.06",
+          "impostoSeletivo": "0.00"
+        },
+        "reducaoPct": null,
+        "aliquotaEfetiva": {
+          "cbs": "1.1612",
+          "ibsUF": null,
+          "ibsMun": null,
+          "ibs": "0.0129"
+        },
+        "precoCliente": "449.00",
+        "custoEfetivo": "337.59",
+        "margemPct": "23.64",
+        "memoria": {
+          "cbs": "Receita bruta do Simples Nacional de R$ 449,00 (Receita bruta - interna). A base de cálculo utilizada é de R$ 449,00, com alíquota efetiva de 1,1612%. Valor devido de R$ 5,21 e pendente/suspenso de R$ 0,00.",
+          "ibs": "Receita bruta do Simples Nacional de R$ 449,00 (Receita bruta - interna). A base de cálculo utilizada é de R$ 449,00, com alíquota efetiva de 0,0129%. Valor devido de R$ 0,06 e pendente/suspenso de R$ 0,00."
+        },
+        "erros": []
+      },
+      {
         "id": "carne-bovina-kg",
         "descricao": "Carne bovina desossada, resfriada (kg)",
         "motor": "simples_nacional",
@@ -161,21 +186,21 @@
           {
             "codigo": "VSN-047",
             "titulo": "NCM não aplicável",
-            "campo": "#/itens/3/ncm",
+            "campo": "#/itens/4/ncm",
             "detalhe": "NCM de código 02013000 não vinculada à Classificação Tributária de código 200035 (CBS e IBS)"
           }
         ]
       }
     ],
     "totais": {
-      "valorProdutos": "3768.00",
+      "valorProdutos": "4217.00",
       "tributos": {
-        "cbs": "43.76",
-        "ibs": "0.49",
+        "cbs": "48.97",
+        "ibs": "0.55",
         "impostoSeletivo": "0.00"
       },
-      "precoCliente": "3768.00",
-      "itensCalculados": 3,
+      "precoCliente": "4217.00",
+      "itensCalculados": 4,
       "itensComErro": 1
     },
     "cargaAtualPct": null,
@@ -192,27 +217,17 @@
       {
         "nome": "Alíquotas nominais de 2027",
         "valor": "CBS 8,8% · IBS estadual 0,05% · IBS municipal 0,05%",
-        "fonte": "Entradas do exemplo oficial (docs/exemplos.md da calculadora RR 1.7.2). Não são alíquotas oficiais (P6)."
+        "fonte": "Cenário de demonstração (data/demo): entradas do exemplo oficial da calculadora RR. Informadas pelo usuário (P6). Não são alíquotas oficiais."
       },
       {
-        "nome": "Imposto Seletivo da cerveja",
-        "valor": "não incide na revenda (cClassTrib do IS 200007); alíquota exigida pelo motor: 10%",
-        "fonte": "Entrada do exemplo oficial. O motor RR exige a alíquota do IS para NCM sujeita ao IS mesmo na revenda (erro REG-035: 'ainda não foi definida em lei'). Na revenda (cClassTrib do IS 200007) o valor do IS sai zero."
-      },
-      {
-        "nome": "Crédito das compras sem grupo IBSCBS na nota",
-        "valor": "calculado no motor RR sobre o custo",
-        "fonte": "Hipótese de fornecedor no regime regular (plano, E3)."
+        "nome": "Alíquota do Imposto Seletivo",
+        "valor": "10%",
+        "fonte": "Informada pelo usuário (P7). O motor RR exige a alíquota do IS para NCM sujeita ao IS enquanto ela não está definida em lei (erro REG-035). Sem efeito nos itens sem nova incidência do IS (CST 200 do IS, ex.: revenda 200007)."
       },
       {
         "nome": "ICMS",
         "valor": "fora das contas",
-        "fonte": "Simplificação da demonstração. Em 2027 o ICMS ainda existe e é deduzido da base do IBS/CBS (docs/exemplos.md da calculadora RR)."
-      },
-      {
-        "nome": "Lote de referência",
-        "valor": "100 unidades por item",
-        "fonte": "Valores por unidade = linha ÷ 100."
+        "fonte": "Simplificação do produto. Em 2027 o ICMS ainda existe e é deduzido da base do IBS/CBS (docs/exemplos.md da calculadora RR)."
       }
     ],
     "regime": "simples_hibrido",
@@ -313,6 +328,37 @@
         "erros": []
       },
       {
+        "id": "biscoito-pacote",
+        "descricao": "Biscoito doce, pacote 140 g",
+        "motor": "regime_regular",
+        "estado": "CALCULO_SIMULADO",
+        "motivoEstado": null,
+        "quantidade": "100",
+        "valorUnitario": "4.49",
+        "valorProdutos": "449.00",
+        "tributos": {
+          "cbs": "39.51",
+          "ibs": "0.44",
+          "impostoSeletivo": null
+        },
+        "reducaoPct": "0.00",
+        "aliquotaEfetiva": {
+          "cbs": "8.80",
+          "ibsUF": "0.05",
+          "ibsMun": "0.05",
+          "ibs": null
+        },
+        "precoCliente": "488.95",
+        "custoEfetivo": "310.00",
+        "margemPct": "28.43",
+        "memoria": {
+          "cbs": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 449,00, com alíquota de 8,80%.",
+          "ibsUF": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 449,00, com alíquota de 0,05%.",
+          "ibsMun": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 449,00, com alíquota de 0,05%."
+        },
+        "erros": []
+      },
+      {
         "id": "carne-bovina-kg",
         "descricao": "Carne bovina desossada, resfriada (kg)",
         "motor": "regime_regular",
@@ -336,27 +382,27 @@
           {
             "codigo": "REG-011",
             "titulo": "NCM não vinculada",
-            "campo": "#/itens/3/ncm",
+            "campo": "#/itens/4/ncm",
             "detalhe": "NCM de código 02013000 não vinculada à Classificação Tributária de código 200035 (CBS e IBS)"
           }
         ]
       }
     ],
     "totais": {
-      "valorProdutos": "3768.00",
+      "valorProdutos": "4217.00",
       "tributos": {
-        "cbs": "86.06",
-        "ibs": "0.98",
+        "cbs": "125.57",
+        "ibs": "1.42",
         "impostoSeletivo": "0.00"
       },
-      "precoCliente": "3855.04",
-      "itensCalculados": 3,
+      "precoCliente": "4343.99",
+      "itensCalculados": 4,
       "itensComErro": 1
     },
     "cargaAtualPct": null,
     "versoes": {
       "motorRegimeRegular": "1.7.2",
-      "motorSimplesNacional": "1.0.2",
+      "motorSimplesNacional": null,
       "banco": "V0073"
     }
   }

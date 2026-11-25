@@ -27,23 +27,23 @@ from app.agente.tipos import DefinicaoFerramenta
 from app.classificacao.candidatos import buscar_candidatos, classificacoes_da_ncm
 from app.contrato import (
     CarrinhoRequisicao,
+    ClienteB2B,
     ContextoChat,
     ExplicarRequisicao,
     ItemBase,
     ItemEntrada,
     PrecoAlvoRequisicao,
+    RegimeCompararRequisicao,
 )
 from app.explicacao import explicar_item
 from app.motores.cliente import ClienteMotores, FalhaMotor, OperacaoRecusada
 from app.motores.dados_abertos import DadosAbertos
 from app.precificacao.carrinho import calcular_carrinho
 from app.precificacao.preco_alvo import CalculoRecusado, calcular_preco_alvo
+from app.regime.comparar import comparar_regimes
 
 log = logging.getLogger("contaai.agente")
 
-INDISPONIVEL_E3 = (
-    "A comparação de regimes com cálculo real entra na E3. Até lá, a tela mostra o cenário de demonstração."
-)
 INDISPONIVEL_E4 = "Os alertas de margem a partir da NF-e entram na E4. Ainda não há alertas reais."
 SEM_CONTEXTO = (
     "Sem contexto da operação (data, UF, município, regime e itens confirmados) não há o que calcular. "
@@ -100,6 +100,15 @@ class CalcularCarrinhoArgs(_Args):
 class PrecoAlvoArgs(_Args):
     itemId: str = Field(max_length=64)
     margemAlvoPct: Decimal = Field(gt=0, lt=100, description="Margem desejada em % do preço ao cliente.")
+
+
+class CompararRegimesArgs(_Args):
+    itemIds: list[str] | None = Field(
+        default=None, max_length=200, description="Ids dos itens do contexto vendidos ao cliente. Vazio: todos."
+    )
+    clienteNome: str | None = Field(
+        default=None, max_length=120, description="Nome do cliente do regime regular, se o usuário disse."
+    )
 
 
 class ItemArgs(_Args):
@@ -223,8 +232,26 @@ async def _explicar_erro(args: ErroArgs, amb: Ambiente) -> dict[str, Any]:
     return {"codigo": erro.codigo, "titulo": erro.titulo, "descricao": erro.descricao, "motor": motor.value}
 
 
-async def _comparar_regimes(_: SemArgs, __: Ambiente) -> dict[str, Any]:
-    return {"indisponivel": INDISPONIVEL_E3}
+CLIENTE_SEM_NOME = "Cliente do regime regular"
+
+
+async def _comparar_regimes(args: CompararRegimesArgs, amb: Ambiente) -> dict[str, Any]:
+    ctx = _contexto(amb)
+    itens = ctx.itens if not args.itemIds else [_item(ctx, i) for i in args.itemIds]
+    if not itens:
+        raise FalhaFerramenta("Não há itens confirmados para comparar.")
+    if ctx.premissasDas is None:
+        raise FalhaFerramenta(
+            "Sem as alíquotas efetivas do Simples (premissasDas) não há lado tradicional. Peça ao usuário para "
+            "informá-las na tela."
+        )
+    operacao = {k: v for k, v in _operacao(ctx).items() if k != "regime"}
+    req = RegimeCompararRequisicao(
+        **operacao,
+        cliente=ClienteB2B(nome=args.clienteNome or CLIENTE_SEM_NOME, regime="regime_regular"),
+        itens=itens,
+    )
+    return _json(await comparar_regimes(req, amb.motores))
 
 
 async def _listar_alertas(_: SemArgs, __: Ambiente) -> dict[str, Any]:
@@ -279,8 +306,10 @@ FERRAMENTAS: dict[str, Ferramenta] = {
         ),
         Ferramenta(
             "comparar_regimes",
-            "Compara Simples tradicional e híbrido para um cliente B2B (disponível na E3).",
-            SemArgs,
+            "Compara Simples tradicional e híbrido numa venda dos itens confirmados a um cliente do regime regular: "
+            "tributo e caixa da empresa, crédito que o cliente leva e custo líquido dele, com as premissas. Não "
+            "recomenda regime.",
+            CompararRegimesArgs,
             _comparar_regimes,
         ),
         Ferramenta(

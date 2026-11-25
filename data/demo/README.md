@@ -4,8 +4,8 @@ Tudo aqui é **fictício** (princípio P10). Empresas, CNPJs, preços, custos, m
 
 | Arquivo | O que é |
 |---|---|
-| `distribuidora.json` | Distribuidora Serra Azul ME (fictícia): Simples, anexo I, atividade 01 (revenda), em Porto Alegre (código IBGE 4314902). Traz as premissas do cenário de março de 2027 e o catálogo de 4 itens. |
-| `cliente-b2b.json` | Mercado Bom Preço Ltda (fictício), regime regular: cesta mensal de R$ 19.901,00 aos preços do catálogo (o plano fala em R$ 20 mil por mês). |
+| `distribuidora.json` | Distribuidora Serra Azul ME (fictícia): Simples, anexo I, atividade 01 (revenda), em Porto Alegre (código IBGE 4314902). Traz as premissas do cenário de março de 2027 e o catálogo de 5 itens. |
+| `cliente-b2b.json` | Mercado Bom Preço Ltda (fictício), regime regular: cesta mensal de R$ 19.898,65 (biscoito, cerveja e chocolate) aos preços do catálogo (o plano fala em R$ 20 mil por mês). Só itens com tributação integral, para que a comparação de regimes não dependa da premissa da redução dentro do DAS (ADR 0007). |
 | `notas/nfe-compra-1.xml` | Compra de 02/03/2027 do Atacado Exemplo Ltda (fictício). **Sem** grupo IBSCBS: o crédito das compras sai do motor RR sobre o custo. |
 | `notas/nfe-compra-2.xml` | Compra de 16/03/2027 do mesmo fornecedor: a cerveja sobe de R$ 2,60 para R$ 3,05. **Com** grupos IS e IBSCBS gerados pelo motor RR e validados no XSD oficial. |
 
@@ -16,12 +16,14 @@ Tudo aqui é **fictício** (princípio P10). Empresas, CNPJs, preços, custos, m
 | Arroz polido, pacote 5 kg | 10063021 | 200003 (Anexo I, redução de 100%) | Item com redução |
 | Cerveja de malte, lata 350 ml | 22030000 | 000001 + IS 200007 | Alerta de margem pela nota 2 |
 | Chocolate não recheado, barra 90 g | 18063210 | 000001 | Referência de alíquota cheia |
+| Biscoito doce, pacote 140 g | 19053100 | 000001 | Venda ao cliente B2B sem redução (no lugar do arroz) |
 | Carne bovina desossada, resfriada (kg) | 02013000 | 200035 (errada de propósito) | Autocorreção do REG-011 |
 
 As classificações e descrições de NCM vêm dos dados abertos do motor RR 1.7.2 e do exemplo oficial (`docs/exemplos.md`). A fonte de cada uma está no próprio JSON.
 
 - **Item comum:** o chocolate foi escolhido porque, nos dados abertos, não tem nenhuma classificação com redução específica do produto (ADR 0003).
-- **Cerveja:** usa o IS `200007` (revenda), porque o IS incide uma única vez sobre o bem, conforme a CF, art. 153, §6º, II.
+- **Biscoito:** mesmo critério do chocolate. Conferido também no motor RR 1.7.2: 200003 (Anexo I) e 200034 (Anexo VII) são recusadas com REG-011, e a NCM não é tributada pelo IS. Entrou na venda ao cliente B2B no lugar do arroz (ADR 0007). Preço e custo são fictícios.
+- **Cerveja:** usa o IS `200007` (revenda), porque o IS incide uma única vez sobre o bem, conforme a CF, art. 153, §6º, II, e a LC 214/2025, art. 410. O contribuinte do IS é o fabricante, no primeiro fornecimento (LC 214, arts. 412, I, e 424, I), e o IS não gera crédito (art. 410).
 
 ## Premissas (rotuladas, nunca alíquota oficial)
 

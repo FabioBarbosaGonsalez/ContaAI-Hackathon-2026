@@ -7,6 +7,7 @@ FastAPI que orquestra os motores oficiais da Receita. Instruções no README da 
 | `app/contrato.py` | Contrato da API (fonte do `docs/contrato/openapi.json`) |
 | `app/motores/` | Modelos das respostas, cliente tipado (httpx) e montagem das requisições aos motores |
 | `app/precificacao/` | Carrinho real e preço-alvo (ajuste afim + bisseção) |
+| `app/regime/` | Comparação Simples tradicional × híbrido (E3) |
 | `app/cenarios/` | Premissas, aviso de simulação e presets de 2027 com fonte |
 | `app/agente/` | Agente: formato interno, tomada do provedor de IA, provedor `roteiro`, ferramentas, loop e verificador |
 | `app/classificacao/` | Índice de NCM (gerado por `scripts/gerar_indice_ncm.py`) e candidatos de classificação |

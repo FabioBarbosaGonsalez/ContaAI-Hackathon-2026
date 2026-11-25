@@ -89,7 +89,7 @@ Uma inconsistência na própria revisão: ela cita um "D4" (PDF para o contador)
 
 - E1-03 e E1-04: resolvidos no [ADR 0005](0005-preco-alvo-e-premissas.md).
 - IS com incidência no Simples tradicional: falta decidir com o contador como o IS entra na margem.
-- O tradicional de 2026 não tem cálculo no motor SN (VSN-015). Falta decidir o que a tela mostra nesse caso.
+- O tradicional de 2026 não tem cálculo no motor SN (VSN-015). Falta decidir o que a tela mostra nesse caso. **Resolvido na E3** ([ADR 0007](0007-comparacao-de-regimes.md)): carrinho, preço-alvo e explicação recusam o tradicional antes de 2027 com mensagem clara, antes de chamar o motor; o híbrido de 2026 continua calculando.
 - O teste avisa que o Starlette depreciou o `httpx` no `TestClient` (sugere "httpx2"). Continua em investigação; nenhuma dependência foi trocada.
 
 ## Consequências

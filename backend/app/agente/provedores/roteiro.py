@@ -202,8 +202,37 @@ def _fluxo_regime(t: _Turno) -> RespostaModelo | str:
     feitos = t.de("comparar_regimes")
     if not feitos:
         return t.chamar(("comparar_regimes", {}))
-    c = feitos[-1].conteudo
-    return (c.get("indisponivel") or _erro(feitos[-1])) + " A decisão de regime deve ser validada com o seu contador."
+    r = feitos[-1]
+    if r.erro:
+        return f"Não consegui comparar os regimes: {_erro(r)} {CONTADOR_REGIME}"
+    c = r.conteudo
+    trad, hib = c["tradicional"], c["hibrido"]
+    texto = (
+        f"Na venda de R$ {reais(c['valorVenda'])} a {c['cliente']['nome']}: no Simples tradicional, a CBS/IBS no DAS "
+        f"é R$ {reais(trad['tributo'])} e o cliente leva R$ {reais(trad['creditoCliente'])} de crédito (custo "
+        f"líquido dele R$ {reais(trad['custoLiquidoCliente'])}). No híbrido, o débito é R$ {reais(hib['debito'])}, "
+        f"o crédito das compras R$ {reais(hib['creditoCompras'])} e o tributo líquido R$ "
+        f"{reais(hib['tributoLiquido'])}; o cliente leva R$ {reais(hib['creditoCliente'])} de crédito (custo "
+        f"líquido dele R$ {reais(hib['custoLiquidoCliente'])})."
+    )
+    diferenca = Decimal(str(c["diferencaCaixa"]))
+    if diferenca > 0:
+        texto += f" A preço igual, o híbrido deixa R$ {reais(diferenca)} a mais de caixa com a empresa."
+    elif diferenca < 0:
+        texto += " A preço igual, o híbrido deixa menos caixa com a empresa que o tradicional."
+    else:
+        texto += " A preço igual, o caixa da empresa é o mesmo nos dois regimes."
+    empate = c.get("empateTradicional")
+    if empate and Decimal(str(empate["descontoNecessario"])) > 0:
+        texto += (
+            f" Para o cliente ter no tradicional o mesmo custo líquido que teria num concorrente do regime regular "
+            f"com o mesmo preço, o preço precisaria ser R$ {reais(empate['precoCliente'])} (R$ "
+            f"{reais(empate['descontoNecessario'])} a menos)."
+        )
+    return f"{texto}{_fim_simulacao(c)} Os números valem para as premissas listadas. {CONTADOR_REGIME}"
+
+
+CONTADOR_REGIME = "A decisão de regime deve ser validada com o seu contador."
 
 
 def _fluxo_alertas(t: _Turno) -> RespostaModelo | str:

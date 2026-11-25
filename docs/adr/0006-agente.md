@@ -46,7 +46,7 @@ São as da seção 10 do plano, mais `listar_itens`: `buscar_ncm`, `listar_cclas
 - **Mesmo código das rotas (P1).** As ferramentas chamam `calcular_carrinho`, `calcular_preco_alvo`, `explicar_item` e os dados abertos.
 - **P3.** Só os itens do contexto, que o usuário já confirmou, são calculados, e por id. `buscar_ncm` e `listar_cclasstrib` só propõem. Um item que só aparece no texto da conversa não é calculado.
 - **Nenhuma ferramenta grava nada.** As ações saem como propostas.
-- **`comparar_regimes` e `listar_alertas`** respondem `{"indisponivel": ...}` até a E3 e a E4, sem número de mock.
+- **`comparar_regimes` e `listar_alertas`** respondem `{"indisponivel": ...}` até a E3 e a E4, sem número de mock. (`comparar_regimes` calcula desde a E3: [ADR 0007](0007-comparacao-de-regimes.md).)
 - **Até 5 `buscar_ncm` por mensagem.** A partir da 6ª, a chamada volta com erro de limite.
 - **Peso no contexto da IA.** `calcular_carrinho` e `preco_alvo` não levam a memória de cálculo, que fica para `explicar_item`.
 
@@ -155,10 +155,10 @@ O log registra o nome, a duração e o resultado (ok ou não) de cada ferramenta
 
 - **Escolher o provedor e escrever o adaptador.** Basta um arquivo em `app/agente/provedores/` e uma linha em `PROVEDORES`; o roteiro está no docstring de `provedor.py`. O adaptador precisa de um teste com `httpx.MockTransport` feito a partir dos exemplos da documentação oficial do provedor, e as 20 perguntas com `-m llm`.
 - **`X-Forwarded-For` atrás do proxy do deploy (E6).**
-- **Continuam abertos:** IS com incidência no tradicional (422), o tradicional de 2026 (VSN-015) e o aviso "httpx2" do Starlette.
+- **Continuam abertos:** IS com incidência no tradicional (422), o tradicional de 2026 (VSN-015) e o aviso "httpx2" do Starlette. (Os dois últimos foram resolvidos na E3: [ADR 0007](0007-comparacao-de-regimes.md).)
 
 ## Consequências
 
 - A E2 está completa com o provedor `roteiro`. Ligar a IA real não muda contrato, rotas nem testes do CI.
 - O cadastro por chat, a correção do REG-011, o preço-alvo e a explicação funcionam no modo real e no modo mock, que agora traz a saída real do agente.
-- `scripts/gerar_mocks.py` continua como referência só para a comparação de regimes (E3) e para NF-e e alertas (E4).
+- `scripts/gerar_mocks.py` continua como referência só para a comparação de regimes (E3) e para NF-e e alertas (E4). Desde a E3, a comparação também usa o código de produção ([ADR 0007](0007-comparacao-de-regimes.md)).
