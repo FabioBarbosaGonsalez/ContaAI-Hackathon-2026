@@ -15,10 +15,12 @@ from app.contrato import (
     AlertasResposta,
     BuscaNcmResposta,
     CarrinhoResposta,
+    CatalogoResposta,
     ChatResposta,
     ErroDescricao,
     ExplicarResposta,
     NfeImportarResposta,
+    PainelContadorResposta,
     PrecoAlvoResposta,
     Regime,
     RegimeCompararResposta,
@@ -34,6 +36,8 @@ class Mocks:
     regime_comparar: RegimeCompararResposta
     nfe_importar: NfeImportarResposta
     alertas: AlertasResposta
+    catalogo: CatalogoResposta
+    contador_painel: PainelContadorResposta
     busca_ncm: dict[str, BuscaNcmResposta]
     explicar: dict[str, dict[Regime, ExplicarResposta]]
     erros: dict[str, ErroDescricao]
@@ -53,6 +57,8 @@ def carregar() -> Mocks:
         regime_comparar=RegimeCompararResposta.model_validate(_ler("regime-comparar.json")),
         nfe_importar=NfeImportarResposta.model_validate(_ler("nfe-importar.json")),
         alertas=AlertasResposta.model_validate(_ler("alertas.json")),
+        catalogo=CatalogoResposta.model_validate(_ler("catalogo.json")),
+        contador_painel=PainelContadorResposta.model_validate(_ler("contador-painel.json")),
         busca_ncm={k: BuscaNcmResposta.model_validate(v) for k, v in _ler("busca-ncm.json").items()},
         explicar={
             item: {Regime(r): ExplicarResposta.model_validate(e) for r, e in por_regime.items()}

@@ -239,7 +239,29 @@ def _fluxo_alertas(t: _Turno) -> RespostaModelo | str:
     feitos = t.de("listar_alertas")
     if not feitos:
         return t.chamar(("listar_alertas", {}))
-    return feitos[-1].conteudo.get("indisponivel") or _erro(feitos[-1])
+    c = feitos[-1].conteudo
+    if "alertas" not in c:
+        return c.get("indisponivel") or _erro(feitos[-1])
+    if not c["alertas"]:
+        return "Nenhum alerta de margem aberto: nenhuma nota importada derrubou uma margem abaixo do alvo."
+    frases = []
+    for a in c["alertas"][:3]:
+        o = a["origem"]
+        frase = (
+            f"A margem de {a['descricaoItem']} caiu de {br(a['margemAntesPct'])}% para {br(a['margemDepoisPct'])}% "
+            f"depois da nota {o['numero']} de {o['dataEmissao'][8:10]}/{o['dataEmissao'][5:7]}/{o['dataEmissao'][:4]}, "
+            f"abaixo do alvo de {br(a['margemAlvoPct'])}%."
+        )
+        if a.get("precoSugerido") is not None:
+            frase += f" Preço sugerido: R$ {reais(a['precoSugerido'])}, no lugar de R$ {reais(a['precoAtual'])}."
+        else:
+            frase += " Não há preço que chegue ao alvo com esse custo."
+        frases.append(frase)
+    resto = c["total"] - len(frases)
+    if resto > 0:
+        frases.append(f"Há mais {resto} alerta(s) na tela.")
+    simulado = " É simulação com as premissas listadas." if any(a.get("simulado") for a in c["alertas"]) else ""
+    return " ".join(frases) + simulado + " Aplicar o preço é com você, na tela."
 
 
 def _fluxo_buscar(t: _Turno) -> RespostaModelo | str:

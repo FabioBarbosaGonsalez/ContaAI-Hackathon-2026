@@ -6,8 +6,9 @@ usam as fórmulas do ADR 0003 sobre esses valores, só com soma, subtração e d
 
 É a implementação de referência que as etapas E1 a E4 substituem pelo código de produção, com testes.
 Carrinho, preço-alvo, explicação, chat e comparação de regimes já saem do código de produção (E1 a E3,
-ADR 0007). O carrinho e o preço-alvo de referência continuam aqui como conferência: se a produção
-divergir deles, nenhum mock é gravado. NF-e e alertas seguem na referência até a E4.
+ADR 0007), e desde a E4 também NF-e, alertas, catálogo e painel do contador (ADR 0008), num banco
+temporário com as sementes. O carrinho, o preço-alvo e a importação da nota 2 de referência continuam
+aqui como conferência: se a produção divergir deles, nenhum mock é gravado.
 
 Uso (motores de pé): cd backend && uv run python scripts/gerar_mocks.py
 """
@@ -169,7 +170,7 @@ class Custo:
 
 def ler_notas() -> list[Nota]:
     notas = []
-    for caminho in sorted((PASTA_DEMO / "notas").glob("*.xml")):
+    for caminho in sorted((PASTA_DEMO / "notas").glob("nfe-compra-*.xml")):
         inf = ET.parse(caminho).getroot().find("n:infNFe", NS)
         itens = []
         for det in inf.findall("n:det", NS):
@@ -641,6 +642,8 @@ def importar(
                         tipo="nfe", numero=nota.numero, dataEmissao=nota.dhEmi, emitente=nota.emitente.nome
                     ),
                     criadoEm=nota.dhEmi,
+                    simulado=True,
+                    premissas=premissas(regime),
                 )
             )
     return NfeImportarResposta(
@@ -650,7 +653,64 @@ def importar(
         itensCasados=casados,
         itensSemPar=[],
         alertas=alertas,
+        simulado=True,
+        premissas=[],
     )
+
+
+# Produção da E4 (ADR 0008): banco temporário com as sementes, importação da nota 2 pela rota real.
+# O relógio é fixo (hora da nota 2, em UTC como todo instante do sistema) para que os mocks sejam reproduzíveis.
+
+RELOGIO_MOCKS = datetime.fromisoformat("2027-03-16T12:00:00+00:00")  # hora da nota 2 (09:00 -03:00), em UTC
+CAMPOS_ALERTA = {"itemId", "regime", "margemAntesPct", "margemDepoisPct", "margemAlvoPct", "precoAtual"}
+CAMPOS_ALERTA |= {"precoSugerido"}
+CAMPOS_CASADO = {"itemId", "codigoFornecedor", "ncm", "quantidade", "custoAnterior", "custoNovo", "variacaoPct"}
+CAMPOS_CASADO |= {"creditoCompraUnitario", "fonteCredito"}
+
+
+def producao_nfe(
+    referencia: NfeImportarResposta,
+) -> tuple[NfeImportarResposta, AlertasResposta, Any, Any]:
+    import asyncio
+    import tempfile
+
+    from app.motores.cliente import ClienteMotores
+    from app.nfe import consultas
+    from app.nfe.importacao import importar_nota
+    from app.persistencia.banco import Banco
+    from app.persistencia.repositorio import Repositorio
+    from app.persistencia.sementes import restaurar
+
+    def relogio() -> datetime:
+        return RELOGIO_MOCKS
+
+    async def rodar() -> tuple[NfeImportarResposta, AlertasResposta, Any, Any]:
+        with tempfile.TemporaryDirectory() as pasta:
+            banco = Banco(Path(pasta) / "mocks.db")
+            banco.migrar()
+            repo = Repositorio(banco)
+            async with httpx.AsyncClient(timeout=60, trust_env=False) as http:
+                motores = ClienteMotores(http, MOTOR_RR_URL, MOTOR_SN_URL)
+                await restaurar(repo, motores, relogio=relogio)
+                nota2 = (PASTA_DEMO / "notas" / "nfe-compra-2.xml").read_bytes()
+                importacao = await importar_nota(nota2, repo, motores, relogio)
+            return (
+                importacao,
+                AlertasResposta(alertas=consultas.alertas(repo, None, None)),
+                consultas.catalogo(repo, EMP.cnpj),
+                consultas.painel(repo),
+            )
+
+    importacao, alertas, catalogo, painel = asyncio.run(rodar())
+    if [a.model_dump(include=CAMPOS_ALERTA) for a in importacao.alertas] != [
+        a.model_dump(include=CAMPOS_ALERTA) for a in referencia.alertas
+    ]:
+        raise Divergencia("alertas da nota 2")
+    if [c.model_dump(include=CAMPOS_CASADO) for c in importacao.itensCasados] != [
+        c.model_dump(include=CAMPOS_CASADO) for c in referencia.itensCasados
+    ]:
+        raise Divergencia("itens casados da nota 2")
+    return importacao, alertas, catalogo, painel
 
 
 # ---------------------------------------------------------------------------
@@ -835,13 +895,16 @@ def main() -> None:
         car, preco, expl = producao(
             atuais, {Regime.SIMPLES_TRADICIONAL: car_trad, Regime.SIMPLES_HIBRIDO: car_hib}, ref_preco
         )
+        nfe, alertas, catalogo, painel = producao_nfe(importacao)
 
         print("Mocks gravados em backend/app/mocks/:")
         gravar("carrinho.json", car)
         gravar("preco-alvo.json", preco)
         gravar("regime-comparar.json", regime_comparar(atuais))
-        gravar("nfe-importar.json", importacao)
-        gravar("alertas.json", AlertasResposta(alertas=importacao.alertas))
+        gravar("nfe-importar.json", nfe)
+        gravar("alertas.json", alertas)
+        gravar("catalogo.json", catalogo)
+        gravar("contador-painel.json", painel)
         gravar("busca-ncm.json", busca)
         gravar("explicar.json", expl)
         gravar("erros.json", erros(motores))

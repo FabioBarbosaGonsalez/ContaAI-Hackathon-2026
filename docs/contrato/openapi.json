@@ -234,16 +234,35 @@
           "notas"
         ],
         "summary": "Nfe Importar",
+        "description": "Lê a nota, casa os itens, grava o histórico de custo e gera os alertas de margem (E4, plano 11.3).",
         "operationId": "nfe_importar_nfe_importar_post",
+        "parameters": [
+          {
+            "name": "X-ContaAI-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Contaai-Token"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "multipart/form-data": {
               "schema": {
                 "$ref": "#/components/schemas/Body_nfe_importar_nfe_importar_post"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -255,6 +274,120 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "XML que não é uma NF-e lida pelo ContaAI, ou destinatário que não é empresa cadastrada."
+          },
+          "502": {
+            "description": "O motor devolveu uma resposta que o ContaAI não reconhece.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Motor indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token da demo ausente ou errado (header X-ContaAI-Token)."
+          },
+          "404": {
+            "description": "Empresa ou alerta não encontrado."
+          },
+          "429": {
+            "description": "Limite de requisições por minuto atingido (header Retry-After)."
+          },
+          "409": {
+            "description": "A mesma nota (emitente, série e número) já foi importada com outro conteúdo."
+          },
+          "411": {
+            "description": "Upload sem Content-Length."
+          },
+          "413": {
+            "description": "Arquivo maior que o limite para uma NF-e."
+          },
+          "415": {
+            "description": "O arquivo não é XML."
+          }
+        }
+      }
+    },
+    "/alertas": {
+      "get": {
+        "tags": [
+          "notas"
+        ],
+        "summary": "Listar Alertas",
+        "description": "Alertas de margem gerados pelas notas de compra, do mais recente para o mais antigo.",
+        "operationId": "listar_alertas_alertas_get",
+        "parameters": [
+          {
+            "name": "cnpj",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^\\d{14}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Só os desta empresa.",
+              "title": "Cnpj"
+            },
+            "description": "Só os desta empresa."
+          },
+          {
+            "name": "abertos",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "true: só os sem preço aplicado; false: só os aplicados.",
+              "title": "Abertos"
+            },
+            "description": "true: só os sem preço aplicado; false: só os aplicados."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertasResposta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token da demo ausente ou errado (header X-ContaAI-Token)."
+          },
+          "404": {
+            "description": "Empresa ou alerta não encontrado."
+          },
+          "429": {
+            "description": "Limite de requisições por minuto atingido (header Retry-After)."
           },
           "422": {
             "description": "Validation Error",
@@ -269,23 +402,223 @@
         }
       }
     },
-    "/alertas": {
-      "get": {
+    "/alertas/{alerta_id}/aplicar": {
+      "post": {
         "tags": [
           "notas"
         ],
-        "summary": "Alertas",
-        "operationId": "alertas_alertas_get",
+        "summary": "Aplicar Alerta",
+        "description": "Aplica o preço sugerido do alerta como preço de venda do item. Só com o clique do usuário (P3).",
+        "operationId": "aplicar_alerta_alertas__alerta_id__aplicar_post",
+        "parameters": [
+          {
+            "name": "alerta_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^alerta-[0-9a-f]{16}$",
+              "title": "Alerta Id"
+            }
+          },
+          {
+            "name": "X-ContaAI-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Contaai-Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AlertasResposta"
+                  "$ref": "#/components/schemas/AplicarAlertaResposta"
                 }
               }
             }
+          },
+          "401": {
+            "description": "Token da demo ausente ou errado (header X-ContaAI-Token)."
+          },
+          "404": {
+            "description": "Empresa ou alerta não encontrado."
+          },
+          "429": {
+            "description": "Limite de requisições por minuto atingido (header Retry-After)."
+          },
+          "409": {
+            "description": "Já aplicado, ou alerta sem preço sugerido."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/catalogo": {
+      "get": {
+        "tags": [
+          "notas"
+        ],
+        "summary": "Catalogo",
+        "description": "Itens da empresa com o preço de venda e o custo atuais e o histórico de custo. Não chama os motores:\na margem de cada item sai do POST /carrinho/calcular com estes valores.",
+        "operationId": "catalogo_catalogo_get",
+        "parameters": [
+          {
+            "name": "cnpj",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{14}$",
+              "description": "CNPJ da empresa (14 dígitos).",
+              "title": "Cnpj"
+            },
+            "description": "CNPJ da empresa (14 dígitos)."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogoResposta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token da demo ausente ou errado (header X-ContaAI-Token)."
+          },
+          "404": {
+            "description": "Empresa ou alerta não encontrado."
+          },
+          "429": {
+            "description": "Limite de requisições por minuto atingido (header Retry-After)."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contador/painel": {
+      "get": {
+        "tags": [
+          "notas"
+        ],
+        "summary": "Contador Painel",
+        "description": "Painel do contador (D1): empresas da carteira com os alertas abertos, a mais urgente primeiro.",
+        "operationId": "contador_painel_contador_painel_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PainelContadorResposta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/demo/restaurar": {
+      "post": {
+        "tags": [
+          "operação"
+        ],
+        "summary": "Demo Restaurar",
+        "description": "Volta o estado às sementes de data/demo (empresas fictícias e notas iniciais), desfazendo tudo o que foi\nimportado ou aplicado. Atômico: se um motor falhar no meio, o estado fica como estava. Exige o token da\ndemo quando ele está configurado.",
+        "operationId": "demo_restaurar_demo_restaurar_post",
+        "parameters": [
+          {
+            "name": "X-ContaAI-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Contaai-Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestaurarResposta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "O motor recusou a operação (erros do motor, ex.: VSN-015). A validação de entrada do ContaAI também responde 422, no formato padrão do FastAPI (detail como lista).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "O motor devolveu uma resposta que o ContaAI não reconhece.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FalhaMotorResposta"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Motor indisponível, ou sementes não encontradas (CONTAAI_PASTA_DEMO)."
+          },
+          "401": {
+            "description": "Token da demo ausente ou errado (header X-ContaAI-Token)."
+          },
+          "404": {
+            "description": "Empresa ou alerta não encontrado."
+          },
+          "429": {
+            "description": "Limite de requisições por minuto atingido (header Retry-After)."
           }
         }
       }
@@ -799,9 +1132,45 @@
       },
       "Alerta": {
         "properties": {
+          "simulado": {
+            "type": "boolean",
+            "title": "Simulado",
+            "description": "Verdadeiro quando há alíquota premissa (2027 em diante ou DAS informado)."
+          },
+          "avisoSimulacao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avisosimulacao",
+            "description": "Frase de estado para o título da tela."
+          },
+          "premissas": {
+            "items": {
+              "$ref": "#/components/schemas/Premissa"
+            },
+            "type": "array",
+            "title": "Premissas"
+          },
           "id": {
             "type": "string",
             "title": "Id"
+          },
+          "cnpj": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cnpj",
+            "description": "Empresa do alerta (painel do contador, D1)."
           },
           "itemId": {
             "type": "string",
@@ -826,13 +1195,54 @@
             "type": "string",
             "title": "Margemalvopct"
           },
+          "custoAnterior": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Custoanterior"
+          },
+          "custoNovo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Custonovo"
+          },
           "precoAtual": {
             "type": "string",
             "title": "Precoatual"
           },
           "precoSugerido": {
-            "type": "string",
-            "title": "Precosugerido"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Precosugerido",
+            "description": "Preço-alvo (POST /item/preco-alvo) com o custo novo. Vazio quando a margem-alvo é impossível."
+          },
+          "motivoSemPreco": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivosempreco"
           },
           "origem": {
             "$ref": "#/components/schemas/OrigemAlerta"
@@ -841,11 +1251,26 @@
             "type": "string",
             "format": "date-time",
             "title": "Criadoem"
+          },
+          "aplicadoEm": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aplicadoem",
+            "description": "Quando o preço sugerido foi aplicado."
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
+          "simulado",
+          "premissas",
           "id",
           "itemId",
           "descricaoItem",
@@ -1010,13 +1435,37 @@
         "title": "AliquotasNominais",
         "description": "Premissas de alíquota do usuário. Obrigatórias a partir de 2027 e proibidas antes (P6)."
       },
+      "AplicarAlertaResposta": {
+        "properties": {
+          "alerta": {
+            "$ref": "#/components/schemas/Alerta"
+          },
+          "precoAnterior": {
+            "type": "string",
+            "title": "Precoanterior"
+          },
+          "precoNovo": {
+            "type": "string",
+            "title": "Preconovo"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "alerta",
+          "precoAnterior",
+          "precoNovo"
+        ],
+        "title": "AplicarAlertaResposta",
+        "description": "O preço sugerido virou o preço de venda do item (lançamento de preço com origem no alerta)."
+      },
       "Body_nfe_importar_nfe_importar_post": {
         "properties": {
           "arquivo": {
             "type": "string",
             "contentMediaType": "application/octet-stream",
             "title": "Arquivo",
-            "description": "XML da NF-e de compra"
+            "description": "XML da NF-e de compra (modelo 55, leiaute 4.00)"
           }
         },
         "type": "object",
@@ -1267,6 +1716,33 @@
         ],
         "title": "CarrinhoResposta"
       },
+      "CatalogoResposta": {
+        "properties": {
+          "empresa": {
+            "$ref": "#/components/schemas/EmpresaResumo"
+          },
+          "itens": {
+            "items": {
+              "$ref": "#/components/schemas/ItemCatalogoEstado"
+            },
+            "type": "array",
+            "title": "Itens"
+          },
+          "aviso": {
+            "type": "string",
+            "title": "Aviso",
+            "description": "Dados fictícios de demonstração (P10)."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "empresa",
+          "itens",
+          "aviso"
+        ],
+        "title": "CatalogoResposta"
+      },
       "ChatRequisicao": {
         "properties": {
           "mensagens": {
@@ -1508,6 +1984,19 @@
             "maxItems": 200,
             "title": "Itens",
             "default": []
+          },
+          "cnpj": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{14}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cnpj",
+            "description": "Empresa da tela: os alertas do chat são os dela (E4)."
           }
         },
         "additionalProperties": false,
@@ -1589,6 +2078,97 @@
         ],
         "title": "EmpateTradicional",
         "description": "Preço no Simples tradicional que dá ao cliente o mesmo custo líquido de um concorrente do regime\nregular que cobra o mesmo preço total (plano 11.2, \"argumento de venda\"; ADR 0007)."
+      },
+      "EmpresaNoPainel": {
+        "properties": {
+          "empresa": {
+            "$ref": "#/components/schemas/EmpresaResumo"
+          },
+          "alertasAbertos": {
+            "type": "integer",
+            "title": "Alertasabertos"
+          },
+          "alertasAplicados": {
+            "type": "integer",
+            "title": "Alertasaplicados"
+          },
+          "ultimaNota": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ultimanota"
+          },
+          "alertaMaisRecente": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Alerta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "empresa",
+          "alertasAbertos",
+          "alertasAplicados",
+          "ultimaNota",
+          "alertaMaisRecente"
+        ],
+        "title": "EmpresaNoPainel"
+      },
+      "EmpresaResumo": {
+        "properties": {
+          "cnpj": {
+            "type": "string",
+            "title": "Cnpj"
+          },
+          "razaoSocial": {
+            "type": "string",
+            "title": "Razaosocial"
+          },
+          "regimeAtual": {
+            "$ref": "#/components/schemas/Regime"
+          },
+          "uf": {
+            "type": "string",
+            "title": "Uf"
+          },
+          "municipio": {
+            "type": "integer",
+            "title": "Municipio"
+          },
+          "municipioNome": {
+            "type": "string",
+            "title": "Municipionome"
+          },
+          "dataCenario": {
+            "type": "string",
+            "format": "date",
+            "title": "Datacenario"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cnpj",
+          "razaoSocial",
+          "regimeAtual",
+          "uf",
+          "municipio",
+          "municipioNome",
+          "dataCenario"
+        ],
+        "title": "EmpresaResumo"
       },
       "ErroDescricao": {
         "properties": {
@@ -1880,7 +2460,7 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
-      "ImpostoSeletivoEntrada": {
+      "ImpostoSeletivoEntrada-Input": {
         "properties": {
           "cst": {
             "type": "string",
@@ -1898,6 +2478,38 @@
                 "type": "number",
                 "exclusiveMinimum": 0.0
               },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Litrosporunidade"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cst",
+          "cClassTrib"
+        ],
+        "title": "ImpostoSeletivoEntrada"
+      },
+      "ImpostoSeletivoEntrada-Output": {
+        "properties": {
+          "cst": {
+            "type": "string",
+            "pattern": "^\\d{3}$",
+            "title": "Cst"
+          },
+          "cClassTrib": {
+            "type": "string",
+            "pattern": "^\\d{6}$",
+            "title": "Cclasstrib"
+          },
+          "litrosPorUnidade": {
+            "anyOf": [
               {
                 "type": "string"
               },
@@ -1967,7 +2579,7 @@
           "impostoSeletivo": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/ImpostoSeletivoEntrada"
+                "$ref": "#/components/schemas/ImpostoSeletivoEntrada-Input"
               },
               {
                 "type": "null"
@@ -2129,6 +2741,125 @@
         ],
         "title": "ItemCalculado"
       },
+      "ItemCatalogoEstado": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Id"
+          },
+          "descricao": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Descricao"
+          },
+          "ncm": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{8}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ncm"
+          },
+          "nbs": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{9}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nbs"
+          },
+          "cst": {
+            "type": "string",
+            "pattern": "^\\d{3}$",
+            "title": "Cst"
+          },
+          "cClassTrib": {
+            "type": "string",
+            "pattern": "^\\d{6}$",
+            "title": "Cclasstrib"
+          },
+          "impostoSeletivo": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ImpostoSeletivoEntrada-Output"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "unidade": {
+            "type": "string",
+            "maxLength": 6,
+            "minLength": 1,
+            "title": "Unidade"
+          },
+          "ncmDescricaoOficial": {
+            "type": "string",
+            "title": "Ncmdescricaooficial"
+          },
+          "classificacaoFonte": {
+            "type": "string",
+            "title": "Classificacaofonte"
+          },
+          "margemAlvoPct": {
+            "type": "string",
+            "title": "Margemalvopct"
+          },
+          "precoVenda": {
+            "type": "string",
+            "title": "Precovenda",
+            "description": "Preço de venda atual por unidade (vUnCom)."
+          },
+          "custoAtual": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LancamentoCustoSaida"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Último custo pela data da nota; vazio sem compra."
+          },
+          "historicoCusto": {
+            "items": {
+              "$ref": "#/components/schemas/LancamentoCustoSaida"
+            },
+            "type": "array",
+            "title": "Historicocusto",
+            "description": "Do mais recente para o mais antigo (até 10)."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "descricao",
+          "cst",
+          "cClassTrib",
+          "unidade",
+          "ncmDescricaoOficial",
+          "classificacaoFonte",
+          "margemAlvoPct",
+          "precoVenda",
+          "custoAtual",
+          "historicoCusto"
+        ],
+        "title": "ItemCatalogoEstado",
+        "description": "O item com o estado atual: preço de venda e custo vêm do último lançamento de cada um."
+      },
       "ItemComparado": {
         "properties": {
           "id": {
@@ -2255,7 +2986,7 @@
           "impostoSeletivo": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/ImpostoSeletivoEntrada"
+                "$ref": "#/components/schemas/ImpostoSeletivoEntrada-Input"
               },
               {
                 "type": "null"
@@ -2341,6 +3072,17 @@
       },
       "ItemNotaCasado": {
         "properties": {
+          "nItem": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nitem"
+          },
           "itemId": {
             "type": "string",
             "title": "Itemid"
@@ -2355,7 +3097,8 @@
           },
           "descricaoNota": {
             "type": "string",
-            "title": "Descricaonota"
+            "title": "Descricaonota",
+            "description": "xProd da nota: texto do fornecedor, tratado como dado não confiável."
           },
           "quantidade": {
             "type": "string",
@@ -2386,6 +3129,12 @@
               }
             ],
             "title": "Variacaopct"
+          },
+          "atualizaCusto": {
+            "type": "boolean",
+            "title": "Atualizacusto",
+            "description": "Falso quando a nota é mais antiga que o custo atual: entra no histórico sem mudar o custo.",
+            "default": true
           },
           "creditoCompraUnitario": {
             "anyOf": [
@@ -2432,6 +3181,17 @@
       },
       "ItemNotaSemPar": {
         "properties": {
+          "nItem": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nitem"
+          },
           "codigoFornecedor": {
             "type": "string",
             "title": "Codigofornecedor"
@@ -2442,7 +3202,20 @@
           },
           "descricaoNota": {
             "type": "string",
-            "title": "Descricaonota"
+            "title": "Descricaonota",
+            "description": "xProd da nota: texto do fornecedor, tratado como dado não confiável."
+          },
+          "motivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo",
+            "description": "Por que não casou (código sem cadastro, NCM ou unidade)."
           }
         },
         "additionalProperties": false,
@@ -2544,6 +3317,66 @@
         ],
         "title": "LadoTradicional"
       },
+      "LancamentoCustoSaida": {
+        "properties": {
+          "data": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Data",
+            "description": "Emissão da nota de compra."
+          },
+          "notaNumero": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notanumero"
+          },
+          "custoUnitario": {
+            "type": "string",
+            "title": "Custounitario"
+          },
+          "creditoCompraUnitario": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Creditocompraunitario"
+          },
+          "fonteCredito": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "nfe",
+                  "motor"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fontecredito"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "data",
+          "custoUnitario",
+          "creditoCompraUnitario",
+          "fonteCredito"
+        ],
+        "title": "LancamentoCustoSaida"
+      },
       "MensagemChat": {
         "properties": {
           "papel": {
@@ -2579,6 +3412,36 @@
       },
       "NfeImportarResposta": {
         "properties": {
+          "simulado": {
+            "type": "boolean",
+            "title": "Simulado",
+            "description": "Verdadeiro quando há alíquota premissa (2027 em diante ou DAS informado)."
+          },
+          "avisoSimulacao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avisosimulacao",
+            "description": "Frase de estado para o título da tela."
+          },
+          "premissas": {
+            "items": {
+              "$ref": "#/components/schemas/Premissa"
+            },
+            "type": "array",
+            "title": "Premissas"
+          },
+          "jaImportada": {
+            "type": "boolean",
+            "title": "Jaimportada",
+            "description": "A mesma nota (mesmo arquivo) já tinha sido importada: nada foi gravado de novo.",
+            "default": false
+          },
           "nota": {
             "$ref": "#/components/schemas/NotaResumo"
           },
@@ -2607,6 +3470,8 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
+          "simulado",
+          "premissas",
           "nota",
           "itensCasados",
           "itensSemPar",
@@ -2616,6 +3481,17 @@
       },
       "NotaResumo": {
         "properties": {
+          "serie": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Serie"
+          },
           "numero": {
             "type": "string",
             "title": "Numero"
@@ -2627,6 +3503,23 @@
           },
           "emitente": {
             "$ref": "#/components/schemas/Emitente"
+          },
+          "destinatario": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Emitente"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "A empresa cadastrada que recebeu a nota."
+          },
+          "homologacao": {
+            "type": "boolean",
+            "title": "Homologacao",
+            "description": "Nota de ambiente de homologação (tpAmb 2), como as da demo.",
+            "default": false
           },
           "temGrupoIbsCbs": {
             "type": "boolean",
@@ -2673,6 +3566,29 @@
           "emitente"
         ],
         "title": "OrigemAlerta"
+      },
+      "PainelContadorResposta": {
+        "properties": {
+          "empresas": {
+            "items": {
+              "$ref": "#/components/schemas/EmpresaNoPainel"
+            },
+            "type": "array",
+            "title": "Empresas"
+          },
+          "aviso": {
+            "type": "string",
+            "title": "Aviso"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "empresas",
+          "aviso"
+        ],
+        "title": "PainelContadorResposta",
+        "description": "Painel do contador (D1): as empresas da carteira, a que tem mais alertas abertos primeiro."
       },
       "PrecoAlvoRequisicao": {
         "properties": {
@@ -3162,7 +4078,7 @@
           "itens"
         ],
         "title": "RegimeCompararRequisicao",
-        "description": "Venda a um cliente do regime regular, comparada nos dois lados do Simples (plano 11.2, ADR 0007).\n\nO crédito das compras vem de creditoCompraUnitario (grupo IBSCBS da NF-e; a leitura da nota é a\nE4) ou, ausente, do motor RR sobre o custo. Por isso todo item precisa do custo."
+        "description": "Venda a um cliente do regime regular, comparada nos dois lados do Simples (plano 11.2, ADR 0007).\n\nO crédito das compras vem de creditoCompraUnitario (grupo IBSCBS da NF-e; desde a E4, o GET /catalogo\ntraz o da última nota de cada item) ou, ausente, do motor RR sobre o custo. Por isso todo item precisa do custo."
       },
       "RegimeCompararResposta": {
         "properties": {
@@ -3277,6 +4193,34 @@
           "versoes"
         ],
         "title": "RegimeCompararResposta"
+      },
+      "RestaurarResposta": {
+        "properties": {
+          "empresas": {
+            "type": "integer",
+            "title": "Empresas"
+          },
+          "notasImportadas": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notasimportadas",
+            "description": "Número de cada nota inicial importada."
+          },
+          "alertas": {
+            "type": "integer",
+            "title": "Alertas"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "empresas",
+          "notasImportadas",
+          "alertas"
+        ],
+        "title": "RestaurarResposta"
       },
       "SaudeMotor": {
         "properties": {

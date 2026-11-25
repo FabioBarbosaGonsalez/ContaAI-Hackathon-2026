@@ -29,6 +29,15 @@ O contrato é o conjunto de modelos Pydantic em `app/contrato.py`. O OpenAPI é 
 | 10 | `GET /busca/ncm` devolve `cClassTrib[]` | Candidatas = específicas do produto + `000001` | Ver "Achados", item 1. |
 | 11 | `/saude` com `/versao/status` | Rotas locais de versão dos motores | ADR 0002: o `/versao/status` do SN dá falso "desatualizado" e consulta a internet. |
 
+### Datas e horas (convenção, revisada na E4)
+
+Toda data e hora é ISO 8601 com fuso ([ADR 0008](0008-nfe-historico-e-alertas.md)):
+- **instantes do sistema** (`criadoEm`, `aplicadoEm`, importação) são gravados e devolvidos em UTC;
+- **datas copiadas de um documento** (`dataEmissao` da NF-e, a data dos lançamentos de custo) são gravadas e devolvidas como vieram, com o fuso da nota, porque é o horário impresso no documento;
+- **ordenação:** sempre pelo instante, nunca pelo texto. Uma nota de Manaus (−04:00) às 08:30 vem depois de uma de Porto Alegre (−03:00) às 09:00 do mesmo dia.
+
+O relógio do sistema é o real. As datas da demonstração são de 2027 (simulação), então um alerta pode ter `criadoEm` em 2026 e `origem.dataEmissao` em 2027: a tela distingue "emitida em" de "criado em".
+
 ### Significado dos campos (fórmulas)
 
 Todos os tributos vêm dos motores. O backend só soma, subtrai e divide esses valores (P1). Valores de linha = quantidade × valor unitário.
@@ -68,7 +77,7 @@ As duas margens são a mesma fórmula do plano, m = (b − c) ÷ (b + T), com b 
 
 - **E1-03 (resolvido no ADR 0005: menor preço em centavos com margem ≥ alvo):** o critério de aceite do M4 ("erro menor que R$ 0,01") e a tolerância do código da seção 11.1 (0,01 p.p. na margem) não são compatíveis. Com preço em centavos, 0,01 p.p. é inatingível em itens baratos: 1 centavo sobre R$ 3,79 vale 0,26 p.p. Proposta: o preço-alvo é o menor preço em centavos com margem ≥ alvo.
 - **E2:** a alíquota de IS que o RR exige na revenda é premissa sem efeito. Falta decidir se o usuário precisa digitá-la ou se o backend envia a premissa rotulada ("exigida pelo motor, sem efeito na revenda"). **Decidido na E2:** o backend envia 0%, com a premissa impressa, conferido no motor ([ADR 0006](0006-agente.md)).
-- **E4:** ler o XML de upload com proteção contra XML malicioso (por exemplo, `defusedxml`; verificar licença e manutenção na hora) e manter o limite de tamanho, que já existe na rota.
+- **E4:** ler o XML de upload com proteção contra XML malicioso (por exemplo, `defusedxml`; verificar licença e manutenção na hora) e manter o limite de tamanho, que já existe na rota. **Feito na E4:** leitor com a biblioteca padrão, que recusa DTD e entidades, e expat ≥ 2.6.0, conferido na documentação do Python; o `defusedxml` não entrou (última versão estável de 2021) ([ADR 0008](0008-nfe-historico-e-alertas.md)).
 - O teste avisa que o Starlette depreciou o uso de `httpx` no `TestClient` e sugere um pacote chamado "httpx2". Investigar antes de trocar qualquer dependência.
 - **Arroz no Simples tradicional (decisão da equipe: seguir com a premissa de que não há redução no DAS, rotulada nos mocks e na comparação; validar com o contador, afeta a demo).** O motor SN cobra CBS/IBS do arroz porque aplica as alíquotas efetivas informadas, sem reduções. A LC 214 (art. 125) zera a cesta básica, mas não diz se isso vale dentro do DAS, e o ROADMAP do motor SN diz que a alíquota efetiva fica com o PGDAS-D. Nos mocks, o arroz responde por R$ 131,03 dos R$ 233,66 de tributo tradicional. Sem ele, o tributo tradicional seria R$ 102,63, e a diferença de caixa passaria de +R$ 100,50 para −R$ 30,53 (R$ 102,63 − R$ 133,16): o sinal da decisão inverte. (Corrigido na E3: aqui constavam R$ 131,04 e R$ 102,62. O detalhamento por linha da comparação mostra R$ 131,03, valor do motor SN para a linha de 400 × R$ 27,90; ver [ADR 0007](0007-comparacao-de-regimes.md).) Os números da comparação só valem com essa premissa; o contador precisa responder. **Na E3 a venda ao cliente B2B trocou o arroz pelo biscoito, que tem tributação integral, e a comparação da demo deixou de depender da premissa ([ADR 0007](0007-comparacao-de-regimes.md)).** A premissa continua valendo para o arroz no carrinho e na explicação do Simples tradicional.
 
@@ -87,4 +96,4 @@ Conferido no texto de lei e no site da Receita. Nada abaixo vem de blog.
 
 - Frontend e agente trabalham sobre `docs/contrato/openapi.json` e sobre a API em modo mock (`uv run uvicorn app.main:app --reload`, documentação em `/docs`).
 - Os mocks e as notas são reproduzíveis: os testes `golden` regeram tudo a partir dos motores e exigem igualdade byte a byte, o que prova que nenhum número foi digitado.
-- As etapas E1 a E4 substituem o gerador de mocks (`scripts/gerar_mocks.py`) pelo código de produção. As fórmulas acima são o critério de aceite desse código.
+- As etapas E1 a E4 substituem o gerador de mocks (`scripts/gerar_mocks.py`) pelo código de produção. As fórmulas acima são o critério de aceite desse código. (Concluído na E4: todos os mocks saem do código de produção, com a referência como conferência; [ADR 0008](0008-nfe-historico-e-alertas.md).)

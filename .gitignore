@@ -39,3 +39,8 @@ Thumbs.db
 docs/plano-de-desenvolvimento.pdf
 docs/gerar_plano.py
 wiki/research/
+
+# Estado do backend (SQLite da E4, ADR 0008)
+backend/.dados/
+*.db-wal
+*.db-shm

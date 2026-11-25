@@ -38,11 +38,30 @@ uv run uvicorn app.main:app --reload   # documentação interativa em http://127
 As rotas seguem o contrato ([docs/contrato/openapi.json](docs/contrato/openapi.json), [ADR 0003](docs/adr/0003-contrato-da-api.md)). Há dois modos:
 
 - **mock** (padrão): todas as rotas respondem com mocks gerados a partir dos motores oficiais, com o header `X-ContaAI-Mock: 1`.
-- **real** (`CONTAAI_MODO=real`, motores de pé): `POST /carrinho/calcular` e `POST /item/preco-alvo` calculam pelos motores ([ADR 0004](docs/adr/0004-nucleo-de-calculo.md), [ADR 0005](docs/adr/0005-preco-alvo-e-premissas.md)); `GET /busca/ncm`, `GET`/`POST /explicar`, `GET /erros/{codigo}` e `POST /chat` também ([ADR 0006](docs/adr/0006-agente.md)), e `POST /regime/comparar` ([ADR 0007](docs/adr/0007-comparacao-de-regimes.md)). As rotas que ainda não calculam (NF-e e alertas) respondem 501 nesse modo. Falhas dos motores voltam como 422 (operação recusada, com os erros do motor), 502 ou 503, sem expor endereço interno.
+- **real** (`CONTAAI_MODO=real`, motores de pé): `POST /carrinho/calcular` e `POST /item/preco-alvo` calculam pelos motores ([ADR 0004](docs/adr/0004-nucleo-de-calculo.md), [ADR 0005](docs/adr/0005-preco-alvo-e-premissas.md)); `GET /busca/ncm`, `GET`/`POST /explicar`, `GET /erros/{codigo}` e `POST /chat` também ([ADR 0006](docs/adr/0006-agente.md)), `POST /regime/comparar` ([ADR 0007](docs/adr/0007-comparacao-de-regimes.md)), e NF-e, alertas, catálogo e painel do contador ([ADR 0008](docs/adr/0008-nfe-historico-e-alertas.md)). Falhas dos motores voltam como 422 (operação recusada, com os erros do motor), 502 ou 503, sem expor endereço interno.
+
+### Testar a recorrência (NF-e → alerta)
+
+No modo real o estado fica num SQLite local (`backend/.dados/contaai.db`, fora do git). Na primeira subida, com o banco vazio, o backend carrega as sementes de `data/demo/` sozinho: três empresas fictícias e as notas iniciais.
+
+```bash
+cd backend
+CONTAAI_MODO=real uv run uvicorn app.main:app          # motores de pé (docker compose up -d)
+curl -F "arquivo=@../data/demo/notas/nfe-compra-2.xml;type=text/xml" http://127.0.0.1:8000/nfe/importar
+```
+
+A nota 2 gera o alerta da cerveja: margem de 24,12% para 11,19%, alvo de 15%, preço sugerido R$ 3,97 (simulação de 2027 com premissas impressas). Também dá para testar:
+
+- `data/demo/notas/nfe-item-sem-par.xml`: um código sem cadastro e um com NCM diferente da do cadastro;
+- a mesma nota de novo: volta o recibo da primeira importação (`jaImportada`), sem gravar nada;
+- `GET /catalogo?cnpj=36817420000113`, `GET /alertas`, `POST /alertas/{id}/aplicar` e `GET /contador/painel`;
+- `POST /demo/restaurar`: volta tudo às sementes (pela documentação em `/docs` também).
+
+Com `CONTAAI_TOKEN_DEMO` definido, as rotas que mudam o estado (importar, aplicar e restaurar) pedem o header `X-ContaAI-Token`. Uma nota cujo destinatário não é uma das empresas fictícias é recusada antes de gravar qualquer coisa: dado real não entra no banco.
 
 `GET /cenarios/presets` (valores de 2027 com fonte) e `GET /saude` (estado e versões dos motores) são reais nos dois modos. O CORS libera só `http://localhost:3000`; para outra origem, use `CONTAAI_CORS_ORIGENS='["http://..."]'`.
 
-**Agente.** O padrão é o provedor `roteiro`: responde às frases do roteiro da demo sem IA, sem chave e sem custo. Para ligar uma IA, escreva o adaptador em `backend/app/agente/provedores/` e configure no `backend/.env` (fora do git) `CONTAAI_LLM_PROVEDOR`, `CONTAAI_LLM_MODELO` e `CONTAAI_LLM_CHAVE` ([ADR 0006](docs/adr/0006-agente.md)). Na demo pública, defina `CONTAAI_TOKEN_DEMO`: o `/chat` passa a exigir o header `X-ContaAI-Token`. Há limite de requisições por IP (`CONTAAI_LIMITE_CHAT_POR_MINUTO`, `CONTAAI_LIMITE_GERAL_POR_MINUTO`, `CONTAAI_LIMITE_BUSCA_POR_MINUTO`).
+**Agente.** O padrão é o provedor `roteiro`: responde às frases do roteiro da demo sem IA, sem chave e sem custo. Para ligar uma IA, escreva o adaptador em `backend/app/agente/provedores/` e configure no `backend/.env` (fora do git) `CONTAAI_LLM_PROVEDOR`, `CONTAAI_LLM_MODELO` e `CONTAAI_LLM_CHAVE` ([ADR 0006](docs/adr/0006-agente.md)). Na demo pública, defina `CONTAAI_TOKEN_DEMO`: o `/chat` e as rotas que mudam o estado passam a exigir o header `X-ContaAI-Token`. Há limite de requisições por IP (`CONTAAI_LIMITE_CHAT_POR_MINUTO`, `CONTAAI_LIMITE_GERAL_POR_MINUTO`, `CONTAAI_LIMITE_BUSCA_POR_MINUTO`).
 
 ### Testes
 
@@ -56,7 +75,7 @@ uv run pytest -m llm       # as 20 perguntas com o provedor de IA do .env (GASTA
 
 No GitHub, o workflow **Golden** sobe os motores e roda os testes de referência: à mão (Actions → Golden → Run workflow) e sozinho nos PRs que mexem nos motores, no cliente, nos geradores ou nos dados de demonstração.
 
-No Linux e no macOS, o [Makefile](Makefile) tem atalhos para os mesmos comandos: `make motores`, `make api`, `make test`, `make golden`, `make llm`, `make indice` e `make lint`.
+No Linux e no macOS, o [Makefile](Makefile) tem atalhos para os mesmos comandos: `make motores`, `make api`, `make real`, `make sementes`, `make test`, `make golden`, `make llm`, `make indice` e `make lint`.
 
 ## Arquitetura (resumo)
 
@@ -92,8 +111,9 @@ No Linux e no macOS, o [Makefile](Makefile) tem atalhos para os mesmos comandos:
 - [ADR 0005](docs/adr/0005-preco-alvo-e-premissas.md): preço-alvo (afim + bisseção), cache e premissas de 2027 com presets de fonte verificada
 - [ADR 0006](docs/adr/0006-agente.md): agente com IA trocável, ferramentas, verificador anti-alucinação, busca de NCM e proteção da demo
 - [ADR 0007](docs/adr/0007-comparacao-de-regimes.md): comparação Simples tradicional × híbrido, crédito das compras e preço de empate
+- [ADR 0008](docs/adr/0008-nfe-historico-e-alertas.md): NF-e de compra, estado em SQLite com migrações, alertas de margem, painel do contador e proteções
 - [Contrato OpenAPI](docs/contrato/openapi.json): o que frontend e agente consomem
-- [Dados de demonstração](data/demo/README.md): distribuidora, cliente B2B e notas de compra fictícias
+- [Dados de demonstração](data/demo/README.md): distribuidora, carteira do contador, cliente B2B, notas de compra fictícias e sementes do estado
 - [Direção visual](.taste-skill/app/inventario.md): inventário, a pergunta de cada tela e o estilo sorteado pela skill design-taste-frontend
 - [Respostas de referência](backend/tests/golden/README.md): o que está gravado e quando regravar
 - [Validação com contadores](docs/validacao.md)
@@ -106,7 +126,9 @@ Etapa 1 (núcleo de cálculo) concluída: clientes tipados dos motores, carrinho
 
 Etapa 2 (agente) concluída: loop de tool use independente do provedor, provedor `roteiro` sem IA, cadastro por chat com confirmação, correção do REG-011 e do VSN-047, explicação pela memória de cálculo e pela lei, busca de NCM nos dados abertos e verificador anti-alucinação (20 perguntas, 0 número fora do JSON). Pendente: escolher o provedor de IA e escrever o adaptador.
 
-Etapa 3 (diferencial B2B) concluída no backend: `POST /regime/comparar` real, com os três números (diferença de caixa, crédito que o cliente leva e custo líquido do cliente), o crédito das compras por item (NF-e ou motor), o detalhamento por linha, o preço de empate com um concorrente do regime regular e a ferramenta `comparar_regimes` do agente. A tela de decisão passou para a Etapa 5 (decisão do usuário, ADR 0007). Próxima: Etapa 4, recorrência (NF-e e alertas).
+Etapa 3 (diferencial B2B) concluída no backend: `POST /regime/comparar` real, com os três números (diferença de caixa, crédito que o cliente leva e custo líquido do cliente), o crédito das compras por item (NF-e ou motor), o detalhamento por linha, o preço de empate com um concorrente do regime regular e a ferramenta `comparar_regimes` do agente. A tela de decisão passou para a Etapa 5 (decisão do usuário, ADR 0007).
+
+Etapa 4 (recorrência) concluída no backend: leitor seguro da NF-e, casamento com o catálogo, histórico de custo em SQLite com migrações versionadas, alerta de margem com o preço-alvo (24,12% → 11,19%, R$ 3,97, em menos de 5 s), aplicar preço, catálogo com o estado atual, painel do contador com três CNPJs fictícios (D1) e a ferramenta `listar_alertas` do agente. As telas (importar nota, painel e contador) ficam para a Etapa 5, como na E3 (ADR 0008). Próxima: Etapa 5, interface.
 
 ## Créditos e licenças
 

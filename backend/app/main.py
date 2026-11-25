@@ -2,9 +2,10 @@
 
 Modo mock (CONTAAI_MODO=mock, padrão): as rotas seguem o contrato (app/contrato.py) e respondem com
 os mocks gerados a partir dos motores oficiais, com o header X-ContaAI-Mock: 1.
-Modo real: as rotas já implementadas calculam pelos motores (E1: carrinho e preço-alvo; E2: busca de
-NCM, explicação, erros e chat; E3: comparação de regimes); as demais respondem 501 até a sua etapa, para nunca devolver número
-de mock como se fosse cálculo. GET /saude e GET /cenarios/presets são iguais nos dois modos.
+Modo real: as rotas calculam pelos motores (E1: carrinho e preço-alvo; E2: busca de NCM, explicação,
+erros e chat; E3: comparação de regimes; E4: NF-e, alertas, catálogo e painel do contador, com o estado
+no SQLite, ADR 0008). Nenhuma rota devolve número de mock como se fosse cálculo. GET /saude e
+GET /cenarios/presets são iguais nos dois modos.
 
 Rodar: cd backend && uv run uvicorn app.main:app --reload   (documentação em /docs)
 """
@@ -12,10 +13,14 @@ Rodar: cd backend && uv run uvicorn app.main:app --reload   (documentação em /
 from __future__ import annotations
 
 import asyncio
+import logging
 import unicodedata
 from collections.abc import AsyncIterator, Awaitable, Callable
+from contextlib import asynccontextmanager
 from datetime import date
 from decimal import Decimal
+from functools import lru_cache
+from pathlib import Path as Caminho
 from typing import Annotated, Any
 
 import httpx
@@ -33,43 +38,97 @@ from app.config import Configuracao, configuracao
 from app.contrato import (
     AVISO_LEGAL,
     AlertasResposta,
-    AliquotasNominais,
+    AplicarAlertaResposta,
     BuscaNcmResposta,
     CarrinhoRequisicao,
     CarrinhoResposta,
+    CatalogoResposta,
     ChatRequisicao,
     ChatResposta,
     ErroDescricao,
     ExplicarRequisicao,
     ExplicarResposta,
     FalhaMotorResposta,
-    ImpostoSeletivoEntrada,
-    ItemEntrada,
     Motor,
     NfeImportarResposta,
+    PainelContadorResposta,
     PrecoAlvoRequisicao,
     PrecoAlvoResposta,
-    PremissasDas,
     PresetsResposta,
     RecusaCalculo,
     Regime,
     RegimeCompararRequisicao,
     RegimeCompararResposta,
+    RestaurarResposta,
     SaudeMotor,
     SaudeResposta,
 )
-from app.dados_demo import carregar_distribuidora
+from app.dados_demo import PASTA_DEMO, carregar_distribuidora
+from app.empresa import item_entrada, operacao_da_empresa
 from app.explicacao import explicar_item
 from app.motores.cache import CacheRespostas
 from app.motores.cliente import ClienteMotores, FalhaMotor, MotorIndisponivel, OperacaoRecusada
 from app.motores.dados_abertos import CacheConsultas, DadosAbertos
+from app.nfe import consultas
+from app.nfe.importacao import NotaRecusada, agora_utc, importar_nota
+from app.nfe.leitor import NotaInvalida
+from app.persistencia.banco import Banco
+from app.persistencia.repositorio import Repositorio
+from app.persistencia.sementes import SementesInvalidas, restaurar
 from app.precificacao.carrinho import calcular_carrinho
 from app.precificacao.preco_alvo import CalculoRecusado, calcular_preco_alvo
 from app.regime.comparar import comparar_regimes
 from app.seguranca import LimitadorPorIp, token_confere
 
+log = logging.getLogger("contaai")
+
+
+@lru_cache
+def _banco(caminho: Caminho) -> Banco:
+    """Um Banco por arquivo, migrado na primeira vez que é pedido (inclusive na subida, no modo real)."""
+    banco = Banco(caminho)
+    banco.migrar()
+    return banco
+
+
+async def semear_se_vazio(cfg: Configuracao) -> None:
+    """Banco sem nenhuma empresa: carrega as sementes, para a demo (e a banca) já começar com dados.
+
+    Se os motores ainda não estiverem de pé, o backend sobe assim mesmo e avisa no log; dá para
+    restaurar depois com POST /demo/restaurar ou `uv run python -m app.persistencia.sementes`.
+    """
+    repo = Repositorio(_banco(cfg.banco_caminho))
+    if await asyncio.to_thread(_tem_empresas, repo):
+        return
+    try:
+        async with httpx.AsyncClient(timeout=cfg.timeout_calculo_s, trust_env=False) as http:
+            motores = ClienteMotores(http, cfg.motor_rr_url, cfg.motor_sn_url, CACHE_MOTORES)
+            await restaurar(repo, motores, cfg.pasta_demo)
+        log.info("Banco vazio: sementes de data/demo carregadas.")
+    except (FalhaMotor, httpx.HTTPError):
+        log.warning("Banco vazio e motores indisponíveis: rode POST /demo/restaurar quando os motores subirem.")
+    except SementesInvalidas as e:
+        log.warning("Banco vazio e sementes indisponíveis: %s", e.mensagem)
+
+
+def _tem_empresas(repo: Repositorio) -> bool:
+    with repo.leitura() as s:
+        return bool(s.empresas())
+
+
+@asynccontextmanager
+async def ciclo_de_vida(_: FastAPI) -> AsyncIterator[None]:
+    cfg = configuracao()
+    if cfg.modo == "real":
+        _banco(cfg.banco_caminho)  # migra na subida: um esquema alterado impede o backend de subir
+        if cfg.semear_ao_subir:
+            await semear_se_vazio(cfg)
+    yield
+
+
 app = FastAPI(
     title="ContaAI",
+    lifespan=ciclo_de_vida,
     version="0.1.0",
     description="Copiloto de preço e margem na reforma tributária. Toda conta vem das calculadoras oficiais da "
     f"Receita Federal; a IA só interpreta e explica. {AVISO_LEGAL}",
@@ -109,7 +168,8 @@ async def limitar_upload_nfe(request: Request, call_next: Callable[[Request], Aw
     return await call_next(request)
 
 
-# Rotas que chamam os motores (ou o provedor de IA) e por isso têm limite por IP (ADR 0006).
+# Rotas que chamam os motores (ou o provedor de IA) ou mudam o estado, e por isso têm limite por IP
+# (ADR 0006 e ADR 0008).
 ROTAS_LIMITADAS = (
     "/carrinho/calcular",
     "/item/preco-alvo",
@@ -118,6 +178,9 @@ ROTAS_LIMITADAS = (
     "/explicar",
     "/erros/",
     "/chat",
+    "/nfe/importar",
+    "/alertas/",
+    "/demo/restaurar",
 )
 LIMITE_CHAT = LimitadorPorIp(configuracao().limite_chat_por_minuto)
 LIMITE_GERAL = LimitadorPorIp(configuracao().limite_geral_por_minuto)
@@ -144,6 +207,52 @@ async def limitar_requisicoes(request: Request, call_next: Callable[[Request], A
                 headers={"Retry-After": str(espera)},
             )
     return await call_next(request)
+
+
+ROTAS_DOCUMENTACAO = ("/docs", "/redoc", "/openapi.json")
+
+
+@app.middleware("http")
+async def cabecalhos_de_seguranca(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+    """Cabeçalhos em toda resposta (ADR 0008). A API só devolve JSON: nada dela deve ser executado,
+    emoldurado ou guardado em cache compartilhado. A documentação (/docs) carrega o Swagger da CDN do
+    FastAPI e fica sem a CSP restritiva."""
+    resposta = await call_next(request)
+    resposta.headers["X-Content-Type-Options"] = "nosniff"
+    resposta.headers["Referrer-Policy"] = "no-referrer"
+    resposta.headers["X-Frame-Options"] = "DENY"
+    resposta.headers["Cross-Origin-Resource-Policy"] = "same-site"
+    if not request.url.path.startswith(ROTAS_DOCUMENTACAO):
+        resposta.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'"
+        resposta.headers["Cache-Control"] = "no-store"
+    return resposta
+
+
+@app.exception_handler(NotaInvalida)
+async def nota_invalida(_: Request, exc: NotaInvalida) -> JSONResponse:
+    """O texto diz qual campo falhou, sem repetir trecho do XML enviado."""
+    return JSONResponse(status_code=422, content={"detail": exc.mensagem})
+
+
+@app.exception_handler(NotaRecusada)
+async def nota_recusada(_: Request, exc: NotaRecusada) -> JSONResponse:
+    return JSONResponse(status_code=exc.status, content={"detail": exc.mensagem})
+
+
+@app.exception_handler(SementesInvalidas)
+async def sementes_invalidas(_: Request, exc: SementesInvalidas) -> JSONResponse:
+    """Sem o caminho da pasta na resposta (não expõe a estrutura do servidor)."""
+    return JSONResponse(status_code=503, content={"detail": exc.mensagem})
+
+
+@app.exception_handler(consultas.NaoEncontrado)
+async def nao_encontrado(_: Request, exc: consultas.NaoEncontrado) -> JSONResponse:
+    return JSONResponse(status_code=404, content={"detail": exc.mensagem})
+
+
+@app.exception_handler(consultas.Conflito)
+async def conflito(_: Request, exc: consultas.Conflito) -> JSONResponse:
+    return JSONResponse(status_code=409, content={"detail": exc.mensagem})
 
 
 @app.exception_handler(ProvedorFalhou)
@@ -180,19 +289,6 @@ RESPOSTAS_MOTOR: dict[int | str, dict[str, Any]] = {
     502: {"model": FalhaMotorResposta, "description": "O motor devolveu uma resposta que o ContaAI não reconhece."},
     503: {"model": FalhaMotorResposta, "description": "Motor indisponível."},
 }
-
-
-def responder_mock(cfg: Cfg, response: Response) -> mocks.Mocks:
-    """Rotas que ainda não calculam: mock no modo mock, 501 no modo real."""
-    if cfg.modo != "mock":
-        raise HTTPException(
-            status_code=501, detail="Rota ainda sem cálculo real (próximas etapas). Use CONTAAI_MODO=mock."
-        )
-    response.headers["X-ContaAI-Mock"] = "1"
-    return mocks.carregar()
-
-
-Mock = Annotated[mocks.Mocks, Depends(responder_mock)]
 
 
 # Um cache por processo, compartilhado entre as requisições (app/motores/cache.py).
@@ -281,20 +377,147 @@ async def regime_comparar(
     return await comparar_regimes(req, motores)
 
 
-@app.post("/nfe/importar", response_model=NfeImportarResposta, tags=["notas"])
+# ---------------------------------------------------------------------------
+# Estado (E4, ADR 0008): NF-e, alertas, catálogo, painel do contador e restauração da demonstração
+
+
+def repositorio(cfg: Cfg) -> Repositorio:
+    return Repositorio(_banco(cfg.banco_caminho))
+
+
+Repo = Annotated[Repositorio, Depends(repositorio)]
+Token = Annotated[str | None, Header(alias="X-ContaAI-Token")]
+
+TIPOS_XML = {"application/xml", "text/xml", "application/octet-stream", ""}
+CNPJ = Annotated[str, Query(pattern=r"^\d{14}$", description="CNPJ da empresa (14 dígitos).")]
+RESPOSTAS_ESTADO: dict[int | str, dict[str, Any]] = {
+    401: {"description": "Token da demo ausente ou errado (header X-ContaAI-Token)."},
+    404: {"description": "Empresa ou alerta não encontrado."},
+    429: {"description": "Limite de requisições por minuto atingido (header Retry-After)."},
+}
+
+
+def exigir_token(cfg: Configuracao, token: str | None) -> None:
+    """Rotas que mudam o estado compartilhado da demo exigem o token, quando ele está configurado."""
+    if not token_confere(cfg.token_demo, token):
+        raise HTTPException(status_code=401, detail="Token da demo ausente ou inválido.")
+
+
+def so_no_modo_real(cfg: Configuracao) -> None:
+    if cfg.modo != "real":
+        raise HTTPException(status_code=501, detail="Esta rota muda o estado e só funciona no modo real.")
+
+
+RESPOSTAS_NFE: dict[int | str, dict[str, Any]] = {
+    **RESPOSTAS_MOTOR,
+    **RESPOSTAS_ESTADO,
+    409: {"description": "A mesma nota (emitente, série e número) já foi importada com outro conteúdo."},
+    411: {"description": "Upload sem Content-Length."},
+    413: {"description": "Arquivo maior que o limite para uma NF-e."},
+    415: {"description": "O arquivo não é XML."},
+    422: {"description": "XML que não é uma NF-e lida pelo ContaAI, ou destinatário que não é empresa cadastrada."},
+}
+
+
+@app.post("/nfe/importar", response_model=NfeImportarResposta, tags=["notas"], responses=RESPOSTAS_NFE)
 async def nfe_importar(
-    cfg: Cfg, m: Mock, arquivo: Annotated[UploadFile, File(description="XML da NF-e de compra")]
+    cfg: Cfg,
+    response: Response,
+    motores: Motores,
+    arquivo: Annotated[UploadFile, File(description="XML da NF-e de compra (modelo 55, leiaute 4.00)")],
+    token: Token = None,
 ) -> NfeImportarResposta:
+    """Lê a nota, casa os itens, grava o histórico de custo e gera os alertas de margem (E4, plano 11.3)."""
+    if cfg.modo == "mock":
+        response.headers["X-ContaAI-Mock"] = "1"
+    else:
+        exigir_token(cfg, token)
+    if (arquivo.content_type or "").split(";")[0].strip().lower() not in TIPOS_XML:
+        raise HTTPException(status_code=415, detail="Envie o arquivo XML da NF-e.")
     # Lê no máximo o limite + 1 byte: não depende de UploadFile.size nem carrega mais que isso em memória.
     conteudo = await arquivo.read(cfg.tamanho_max_nfe_bytes + 1)
     if len(conteudo) > cfg.tamanho_max_nfe_bytes:
         raise HTTPException(status_code=413, detail="Arquivo maior que o limite para uma NF-e.")
-    return m.nfe_importar
+    if cfg.modo == "mock":
+        return mocks.carregar().nfe_importar
+    return await importar_nota(conteudo, repositorio(cfg), motores)
 
 
-@app.get("/alertas", response_model=AlertasResposta, tags=["notas"])
-def alertas(m: Mock) -> AlertasResposta:
-    return m.alertas
+@app.get("/alertas", response_model=AlertasResposta, tags=["notas"], responses=RESPOSTAS_ESTADO)
+def listar_alertas(
+    cfg: Cfg,
+    response: Response,
+    cnpj: Annotated[str | None, Query(pattern=r"^\d{14}$", description="Só os desta empresa.")] = None,
+    abertos: Annotated[
+        bool | None, Query(description="true: só os sem preço aplicado; false: só os aplicados.")
+    ] = None,
+) -> AlertasResposta:
+    """Alertas de margem gerados pelas notas de compra, do mais recente para o mais antigo."""
+    if cfg.modo == "mock":
+        response.headers["X-ContaAI-Mock"] = "1"
+        return mocks.carregar().alertas
+    return AlertasResposta(alertas=consultas.alertas(repositorio(cfg), cnpj, abertos))
+
+
+@app.post(
+    "/alertas/{alerta_id}/aplicar",
+    response_model=AplicarAlertaResposta,
+    tags=["notas"],
+    responses={**RESPOSTAS_ESTADO, 409: {"description": "Já aplicado, ou alerta sem preço sugerido."}},
+)
+def aplicar_alerta(
+    cfg: Cfg, alerta_id: Annotated[str, Path(pattern=r"^alerta-[0-9a-f]{16}$")], token: Token = None
+) -> AplicarAlertaResposta:
+    """Aplica o preço sugerido do alerta como preço de venda do item. Só com o clique do usuário (P3)."""
+    so_no_modo_real(cfg)
+    exigir_token(cfg, token)
+    return consultas.aplicar(repositorio(cfg), alerta_id, agora_utc())
+
+
+@app.get("/catalogo", response_model=CatalogoResposta, tags=["notas"], responses=RESPOSTAS_ESTADO)
+def catalogo(cfg: Cfg, response: Response, cnpj: CNPJ) -> CatalogoResposta:
+    """Itens da empresa com o preço de venda e o custo atuais e o histórico de custo. Não chama os motores:
+    a margem de cada item sai do POST /carrinho/calcular com estes valores."""
+    if cfg.modo == "mock":
+        response.headers["X-ContaAI-Mock"] = "1"
+        return mocks.carregar().catalogo
+    return consultas.catalogo(repositorio(cfg), cnpj)
+
+
+@app.get("/contador/painel", response_model=PainelContadorResposta, tags=["notas"])
+def contador_painel(cfg: Cfg, response: Response) -> PainelContadorResposta:
+    """Painel do contador (D1): empresas da carteira com os alertas abertos, a mais urgente primeiro."""
+    if cfg.modo == "mock":
+        response.headers["X-ContaAI-Mock"] = "1"
+        return mocks.carregar().contador_painel
+    return consultas.painel(repositorio(cfg))
+
+
+@app.post(
+    "/demo/restaurar",
+    response_model=RestaurarResposta,
+    tags=["operação"],
+    responses={
+        **RESPOSTAS_MOTOR,
+        **RESPOSTAS_ESTADO,
+        503: {"description": "Motor indisponível, ou sementes não encontradas (CONTAAI_PASTA_DEMO)."},
+    },
+)
+async def demo_restaurar(cfg: Cfg, motores: Motores, token: Token = None) -> RestaurarResposta:
+    """Volta o estado às sementes de data/demo (empresas fictícias e notas iniciais), desfazendo tudo o que foi
+    importado ou aplicado. Atômico: se um motor falhar no meio, o estado fica como estava. Exige o token da
+    demo quando ele está configurado."""
+    so_no_modo_real(cfg)
+    exigir_token(cfg, token)
+    repo = repositorio(cfg)
+    recibos = await restaurar(repo, motores, cfg.pasta_demo)
+    empresas, alertas = await asyncio.to_thread(_contagem, repo)
+    return RestaurarResposta(empresas=empresas, notasImportadas=[r.nota.numero for r in recibos], alertas=alertas)
+
+
+def _contagem(repo: Repositorio) -> tuple[int, int]:
+    with repo.leitura() as s:
+        return len(s.empresas()), len(s.alertas())
 
 
 @app.get("/busca/ncm", response_model=BuscaNcmResposta, tags=["classificação"], responses=RESPOSTAS_MOTOR)
@@ -317,49 +540,16 @@ async def busca_ncm(
     return achada.model_copy(update={"consulta": q})
 
 
-def requisicao_demo(item_id: str, regime: Regime) -> ExplicarRequisicao:
+def requisicao_demo(item_id: str, regime: Regime, pasta: Caminho = PASTA_DEMO) -> ExplicarRequisicao:
     """Item do catálogo de demonstração com o cenário da demo (data/demo, dados fictícios, P10)."""
-    demo = carregar_distribuidora()
+    demo = carregar_distribuidora(pasta)
     cat = next((i for i in demo.catalogo if i.id == item_id), None)
     if cat is None:
         raise HTTPException(status_code=404, detail="Item não encontrado.")
-    cen = demo.cenario
     return ExplicarRequisicao(
-        data=cen.data,
-        uf=demo.empresa.uf,
-        municipio=demo.empresa.municipio,
-        aliquotasNominais=AliquotasNominais(
-            cbs=cen.aliquotasNominais.cbs,
-            ibsEstadual=cen.aliquotasNominais.ibsEstadual,
-            ibsMunicipal=cen.aliquotasNominais.ibsMunicipal,
-            impostoSeletivoAdValorem=cen.impostoSeletivoAdValorem.valor,
-            fonte="Cenário de demonstração (data/demo): entradas do exemplo oficial da calculadora RR",
-        ),
-        premissasDas=PremissasDas(
-            anexo=cen.premissasDas.anexo,
-            cAtivSN=demo.empresa.simples.cAtivSN,
-            pCBSSN=cen.premissasDas.pCBSSN,
-            pIBSSN=cen.premissasDas.pIBSSN,
-            fonte="Cenário de demonstração (data/demo): valores de exemplo do esquema do motor SN",
-        ),
+        **operacao_da_empresa(demo.empresa, demo.cenario),
         regime=regime,
-        item=ItemEntrada(
-            id=cat.id,
-            descricao=cat.descricao,
-            ncm=cat.ncm,
-            cst=cat.cst,
-            cClassTrib=cat.cClassTrib,
-            impostoSeletivo=ImpostoSeletivoEntrada(
-                cst=cat.impostoSeletivo.cst,
-                cClassTrib=cat.impostoSeletivo.cClassTrib,
-                litrosPorUnidade=cat.impostoSeletivo.litrosPorUnidade,
-            )
-            if cat.impostoSeletivo
-            else None,
-            unidade=cat.unidade,
-            quantidade=Decimal(1),
-            valorUnitario=cat.precoVenda,
-        ),
+        item=item_entrada(cat, Decimal(1), cat.precoVenda),
     )
 
 
@@ -374,7 +564,7 @@ async def explicar(
 ) -> ExplicarResposta:
     """Só o catálogo de demonstração (uma unidade pelo preço de venda da demo). Para outro item, POST /explicar."""
     if cfg.modo != "mock":
-        return await explicar_item(requisicao_demo(item_id, regime), motores, da)
+        return await explicar_item(requisicao_demo(item_id, regime, cfg.pasta_demo), motores, da)
     response.headers["X-ContaAI-Mock"] = "1"
     try:
         return mocks.carregar().explicar[item_id][regime]
@@ -432,7 +622,9 @@ async def chat(
         return mocks.carregar().chat
     async with httpx.AsyncClient(timeout=cfg.llm_timeout_s, trust_env=False) as http:
         provedor = criar_provedor(cfg, http)
-        return await responder_chat(req, provedor, cfg, Ambiente(motores, da, req.contexto))
+        return await responder_chat(
+            req, provedor, cfg, Ambiente(motores, da, req.contexto, repositorio=repositorio(cfg))
+        )
 
 
 async def _checar(cli: httpx.AsyncClient, motor: Motor, url: str, fixada: str) -> SaudeMotor:

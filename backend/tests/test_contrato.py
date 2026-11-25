@@ -16,11 +16,14 @@ from fastapi.testclient import TestClient
 from app import mocks
 from app.config import Configuracao, configuracao
 from app.contrato import (
+    AlertasResposta,
     BuscaNcmResposta,
     CarrinhoResposta,
+    CatalogoResposta,
     ChatResposta,
     ExplicarResposta,
     NfeImportarResposta,
+    PainelContadorResposta,
     PrecoAlvoResposta,
     Regime,
     RegimeCompararResposta,
@@ -164,6 +167,23 @@ def test_alertas() -> None:
     assert r.json()["alertas"][0]["itemId"] == "cerveja-lata"
 
 
+def test_catalogo_e_painel_do_contador_no_mock() -> None:
+    """Um fato, uma variável (inventário da E5): o preço atual do alerta é o do catálogo, e o custo novo
+    do alerta é o custo atual do catálogo."""
+    r = cliente.get("/catalogo?cnpj=36817420000113")
+    assert_mock(r)
+    cat = CatalogoResposta.model_validate(r.json())
+    cerveja = next(i for i in cat.itens if i.id == "cerveja-lata")
+    alerta = next(
+        a for a in AlertasResposta.model_validate(cliente.get("/alertas").json()).alertas if a.itemId == "cerveja-lata"
+    )
+    assert cerveja.precoVenda == alerta.precoAtual and cerveja.custoAtual.custoUnitario == alerta.custoNovo
+    painel = cliente.get("/contador/painel")
+    assert_mock(painel)
+    corpo = PainelContadorResposta.model_validate(painel.json())
+    assert len(corpo.empresas) == 3 and corpo.empresas[0].alertasAbertos >= corpo.empresas[-1].alertasAbertos
+
+
 def test_busca_ncm() -> None:
     r = cliente.get("/busca/ncm", params={"q": "Arroz 5 kg"})
     assert_mock(r)
@@ -204,9 +224,11 @@ def test_cors_so_libera_o_frontend_configurado() -> None:
     assert local.headers["access-control-allow-origin"] == "http://localhost:3000"
 
 
-def test_modo_real_ainda_nao_calcula(configurar) -> None:
-    configurar(modo="real")
-    assert cliente.get("/alertas").status_code == 501
+def test_modo_mock_nao_muda_o_estado(configurar) -> None:
+    """Aplicar preço e restaurar a demo só existem no modo real: o mock nunca finge uma gravação."""
+    configurar(modo="mock")
+    assert cliente.post("/alertas/alerta-0123456789abcdef/aplicar").status_code == 501
+    assert cliente.post("/demo/restaurar").status_code == 501
 
 
 def test_saude_sem_motores_fica_degradada(configurar) -> None:

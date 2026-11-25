@@ -271,6 +271,32 @@ def motores_falsos() -> Iterator[MotoresFalsos]:
     app.dependency_overrides.clear()
 
 
+MOTOR_INALCANCAVEL = "http://127.0.0.1:9/api"  # porta 9 (discard): conexão recusada na hora
+
+
+@pytest.fixture(autouse=True)
+def sem_motores_reais(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Fora dos testes golden e llm, nenhuma chamada pode chegar a um motor de verdade.
+
+    Sem isto, uma rota que criasse o próprio cliente (em vez da dependência que os motores falsos
+    substituem) passaria na máquina de quem tem os motores de pé e só falharia no CI.
+    """
+    if request.node.get_closest_marker("golden") or request.node.get_closest_marker("llm"):
+        return
+    monkeypatch.setenv("CONTAAI_MOTOR_RR_URL", MOTOR_INALCANCAVEL)
+    monkeypatch.setenv("CONTAAI_MOTOR_SN_URL", MOTOR_INALCANCAVEL)
+
+
+@pytest.fixture(autouse=True)
+def banco_isolado(tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
+    """Cada teste usa um banco próprio numa pasta temporária: nunca o backend/.dados do desenvolvedor."""
+    caminho = tmp_path_factory.mktemp("estado") / "contaai.db"
+    monkeypatch.setenv("CONTAAI_BANCO_CAMINHO", str(caminho))
+    configuracao.cache_clear()
+    yield
+    configuracao.cache_clear()
+
+
 @pytest.fixture(autouse=True)
 def sem_limite_de_requisicoes(monkeypatch: pytest.MonkeyPatch) -> None:
     """Os limites por IP valem por processo; nos testes ficam desligados (test_seguranca liga de novo)."""
