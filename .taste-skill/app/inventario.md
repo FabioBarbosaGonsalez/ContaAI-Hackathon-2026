@@ -47,6 +47,13 @@ As asserções que a skill pede estão nos testes do backend (`backend/tests/tes
 
 **Um fato, uma variável.** A margem da cerveja (11,19%) aparece no catálogo e no alerta, e o preço sugerido (R$ 3,97) aparece no alerta e no preço-alvo. Nos mocks, os dois saem do mesmo cálculo e já foram conferidos iguais. Na E5, cada um deve vir de um só campo. Desde a E4, o preço e o custo atuais de cada item vêm do `GET /catalogo` (estado no SQLite, ADR 0008): o preço atual do alerta é o do catálogo, e o custo novo do alerta é o custo atual do catálogo (teste em `test_contrato.py`).
 
+**Antes da E5 (ADR 0011)**, o `GET /catalogo` passou a trazer tudo de que as telas precisam para montar os pedidos. A tela usa estes campos e não guarda cópia de nenhum valor:
+- `cenario.operacao`: data, UF, município, alíquotas e premissas do DAS, com a fonte. Vai em todo carrinho, preço-alvo, comparação, explicação e contexto do chat. Nenhuma alíquota fica escrita no código da tela (P6).
+- `loteReferencia` (100): a quantidade de cada linha do catálogo ("CBS/IBS a cada 100 unidades"). É o mesmo lote da explicação e do preço-alvo.
+- `clientesB2B[].compraMensal`: a venda que a decisão de regime compara.
+
+Conferido nos testes (`test_tela.py` e `test_tela_golden.py`): a margem da cerveja refeita com o catálogo é a do alerta (11,19% contra os motores). A memória da explicação é a conta da linha do catálogo: no tradicional, o arroz dá R$ 32,40 + R$ 0,36 = R$ 32,76 a cada 100 unidades.
+
 ## 2. Uma pergunta e um achado por tela (§2.2)
 
 Valores do cenário de demonstração (simulação de março de 2027, premissas rotuladas). A tela mostra o que a API devolver; os números abaixo são os dos mocks.
@@ -59,7 +66,7 @@ Valores do cenário de demonstração (simulação de março de 2027, premissas 
   - o alerta, que é o maior bloco e vem primeiro;
   - a margem de cada item contra o alvo: uma barra por item com um traço no alvo (`Charts.bullet`); só a que quebra leva cor;
   - a última nota importada, com "Importar nota";
-  - pendências de cadastro: "Carne bovina: NCM não combina com a classificação", com "Corrigir".
+  - pendências de cadastro: "Carne bovina: NCM não combina com a classificação", com "Corrigir". Corrigir mostra as candidatas oficiais (200003, alimentação humana, e 000001, tributação integral, conferidas nos motores) e grava a escolhida com `POST /catalogo/{itemId}/classificacao` (ADR 0011). Gravada, a pendência some e o item volta a calcular.
 
 ### Catálogo e impacto (list)
 - **Pergunta:** quanto de CBS/IBS cada item carrega e quanto sobra?
@@ -95,6 +102,25 @@ Valores do cenário de demonstração (simulação de março de 2027, premissas 
 - **Pergunta:** por que este item paga isso?
 - **Achado** (arroz, híbrido): alíquota zero da cesta básica, Art. 125 da LC 214/2025, com a memória de cálculo do motor a um clique.
 - **Regras:** de 3 a 6 frases (seção 11.6 do plano), terminando com o aviso de estimativa.
+- **Dados:** `GET /explicar/{itemId}?cnpj=` (desde o ADR 0011, lê o item como está no estado, no lote de referência) ou, para um item que só existe na tela, `POST /explicar`.
+
+### Chat lateral (M1, M3 e o preço-alvo conversado)
+- **Pergunta:** o que o copiloto propõe, e o que eu confirmo?
+- **Achado** (provedor `roteiro`, sem IA): "Vendo arroz, cerveja e chocolate" gera três cartões de classificação para confirmar, sem nenhum cálculo antes da confirmação (P3).
+- **Tarefa:** confirmar uma classificação, corrigir o item com REG-011 ou aplicar o preço sugerido.
+- **Blocos:**
+  - a conversa, como texto (nunca HTML: a resposta e a descrição dos itens são dados, `docs/seguranca.md`);
+  - os cartões das ações propostas (`acoesPropostas`), montados pelo backend a partir das ferramentas e nunca do texto da IA:
+    - `confirmar_classificacao`: até 3 candidatas visíveis e um "ver todas" (o arroz tem 4; ADR 0006). O item confirmado fica só na tela, como lista de trabalho calculada pelo carrinho (decisão do usuário, ADR 0011);
+    - `corrigir_classificacao`: grava com `POST /catalogo/{itemId}/classificacao`;
+    - `aplicar_preco`: grava com `POST /catalogo/{itemId}/preco`, só com o clique;
+  - a frase de simulação e as premissas quando `simulado` (P6), e o aviso curto no fim;
+  - quem respondeu (`provedor`: "roteiro, sem IA" ou o provedor de IA). Com uma IA externa, a tela diz que a conversa vai ao provedor (ADR 0006).
+- **Estados:**
+  - `verificacao: resposta_segura`: o verificador trocou uma resposta com número fora das ferramentas; a tela mostra a resposta segura, sem alarme;
+  - 401: o chat exige o token da demo, que a pessoa digita num campo e fica só na memória da aba;
+  - 429: espera, com o tempo de `Retry-After`.
+- **No celular:** o chat abre em tela cheia, sobre a tela de onde veio, e volta para ela ao fechar.
 
 ### Painel do contador (inbox, D1)
 - **Pergunta:** qual cliente meu precisa de atenção este mês?
@@ -126,3 +152,10 @@ Valores do cenário de demonstração (simulação de março de 2027, premissas 
 - **Fonte sem rastreio:** a folha carrega Geist pelo Google Fonts. No produto, hospedar os arquivos junto com o app, sem CDN, para não enviar o IP dos usuários ao Google (LGPD). Geist e Geist Mono estão sob a SIL Open Font License 1.1 (repositório oficial `vercel/geist-font`), o que permite isso de graça.
 - **Padrões da biblioteca:** só a *overview* tem padrão ("KPIs como abas do gráfico"). Catálogo, decisão e contador se compõem pelas regras do capítulo. Não copiar uma tela estudada.
 - **Portão:** `inspect.mjs --app` com 0 FAIL em 1440, 768 e 390px (P11). No celular, a tabela do catálogo vira lista de duas linhas, e a régua do crédito fica empilhada, com a mesma escala.
+- **Base técnica (decisões do usuário, ADR 0011):**
+  - Vite + React como páginas estáticas, no lugar do Next.js do plano;
+  - TypeScript 5.9.3, porque o 7 é incompatível com o typescript-eslint e com o openapi-typescript;
+  - a tela roda na porta 3000, a origem que o CORS já libera;
+  - o endereço da API é configurável, e na E6 a API fica em `/api`, para `/catalogo` e `/contador` não colidirem;
+  - a linha do tempo 2026 × 2027 (D2) e a exportação (D3) ficam fora da E5.
+- **Arquivos da skill:** `assets/app.css` e `assets/charts.js` não declaram licença e não são copiados para o repositório (público, MIT). O CSS e os SVG (a barra de margem contra o alvo e a régua) são escritos no projeto, seguindo as regras do capítulo. A skill entra como referência e como portão, rodando da pasta dela.

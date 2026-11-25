@@ -34,7 +34,7 @@ Todos os dados são sintéticos (P10): empresas, CNPJs e notas fictícios. Não 
   - mais 20 por minuto na busca de NCM.
 
   A tabela de IPs tem no máximo 10 mil entradas.
-- **Token da demo** (`CONTAAI_TOKEN_DEMO`) no `/chat` e nas rotas que mudam o estado, comparado em tempo constante.
+- **Token da demo** (`CONTAAI_TOKEN_DEMO`) no `/chat` e nas rotas que mudam o estado (inclusive preço e classificação pela tela, fora do espaço), comparado em tempo constante.
 - **Teto por mensagem do agente:** 6 rodadas, 16 ferramentas, 1.024 tokens de saída por rodada e 90 s.
 - **Cache das respostas dos motores:** pedidos repetidos não chegam ao motor.
 
@@ -50,7 +50,24 @@ Todos os dados são sintéticos (P10): empresas, CNPJs e notas fictícios. Não 
   - acima do limite, 413, antes de o corpo ser lido;
   - leitura de no máximo o limite + 1 byte;
   - só tipos de XML (415).
-- **Contrato:** todo modelo recusa campo desconhecido. CNPJ, id do alerta e código de erro têm padrão fixo. O texto do produto vindo da nota (`xProd`) é tratado como dado, nunca como instrução ao agente.
+- **Contrato:**
+  - todo modelo recusa campo desconhecido;
+  - CNPJ, id do alerta, id do item do catálogo e código de erro têm padrão fixo;
+  - o texto do produto vindo da nota (`xProd`) é tratado como dado, nunca como instrução ao agente.
+- **Corpo das rotas JSON** ([ADR 0011](adr/0011-contrato-da-tela-e-seguranca.md)):
+  - acima de 1 MB (`CONTAAI_TAMANHO_MAX_JSON_BYTES`), 413 antes de ser lido;
+  - em pedaços, sem `Content-Length`, 411.
+- **Números de entrada:**
+  - valores com até 10 casas, quantidades e percentuais com até 4;
+  - teto de R$ 1 bilhão por unidade e 1 bilhão de unidades;
+  - NaN e infinito recusados.
+
+  Antes, `1e999999` no valor dava erro 500, e `1e-999999` ia ao motor.
+- **Preço e classificação pela tela:**
+  - a classificação só é aceita se for candidata válida para a NCM nos dados abertos do motor;
+  - o CST vem da fundamentação oficial, não da tela;
+  - o texto da fonte é montado só com dados oficiais;
+  - os dois são lançamentos de acréscimo (gatilhos bloqueiam UPDATE).
 - **Espaços de avaliação** ([ADR 0010](adr/0010-espacos-de-avaliacao.md)):
   - o id é sorteado pelo servidor (128 bits) e vai num header, não na URL, e por isso não aparece no log de acesso;
   - só vira nome de arquivo depois de conferido pelo padrão de 32 hexadecimais;
@@ -58,13 +75,65 @@ Todos os dados são sintéticos (P10): empresas, CNPJs e notas fictícios. Não 
   - o espaço vence num tempo fixo e é apagado na limpeza.
 - **Estado:** a nota só entra se o destinatário for uma empresa cadastrada. Reimportar a mesma nota é idempotente (SHA-256). Os lançamentos de custo só aceitam acréscimo (gatilhos bloqueiam UPDATE). A restauração é atômica.
 
+### Navegador: XSS, CSRF e DNS rebinding ([ADR 0011](adr/0011-contrato-da-tela-e-seguranca.md))
+
+- **A API nunca responde HTML.**
+  - Toda resposta é JSON ou Problem Details, com `nosniff` e `Content-Security-Policy: default-src 'none'`, inclusive as de erro.
+  - O texto do usuário volta como string JSON, nunca como página: o backend não o escapa nem o remove, porque é dado.
+  - O teste percorre todas as rotas do contrato com payload de XSS, nos modos mock e real.
+- **`/docs` é a única página HTML** e é desligável (`CONTAAI_DOCS_PUBLICA=false`). O Swagger carrega scripts de uma CDN. Na mesma origem da tela, eles alcançariam o que a tela guarda no navegador. No deploy, fica desligado.
+- **CSRF:**
+  - POST com `Origin` fora de `CONTAAI_CORS_ORIGENS` recebe 403, inclusive com `Origin: null`;
+  - corpo `text/plain` ou de formulário não é lido como JSON;
+  - as rotas que mudam o estado também exigem um header próprio (token ou espaço), que força o preflight do CORS.
+- **DNS rebinding:** só os hosts de `CONTAAI_HOSTS_PERMITIDOS` são aceitos (padrão: `127.0.0.1` e `localhost`). Os outros recebem 400.
+- **CORS:** expõe só `Retry-After` e `X-ContaAI-Mock`, que a tela precisa ler.
+
+### Regras para a interface (E5)
+
+A tela é a próxima camada exposta a XSS. A fundação do frontend (PR 2 da E5) traz estas regras com teste:
+
+1. **Todo texto vindo da API é exibido como texto.** Isso vale para:
+   - a descrição da nota (`xProd`, escrita pelo fornecedor);
+   - a resposta do chat;
+   - a memória de cálculo;
+   - as premissas e a fonte;
+   - o `detail` dos erros;
+   - os nomes das empresas.
+
+   O React escapa texto por padrão. São proibidos `dangerouslySetInnerHTML`, `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `document.write` e `eval`/`new Function`, com regra de lint (`react/no-danger`) e busca no código no CI.
+2. **Nenhum texto da API vira `href`, `src`, `style` ou nome de atributo.** Os links da tela são rotas fixas do próprio app. Um `javascript:` vindo de dado nunca chega a um link.
+3. **Sem script embutido na página gerada.** Um teste procura `<script>` sem `src` no `dist/`, e a CSP da tela é:
+
+   ```
+   default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self';
+   base-uri 'none'; form-action 'none'; frame-ancestors 'none'; require-trusted-types-for 'script'
+   ```
+
+   - No desenvolvimento, `connect-src` inclui o endereço da API.
+   - Trusted Types e `style-src 'self'` com os estilos do React ficam a conferir no navegador, no PR da fundação.
+4. **Segredos fora do código da tela.** Toda variável de ambiente do Vite (`VITE_*`) vai para o navegador e é pública. O token do chat só aparece num campo, quando a API responde 401, e fica só na memória da aba.
+5. **O id do espaço fica no navegador, nunca no endereço da página.** Os dados são fictícios e o espaço vence em 120 min.
+6. **Nenhuma requisição a terceiros:**
+   - fontes Geist hospedadas junto do app (OFL-1.1);
+   - sem CDN, analytics ou rastreamento (LGPD).
+7. **Upload:**
+   - `accept=".xml"`;
+   - o tamanho é conferido antes de enviar;
+   - o backend continua sendo quem decide (411, 413 e 415).
+8. **Dependências:**
+   - `npm ci` com o lockfile;
+   - `npm audit` no CI;
+   - bloco npm no Dependabot;
+   - CodeQL de JavaScript (o job já existe).
+
 ### Vazamento de informação ([ADR 0009](adr/0009-camada-http-e-erros.md))
 
 - **Erros no formato da RFC 9457.**
   - Nenhum traz pilha, URL ou host dos motores, caminho do servidor ou corpo de terceiros.
   - O erro não tratado vai para o log e o cliente recebe só "Erro interno".
   - A validação não devolve o valor enviado.
-- **Cabeçalhos em toda resposta:** `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `X-Frame-Options: DENY` e `Cross-Origin-Resource-Policy: same-site`. Fora de `/docs`, também `Content-Security-Policy: default-src 'none'` e `Cache-Control: no-store`.
+- **Cabeçalhos em toda resposta:** `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `X-Frame-Options: DENY` e `Cross-Origin-Resource-Policy: same-origin` (era `same-site` até o ADR 0011). Fora de `/docs`, também `Content-Security-Policy: default-src 'none'` e `Cache-Control: no-store`.
 - **CORS** só para as origens configuradas (`CONTAAI_CORS_ORIGENS`), sem credenciais.
 - **Segredos:**
   - a chave da IA e o token são `SecretStr`, ausentes de `repr` e de `model_dump_json` (testado);
@@ -85,6 +154,9 @@ Todos os dados são sintéticos (P10): empresas, CNPJs e notas fictícios. Não 
 | Segredos no histórico inteiro | CI, job "Segredos" | gitleaks 8.30.1 (MIT), binário conferido pelo SHA-256 da release |
 | Segredos no push e no repositório | GitHub, ligado nas configurações | varredura de segredos e proteção no push (gratuitas em repositório público) |
 | Análise estática | CI, CodeQL (Python e JavaScript) | CodeQL (gratuito em repositório público) |
+| Regras de segurança do bandit (`S`) | CI, no `ruff check` | ruff (MIT), já travado no `uv.lock`; sem dependência nova |
+| Testes de segurança da API (XSS, CSRF, Host, corpo, números, injeção) | CI, `tests/test_seguranca_api.py` | pytest |
+| Varredura dinâmica da API pelo OpenAPI | Local, antes de cada etapa (ADR 0011) | OWASP ZAP (Apache-2.0), imagem oficial `ghcr.io/zaproxy/zaproxy` |
 | Tipos | CI, `mypy` com o plugin do Pydantic | mypy (MIT) |
 | Cobertura mínima de 90% no `app/` | CI | coverage.py (Apache-2.0) |
 | Atualizações | Dependabot semanal (Actions, uv, imagens dos motores) e alertas de segurança | GitHub |
@@ -105,6 +177,12 @@ Não usamos a `gitleaks-action`: desde a v2 ela deixou de ser MIT e exige chave 
 - **Sem usuário nem autorização por CNPJ.** O CNPJ é filtro, não permissão. Há um token só para toda a demo. Login fica para depois do hackathon ([ADR 0008](adr/0008-nfe-historico-e-alertas.md)).
 - **Esgotar os espaços de avaliação:** criar um espaço não pede o token, para a banca testar sem combinar nada. Quem fizer muitos pedidos de IPs diferentes pode ocupar o teto (50, configurável) até eles vencerem. A demonstração compartilhada segue funcionando, e o 503 diz em quanto tempo abre vaga ([ADR 0010](adr/0010-espacos-de-avaliacao.md)).
 - **Atrás de proxy, o limite por IP vira global.** Ler `X-Forwarded-For` só de um proxy nosso fica para o deploy (E6).
-- **Deploy (E6):** volume para o SQLite, container sem root e com sistema de arquivos só de leitura, limite de corpo no proxy e `/docs` desligado ou protegido.
+- **Deploy (E6):**
+  - volume para o SQLite;
+  - container sem root e com sistema de arquivos só de leitura;
+  - limite de corpo no proxy;
+  - `CONTAAI_DOCS_PUBLICA=false`;
+  - o domínio público em `CONTAAI_HOSTS_PERMITIDOS` e em `CONTAAI_CORS_ORIGENS`;
+  - HSTS e a API em `/api` no proxy.
 - **Erro 500 sem os cabeçalhos de segurança e de CORS**, porque o Starlette o monta por fora dos middlewares. O corpo não traz nada interno ([ADR 0009](adr/0009-camada-http-e-erros.md)).
 - **Custo da IA real** ainda não verificado. Precisa ser conferido na página oficial do provedor antes de ligar a chave ([ADR 0006](adr/0006-agente.md)).

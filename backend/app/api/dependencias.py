@@ -100,7 +100,9 @@ def abrir_estado(cfg: Configuracao, espaco_id: str | None) -> Estado:
         return Estado(repositorio(cfg))
     gerenciador = espacos(cfg)
     espaco = gerenciador.abrir(espaco_id, agora_utc())
-    return Estado(Repositorio(gerenciador.banco(espaco.id)), espaco)
+    # banco() migra uma vez por processo: um espaço copiado antes de uma migração nova (ex.: a 0002, com o
+    # processo anterior no ar) recebe a migração ao ser aberto, em vez de falhar na primeira gravação.
+    return Estado(Repositorio(banco(gerenciador.banco(espaco.id).caminho)), espaco)
 
 
 def exigir_token_fora_do_espaco(cfg: Configuracao, token: str | None, estado: Estado) -> None:

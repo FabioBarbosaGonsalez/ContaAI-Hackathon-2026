@@ -38,7 +38,7 @@ uv run uvicorn app.main:app --reload   # documentação interativa em http://127
 As rotas seguem o contrato ([docs/contrato/openapi.json](docs/contrato/openapi.json), [ADR 0003](docs/adr/0003-contrato-da-api.md)). Há dois modos:
 
 - **mock** (padrão): todas as rotas respondem com mocks gerados a partir dos motores oficiais, com o header `X-ContaAI-Mock: 1`.
-- **real** (`CONTAAI_MODO=real`, motores de pé): `POST /carrinho/calcular` e `POST /item/preco-alvo` calculam pelos motores ([ADR 0004](docs/adr/0004-nucleo-de-calculo.md), [ADR 0005](docs/adr/0005-preco-alvo-e-premissas.md)); `GET /busca/ncm`, `GET`/`POST /explicar`, `GET /erros/{codigo}` e `POST /chat` também ([ADR 0006](docs/adr/0006-agente.md)), `POST /regime/comparar` ([ADR 0007](docs/adr/0007-comparacao-de-regimes.md)), e NF-e, alertas, catálogo e painel do contador ([ADR 0008](docs/adr/0008-nfe-historico-e-alertas.md)). Todo erro sai no formato Problem Details da RFC 9457 (`application/problem+json`, com `type`, `title`, `status` e `detail`); `GET /problemas/{nome}` descreve cada tipo próprio ([ADR 0009](docs/adr/0009-camada-http-e-erros.md)). Falhas dos motores voltam como 422 (operação recusada, com os erros do motor), 502 ou 503, sem expor endereço interno.
+- **real** (`CONTAAI_MODO=real`, motores de pé): `POST /carrinho/calcular` e `POST /item/preco-alvo` calculam pelos motores ([ADR 0004](docs/adr/0004-nucleo-de-calculo.md), [ADR 0005](docs/adr/0005-preco-alvo-e-premissas.md)); `GET /busca/ncm`, `GET`/`POST /explicar`, `GET /erros/{codigo}` e `POST /chat` também ([ADR 0006](docs/adr/0006-agente.md)), `POST /regime/comparar` ([ADR 0007](docs/adr/0007-comparacao-de-regimes.md)), e NF-e, alertas, catálogo e painel do contador ([ADR 0008](docs/adr/0008-nfe-historico-e-alertas.md)). Para a tela, o catálogo traz o cenário da empresa, os clientes B2B e o lote de referência, e a tela grava preço e classificação (`POST /catalogo/{itemId}/preco` e `/classificacao`, [ADR 0011](docs/adr/0011-contrato-da-tela-e-seguranca.md)). Todo erro sai no formato Problem Details da RFC 9457 (`application/problem+json`, com `type`, `title`, `status` e `detail`); `GET /problemas/{nome}` descreve cada tipo próprio ([ADR 0009](docs/adr/0009-camada-http-e-erros.md)). Falhas dos motores voltam como 422 (operação recusada, com os erros do motor), 502 ou 503, sem expor endereço interno.
 
 ### Testar a recorrência (NF-e → alerta)
 
@@ -94,7 +94,7 @@ No Linux e no macOS, o [Makefile](Makefile) tem atalhos para os mesmos comandos:
 | Motor Simples Nacional 1.0.2 (Receita, Java 25) | Lado "Simples tradicional" da decisão de regime: CBS e IBS por item a partir das alíquotas efetivas informadas ([ADR 0001](docs/adr/0001-lado-tradicional-do-simples.md)) |
 | Backend (FastAPI) | Orquestra, preço-alvo, comparação de regimes, leitura de NF-e e alertas |
 | Agente (tool use, provedor de IA trocável) | Só chama as ferramentas do backend; não faz conta. Toda resposta passa pelo verificador de números |
-| Frontend (Next.js) | Telas construídas com a skill design-taste-frontend |
+| Frontend (Vite + React, páginas estáticas; E5) | Telas construídas com a skill design-taste-frontend. Troca do Next.js do plano aprovada pelo usuário: CSP estrita sem servidor Node ([ADR 0011](docs/adr/0011-contrato-da-tela-e-seguranca.md)) |
 
 ## Princípios
 
@@ -123,6 +123,7 @@ No Linux e no macOS, o [Makefile](Makefile) tem atalhos para os mesmos comandos:
 - [ADR 0008](docs/adr/0008-nfe-historico-e-alertas.md): NF-e de compra, estado em SQLite com migrações, alertas de margem, painel do contador e proteções
 - [ADR 0009](docs/adr/0009-camada-http-e-erros.md): camada HTTP em routers, erros no formato da RFC 9457 e ordem dos middlewares
 - [ADR 0010](docs/adr/0010-espacos-de-avaliacao.md): espaço de avaliação por visitante (um SQLite por espaço, cópia do banco-modelo, validade e teto)
+- [ADR 0011](docs/adr/0011-contrato-da-tela-e-seguranca.md): contrato para a tela da E5 (cenário, clientes B2B, lote, preço e classificação pela tela), proteções do navegador (XSS, CSRF, DNS rebinding) e testes de segurança
 - [Segurança](docs/seguranca.md): o que o projeto protege, como, e o que está em aberto; para relatar uma vulnerabilidade, [SECURITY.md](SECURITY.md)
 - [Contrato OpenAPI](docs/contrato/openapi.json): o que frontend e agente consomem
 - [Dados de demonstração](data/demo/README.md): distribuidora, carteira do contador, cliente B2B, notas de compra fictícias e sementes do estado
@@ -140,7 +141,9 @@ Etapa 2 (agente) concluída: loop de tool use independente do provedor, provedor
 
 Etapa 3 (diferencial B2B) concluída no backend: `POST /regime/comparar` real, com os três números (diferença de caixa, crédito que o cliente leva e custo líquido do cliente), o crédito das compras por item (NF-e ou motor), o detalhamento por linha, o preço de empate com um concorrente do regime regular e a ferramenta `comparar_regimes` do agente. A tela de decisão passou para a Etapa 5 (decisão do usuário, ADR 0007).
 
-Etapa 4 (recorrência) concluída no backend: leitor seguro da NF-e, casamento com o catálogo, histórico de custo em SQLite com migrações versionadas, alerta de margem com o preço-alvo (24,12% → 11,19%, R$ 3,97, em menos de 5 s), aplicar preço, catálogo com o estado atual, painel do contador com três CNPJs fictícios (D1) e a ferramenta `listar_alertas` do agente. As telas (importar nota, painel e contador) ficam para a Etapa 5, como na E3 (ADR 0008). Próxima: Etapa 5, interface.
+Etapa 4 (recorrência) concluída no backend: leitor seguro da NF-e, casamento com o catálogo, histórico de custo em SQLite com migrações versionadas, alerta de margem com o preço-alvo (24,12% → 11,19%, R$ 3,97, em menos de 5 s), aplicar preço, catálogo com o estado atual, painel do contador com três CNPJs fictícios (D1) e a ferramenta `listar_alertas` do agente. As telas (importar nota, painel e contador) ficam para a Etapa 5, como na E3 (ADR 0008).
+
+Antes da Etapa 5: espaço de avaliação por visitante (ADR 0010) e o contrato para a tela, com as proteções do navegador e os testes de segurança (ADR 0011). Próxima: Etapa 5, interface (fundação do frontend e telas).
 
 ## Créditos e licenças
 

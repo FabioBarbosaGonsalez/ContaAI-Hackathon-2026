@@ -7,8 +7,8 @@
       "estado": "CALCULADO",
       "reducaoPct": null,
       "memoria": {
-        "cbs": "Receita bruta do Simples Nacional de R$ 27,90 (Receita bruta - interna). A base de cálculo utilizada é de R$ 27,90, com alíquota efetiva de 1,1612%. Valor devido de R$ 0,32 e pendente/suspenso de R$ 0,00.",
-        "ibs": "Receita bruta do Simples Nacional de R$ 27,90 (Receita bruta - interna). A base de cálculo utilizada é de R$ 27,90, com alíquota efetiva de 0,0129%. Valor devido de R$ 0,00 e pendente/suspenso de R$ 0,00."
+        "cbs": "Receita bruta do Simples Nacional de R$ 2.790,00 (Receita bruta - interna). A base de cálculo utilizada é de R$ 2.790,00, com alíquota efetiva de 1,1612%. Valor devido de R$ 32,40 e pendente/suspenso de R$ 0,00.",
+        "ibs": "Receita bruta do Simples Nacional de R$ 2.790,00 (Receita bruta - interna). A base de cálculo utilizada é de R$ 2.790,00, com alíquota efetiva de 0,0129%. Valor devido de R$ 0,36 e pendente/suspenso de R$ 0,00."
       },
       "erros": [],
       "fundamentacoes": [
@@ -55,9 +55,9 @@
       "estado": "CALCULO_SIMULADO",
       "reducaoPct": "100.00",
       "memoria": {
-        "cbs": "Operação de consumo com enquadramento legal em Art. 125, tributada conforme Alíquota zero. A base de cálculo utilizada é de R$ 27,90, com alíquota de zero.",
-        "ibsUF": "Operação de consumo com enquadramento legal em Art. 125, tributada conforme Alíquota zero. A base de cálculo utilizada é de R$ 27,90, com alíquota de zero.",
-        "ibsMun": "Operação de consumo com enquadramento legal em Art. 125, tributada conforme Alíquota zero. A base de cálculo utilizada é de R$ 27,90, com alíquota de zero."
+        "cbs": "Operação de consumo com enquadramento legal em Art. 125, tributada conforme Alíquota zero. A base de cálculo utilizada é de R$ 2.790,00, com alíquota de zero.",
+        "ibsUF": "Operação de consumo com enquadramento legal em Art. 125, tributada conforme Alíquota zero. A base de cálculo utilizada é de R$ 2.790,00, com alíquota de zero.",
+        "ibsMun": "Operação de consumo com enquadramento legal em Art. 125, tributada conforme Alíquota zero. A base de cálculo utilizada é de R$ 2.790,00, com alíquota de zero."
       },
       "erros": [],
       "fundamentacoes": [
@@ -91,8 +91,8 @@
       "estado": "CALCULADO",
       "reducaoPct": null,
       "memoria": {
-        "cbs": "Receita bruta do Simples Nacional de R$ 3,79 (Receita bruta - interna). A base de cálculo utilizada é de R$ 3,79, com alíquota efetiva de 1,1612%. Valor devido de R$ 0,04 e pendente/suspenso de R$ 0,00.",
-        "ibs": "Receita bruta do Simples Nacional de R$ 3,79 (Receita bruta - interna). A base de cálculo utilizada é de R$ 3,79, com alíquota efetiva de 0,0129%. Valor devido de R$ 0,00 e pendente/suspenso de R$ 0,00."
+        "cbs": "Receita bruta do Simples Nacional de R$ 379,00 (Receita bruta - interna). A base de cálculo utilizada é de R$ 379,00, com alíquota efetiva de 1,1612%. Valor devido de R$ 4,40 e pendente/suspenso de R$ 0,00.",
+        "ibs": "Receita bruta do Simples Nacional de R$ 379,00 (Receita bruta - interna). A base de cálculo utilizada é de R$ 379,00, com alíquota efetiva de 0,0129%. Valor devido de R$ 0,05 e pendente/suspenso de R$ 0,00."
       },
       "erros": [],
       "fundamentacoes": [
@@ -134,10 +134,10 @@
       "estado": "CALCULO_SIMULADO",
       "reducaoPct": "0.00",
       "memoria": {
-        "cbs": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 3,79, com alíquota de 8,80%.",
-        "ibsUF": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 3,79, com alíquota de 0,05%.",
-        "ibsMun": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 3,79, com alíquota de 0,05%.",
-        "impostoSeletivo": "Operação de consumo sujeita à tributação pelo Imposto Seletivo, com enquadramento legal em Art. 410, tributada conforme Tributação pelo Imposto Seletivo - Sem Cálculo. A base de cálculo utilizada é de R$ 3,79, com alíquota ad valorem de 10,00%. A alíquota ad rem é de 0,00."
+        "cbs": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 379,00, com alíquota de 8,80%.",
+        "ibsUF": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 379,00, com alíquota de 0,05%.",
+        "ibsMun": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 379,00, com alíquota de 0,05%.",
+        "impostoSeletivo": "Operação de consumo sujeita à tributação pelo Imposto Seletivo, com enquadramento legal em Art. 410, tributada conforme Tributação pelo Imposto Seletivo - Sem Cálculo. A base de cálculo utilizada é de R$ 379,00, com alíquota ad valorem de 10,00%. A alíquota ad rem é de 0,00."
       },
       "erros": [],
       "fundamentacoes": [
@@ -176,8 +176,8 @@
       "estado": "CALCULADO",
       "reducaoPct": null,
       "memoria": {
-        "cbs": "Receita bruta do Simples Nacional de R$ 5,99 (Receita bruta - interna). A base de cálculo utilizada é de R$ 5,99, com alíquota efetiva de 1,1612%. Valor devido de R$ 0,07 e pendente/suspenso de R$ 0,00.",
-        "ibs": "Receita bruta do Simples Nacional de R$ 5,99 (Receita bruta - interna). A base de cálculo utilizada é de R$ 5,99, com alíquota efetiva de 0,0129%. Valor devido de R$ 0,00 e pendente/suspenso de R$ 0,00."
+        "cbs": "Receita bruta do Simples Nacional de R$ 599,00 (Receita bruta - interna). A base de cálculo utilizada é de R$ 599,00, com alíquota efetiva de 1,1612%. Valor devido de R$ 6,96 e pendente/suspenso de R$ 0,00.",
+        "ibs": "Receita bruta do Simples Nacional de R$ 599,00 (Receita bruta - interna). A base de cálculo utilizada é de R$ 599,00, com alíquota efetiva de 0,0129%. Valor devido de R$ 0,08 e pendente/suspenso de R$ 0,00."
       },
       "erros": [],
       "fundamentacoes": [
@@ -219,9 +219,9 @@
       "estado": "CALCULO_SIMULADO",
       "reducaoPct": "0.00",
       "memoria": {
-        "cbs": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 5,99, com alíquota de 8,80%.",
-        "ibsUF": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 5,99, com alíquota de 0,05%.",
-        "ibsMun": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 5,99, com alíquota de 0,05%."
+        "cbs": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 599,00, com alíquota de 8,80%.",
+        "ibsUF": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 599,00, com alíquota de 0,05%.",
+        "ibsMun": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 599,00, com alíquota de 0,05%."
       },
       "erros": [],
       "fundamentacoes": [
@@ -255,8 +255,8 @@
       "estado": "CALCULADO",
       "reducaoPct": null,
       "memoria": {
-        "cbs": "Receita bruta do Simples Nacional de R$ 4,49 (Receita bruta - interna). A base de cálculo utilizada é de R$ 4,49, com alíquota efetiva de 1,1612%. Valor devido de R$ 0,05 e pendente/suspenso de R$ 0,00.",
-        "ibs": "Receita bruta do Simples Nacional de R$ 4,49 (Receita bruta - interna). A base de cálculo utilizada é de R$ 4,49, com alíquota efetiva de 0,0129%. Valor devido de R$ 0,00 e pendente/suspenso de R$ 0,00."
+        "cbs": "Receita bruta do Simples Nacional de R$ 449,00 (Receita bruta - interna). A base de cálculo utilizada é de R$ 449,00, com alíquota efetiva de 1,1612%. Valor devido de R$ 5,21 e pendente/suspenso de R$ 0,00.",
+        "ibs": "Receita bruta do Simples Nacional de R$ 449,00 (Receita bruta - interna). A base de cálculo utilizada é de R$ 449,00, com alíquota efetiva de 0,0129%. Valor devido de R$ 0,06 e pendente/suspenso de R$ 0,00."
       },
       "erros": [],
       "fundamentacoes": [
@@ -298,9 +298,9 @@
       "estado": "CALCULO_SIMULADO",
       "reducaoPct": "0.00",
       "memoria": {
-        "cbs": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 4,49, com alíquota de 8,80%.",
-        "ibsUF": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 4,49, com alíquota de 0,05%.",
-        "ibsMun": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 4,49, com alíquota de 0,05%."
+        "cbs": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 449,00, com alíquota de 8,80%.",
+        "ibsUF": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 449,00, com alíquota de 0,05%.",
+        "ibsMun": "Operação de consumo com enquadramento legal em LC 214/2025, tributada conforme Tributação integral. A base de cálculo utilizada é de R$ 449,00, com alíquota de 0,05%."
       },
       "erros": [],
       "fundamentacoes": [

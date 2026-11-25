@@ -9,6 +9,12 @@ motores. Os testes que conferem números reais são os de marcador "golden".
 from __future__ import annotations
 
 import json
+import os
+
+# O TestClient manda "Host: testserver": só nos testes ele entra na lista de hosts aceitos (ADR 0011).
+# Antes de importar o app, que lê a configuração na montagem dos middlewares.
+os.environ["CONTAAI_HOSTS_PERMITIDOS"] = '["127.0.0.1", "localhost", "testserver"]'
+
 from collections.abc import AsyncIterator, Callable, Iterator
 from dataclasses import dataclass, field
 from decimal import ROUND_HALF_UP, Decimal

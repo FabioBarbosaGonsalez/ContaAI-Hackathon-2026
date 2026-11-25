@@ -53,7 +53,8 @@ from app.motores.requisicoes import Linha
 from app.nfe.leitor import ItemLido, NotaLida, ler_nfe
 from app.persistencia.repositorio import EmpresaRegistro, FonteCredito, LancamentoCusto, Repositorio, Sessao
 from app.precificacao.carrinho import aliquotas_premissa, calcular_carrinho, pct
-from app.precificacao.preco_alvo import LOTE, CalculoRecusado, calcular_preco_alvo
+from app.precificacao.lote import LOTE
+from app.precificacao.preco_alvo import CalculoRecusado, calcular_preco_alvo
 
 C4 = Decimal("0.0001")
 Relogio = Callable[[], datetime]

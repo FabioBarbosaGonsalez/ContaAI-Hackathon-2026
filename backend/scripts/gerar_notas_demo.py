@@ -163,7 +163,8 @@ def grupo_do_motor(cli: httpx.Client, demo: Distribuidora, nota: dict) -> ET.Ele
     )
     calculo = cli.post(f"{MOTOR_RR_URL}/calculadora/regime-geral", json=operacao).raise_for_status()
     xml = cli.post(f"{MOTOR_RR_URL}/calculadora/xml/generate", params={"tipo": "nfe"}, json=calculo.json())
-    return ET.fromstring(xml.raise_for_status().content)
+    # XML gerado pelo motor oficial local (127.0.0.1), não por terceiro.
+    return ET.fromstring(xml.raise_for_status().content)  # noqa: S314
 
 
 def montar_nota(cli: httpx.Client, demo: Distribuidora, nota: dict, cuf: str) -> ET.ElementTree:

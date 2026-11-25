@@ -6,8 +6,17 @@ from datetime import date
 from decimal import Decimal
 from typing import Any
 
-from app.contrato import AliquotasNominais, ImpostoSeletivoEntrada, ItemBase, ItemEntrada, PremissasDas, Regime
+from app.contrato import (
+    AliquotasNominais,
+    ExplicarRequisicao,
+    ImpostoSeletivoEntrada,
+    ItemBase,
+    ItemEntrada,
+    PremissasDas,
+    Regime,
+)
 from app.dados_demo import Cenario, Empresa, ItemCatalogo
+from app.precificacao.lote import LOTE
 
 FONTE_ALIQUOTAS_DEMO = "Cenário de demonstração (data/demo): entradas do exemplo oficial da calculadora RR"
 FONTE_DAS_DEMO = "Cenário de demonstração (data/demo): valores de exemplo do esquema do motor SN"
@@ -60,6 +69,18 @@ def item_base(cat: ItemCatalogo) -> ItemBase:
         if cat.impostoSeletivo
         else None,
         unidade=cat.unidade,
+    )
+
+
+def requisicao_explicar(
+    empresa: Empresa, cenario: Cenario, cat: ItemCatalogo, preco: Decimal, regime: Regime
+) -> ExplicarRequisicao:
+    """O item do catálogo com o cenário da empresa, no lote de referência e ao preço atual (ADR 0011): a
+    memória de cálculo da explicação é a mesma conta da linha do catálogo na tela."""
+    return ExplicarRequisicao(
+        **operacao_da_empresa(empresa, cenario),
+        regime=regime,
+        item=item_entrada(cat, LOTE, preco),
     )
 
 

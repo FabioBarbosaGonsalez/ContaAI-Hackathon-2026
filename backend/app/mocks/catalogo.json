@@ -8,6 +8,54 @@
     "municipioNome": "Porto Alegre",
     "dataCenario": "2027-03-16"
   },
+  "cenario": {
+    "descricao": "Simulação de março de 2027",
+    "operacao": {
+      "data": "2027-03-16",
+      "uf": "RS",
+      "municipio": 4314902,
+      "aliquotasNominais": {
+        "cbs": "8.8",
+        "ibsEstadual": "0.05",
+        "ibsMunicipal": "0.05",
+        "impostoSeletivoAdValorem": "10.0",
+        "fonte": "Cenário de demonstração (data/demo): entradas do exemplo oficial da calculadora RR"
+      },
+      "premissasDas": {
+        "anexo": "I",
+        "cAtivSN": "01",
+        "pCBSSN": "1.1612",
+        "pIBSSN": "0.0129",
+        "fonte": "Cenário de demonstração (data/demo): valores de exemplo do esquema do motor SN"
+      }
+    },
+    "cargaAtualPct": null
+  },
+  "clientesB2B": [
+    {
+      "cnpj": "50291633000185",
+      "nome": "Mercado Bom Preço Ltda (fictício)",
+      "regime": "regime_regular",
+      "uf": "RS",
+      "municipio": 4314902,
+      "compraMensalDescricao": "Cesta mensal fictícia, perto dos R$ 20 mil por mês do plano (seção 13), aos preços do catálogo da distribuidora",
+      "compraMensal": [
+        {
+          "itemId": "biscoito-pacote",
+          "quantidade": "2485"
+        },
+        {
+          "itemId": "cerveja-lata",
+          "quantidade": "1200"
+        },
+        {
+          "itemId": "chocolate-barra",
+          "quantidade": "700"
+        }
+      ]
+    }
+  ],
+  "loteReferencia": 100,
   "itens": [
     {
       "id": "arroz-5kg",

@@ -1,22 +1,36 @@
-"""Leituras e a ação de aplicar preço sobre o estado (E4-02 e E4-04, ADR 0008). Nenhuma chama os motores."""
+"""Leituras e ações sobre o estado (E4-02 e E4-04, ADR 0008; preço e classificação pela tela, ADR 0011).
+
+Nenhuma chama os motores: a classificação chega aqui já conferida nos dados abertos pela rota.
+"""
 
 from __future__ import annotations
 
-from datetime import datetime
+from dataclasses import dataclass
+from datetime import date, datetime
+from decimal import Decimal
 
 from app.contrato import (
     Alerta,
     AplicarAlertaResposta,
+    AplicarPrecoResposta,
     CatalogoResposta,
+    CenarioEmpresa,
+    ClassificacaoCandidata,
+    ClienteB2BEstado,
+    CorrigirClassificacaoResposta,
     EmpresaNoPainel,
     EmpresaResumo,
     ItemCatalogoEstado,
+    ItemCompraMensal,
     LancamentoCustoSaida,
+    Operacao,
     PainelContadorResposta,
     Regime,
 )
-from app.empresa import item_base
+from app.dados_demo import ClienteB2B, ItemCatalogo
+from app.empresa import item_base, operacao_da_empresa
 from app.persistencia.repositorio import AlertaRegistro, EmpresaRegistro, LancamentoCusto, Repositorio, Sessao
+from app.precificacao.lote import LOTE
 
 AVISO_DEMO = "Dados fictícios de demonstração (P10): empresas, CNPJs, preços e custos não são reais."
 HISTORICO_MAX = 10
@@ -64,24 +78,132 @@ def _empresa(s: Sessao, cnpj: str) -> EmpresaRegistro:
     return reg
 
 
+def cenario_empresa(reg: EmpresaRegistro) -> CenarioEmpresa:
+    """O mesmo cenário que as margens dos alertas usam (app.empresa.operacao_da_empresa)."""
+    return CenarioEmpresa(
+        descricao=reg.cenario.descricao,
+        operacao=Operacao(**operacao_da_empresa(reg.empresa, reg.cenario)),
+        cargaAtualPct=reg.cenario.cargaAtualPct,
+    )
+
+
+def cliente_estado(c: ClienteB2B) -> ClienteB2BEstado:
+    return ClienteB2BEstado(
+        cnpj=c.cliente.cnpj,
+        nome=c.cliente.razaoSocial,
+        regime=c.cliente.regime,
+        uf=c.cliente.uf,
+        municipio=c.cliente.municipio,
+        compraMensalDescricao=c.compraMensal.descricao,
+        compraMensal=[ItemCompraMensal(itemId=i.itemId, quantidade=i.quantidade) for i in c.compraMensal.itens],
+    )
+
+
+def _item_estado(s: Sessao, cnpj: str, cat: ItemCatalogo) -> ItemCatalogoEstado:
+    historico = [_lancamento(s, cnpj, h) for h in s.historico_custo(cnpj, cat.id, HISTORICO_MAX)]
+    return ItemCatalogoEstado(
+        **item_base(cat).model_dump(),
+        ncmDescricaoOficial=cat.ncmDescricaoOficial,
+        classificacaoFonte=cat.classificacaoFonte,
+        margemAlvoPct=cat.margemAlvoPct,
+        precoVenda=s.preco_atual(cnpj, cat.id) or cat.precoVenda,
+        custoAtual=historico[0] if historico else None,
+        historicoCusto=historico,
+    )
+
+
 def catalogo(repo: Repositorio, cnpj: str) -> CatalogoResposta:
     with repo.leitura() as s:
         reg = _empresa(s, cnpj)
-        itens = []
-        for cat in s.itens(cnpj):
-            historico = [_lancamento(s, cnpj, h) for h in s.historico_custo(cnpj, cat.id, HISTORICO_MAX)]
-            itens.append(
-                ItemCatalogoEstado(
-                    **item_base(cat).model_dump(),
-                    ncmDescricaoOficial=cat.ncmDescricaoOficial,
-                    classificacaoFonte=cat.classificacaoFonte,
-                    margemAlvoPct=cat.margemAlvoPct,
-                    precoVenda=s.preco_atual(cnpj, cat.id) or cat.precoVenda,
-                    custoAtual=historico[0] if historico else None,
-                    historicoCusto=historico,
-                )
-            )
-    return CatalogoResposta(empresa=resumo_empresa(reg), itens=itens, aviso=AVISO_DEMO)
+        itens = [_item_estado(s, cnpj, cat) for cat in s.itens(cnpj)]
+        clientes = [cliente_estado(c) for c in s.clientes_b2b(cnpj)]
+    return CatalogoResposta(
+        empresa=resumo_empresa(reg),
+        cenario=cenario_empresa(reg),
+        clientesB2B=clientes,
+        loteReferencia=int(LOTE),
+        itens=itens,
+        aviso=AVISO_DEMO,
+    )
+
+
+@dataclass(frozen=True)
+class ItemDaEmpresa:
+    """O item com o cenário da empresa e o preço atual, para quem precisa calcular (explicação, correção)."""
+
+    empresa: EmpresaRegistro
+    item: ItemCatalogo
+    preco_atual: Decimal
+
+
+def item_da_empresa(repo: Repositorio, cnpj: str, item_id: str) -> ItemDaEmpresa:
+    with repo.leitura() as s:
+        reg = _empresa(s, cnpj)
+        cat = s.item(cnpj, item_id)
+        if cat is None:
+            raise NaoEncontrado("Item não encontrado no catálogo desta empresa.")
+        return ItemDaEmpresa(reg, cat, s.preco_atual(cnpj, item_id) or cat.precoVenda)
+
+
+def aplicar_preco(repo: Repositorio, cnpj: str, item_id: str, valor: Decimal, agora: datetime) -> AplicarPrecoResposta:
+    """Lança o preço escolhido pelo usuário na tela (P3: só com o clique). Não fecha alertas."""
+    with repo.escrita() as s:
+        _empresa(s, cnpj)
+        cat = s.item(cnpj, item_id)
+        if cat is None:
+            raise NaoEncontrado("Item não encontrado no catálogo desta empresa.")
+        anterior = s.preco_atual(cnpj, item_id) or cat.precoVenda
+        if anterior == valor:
+            raise Conflito("Este já é o preço de venda atual do item.")
+        s.lancar_preco(cnpj, item_id, valor, agora, "tela")
+    return AplicarPrecoResposta(itemId=item_id, precoAnterior=anterior, precoNovo=valor, vigenteDesde=agora)
+
+
+def fonte_da_correcao(escolhida: ClassificacaoCandidata, data_cenario: date, agora: datetime) -> str:
+    """Texto montado só com dados oficiais (dados abertos do motor RR) e datas: nada digitado pelo usuário."""
+    return (
+        f"Corrigida na tela em {agora.date().isoformat()} (UTC), com a confirmação do usuário (P3): "
+        f"{escolhida.cClassTrib} ({escolhida.descricao}), válida para a NCM nos dados abertos do motor RR em "
+        f"{data_cenario.isoformat()}."
+    )
+
+
+def corrigir_classificacao(
+    repo: Repositorio,
+    cnpj: str,
+    lido: ItemCatalogo,
+    escolhida: ClassificacaoCandidata,
+    agora: datetime,
+) -> CorrigirClassificacaoResposta:
+    """Grava a classificação escolhida, se o item ainda estiver como a rota o leu (checagem otimista)."""
+    with repo.escrita() as s:
+        reg = _empresa(s, cnpj)
+        cat = s.item(cnpj, lido.id)
+        if cat is None:
+            raise NaoEncontrado("Item não encontrado no catálogo desta empresa.")
+        if (cat.cst, cat.cClassTrib) != (lido.cst, lido.cClassTrib):
+            raise Conflito("A classificação do item mudou enquanto a correção era conferida. Tente de novo.")
+        if (cat.cst, cat.cClassTrib) == (escolhida.cst, escolhida.cClassTrib):
+            raise Conflito("O item já tem esta classificação.")
+        s.lancar_classificacao(
+            cnpj,
+            cat.id,
+            escolhida.cst,
+            escolhida.cClassTrib,
+            fonte_da_correcao(escolhida, reg.cenario.data, agora),
+            agora,
+        )
+        novo = s.item(cnpj, cat.id)
+        if novo is None:
+            raise NaoEncontrado("Item não encontrado no catálogo desta empresa.")
+        estado = _item_estado(s, cnpj, novo)
+    return CorrigirClassificacaoResposta(
+        cstAnterior=cat.cst,
+        cClassTribAnterior=cat.cClassTrib,
+        classificacao=escolhida,
+        item=estado,
+        vigenteDesde=agora,
+    )
 
 
 def _saida(reg: AlertaRegistro) -> Alerta:

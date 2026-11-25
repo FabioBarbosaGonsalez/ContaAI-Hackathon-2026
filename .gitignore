@@ -15,10 +15,9 @@ venv/
 htmlcov/
 *.egg-info/
 
-# Node / Next.js
+# Node (frontend Vite + React da E5, ADR 0011)
 node_modules/
-.next/
-out/
+dist/
 
 # Java / Maven (motores clonados no build)
 target/

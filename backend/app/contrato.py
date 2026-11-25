@@ -28,6 +28,15 @@ AVISO_LEGAL = "Estimativa baseada nas calculadoras oficiais. Não é parecer fis
 Anexo = Literal["I", "II", "III", "IV", "V"]
 Porcentagem = Decimal
 
+# Limites de sanidade das entradas (ADR 0011). Sem eles, "1e999999" no valor derrubava o cálculo com erro 500
+# (o arredondamento ao centavo estoura), e "1e-999999" ia ao motor. As casas decimais seguem o leitor da NF-e
+# (app/nfe/leitor.py: até 10 casas); o teto (R$ 1 bilhão por unidade, 1 bilhão de unidades, 1.000 pontos
+# percentuais no IS) é escolha de projeto, não regra fiscal: só recusa número que nenhuma venda real tem.
+TETO_ENTRADA = Decimal("1000000000")
+ValorEntrada = Annotated[Decimal, Field(le=TETO_ENTRADA, decimal_places=10)]
+QuantidadeEntrada = Annotated[Decimal, Field(le=TETO_ENTRADA, decimal_places=4)]
+PorcentagemEntrada = Annotated[Decimal, Field(decimal_places=4)]
+
 
 class _Modelo(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -61,11 +70,14 @@ class EstadoItem(StrEnum):
 class AliquotasNominais(_Modelo):
     """Premissas de alíquota do usuário. Obrigatórias a partir de 2027 e proibidas antes (P6)."""
 
-    cbs: Porcentagem = Field(ge=0, lt=100)
-    ibsEstadual: Porcentagem = Field(ge=0, lt=100)
-    ibsMunicipal: Porcentagem = Field(ge=0, lt=100)
-    impostoSeletivoAdValorem: Porcentagem | None = Field(
-        default=None, ge=0, description="Exigida pelo motor para NCM sujeita ao IS, mesmo na revenda (REG-035)."
+    cbs: PorcentagemEntrada = Field(ge=0, lt=100)
+    ibsEstadual: PorcentagemEntrada = Field(ge=0, lt=100)
+    ibsMunicipal: PorcentagemEntrada = Field(ge=0, lt=100)
+    impostoSeletivoAdValorem: PorcentagemEntrada | None = Field(
+        default=None,
+        ge=0,
+        le=1000,
+        description="Exigida pelo motor para NCM sujeita ao IS, mesmo na revenda (REG-035).",
     )
     fonte: str | None = Field(
         default=None,
@@ -79,8 +91,8 @@ class PremissasDas(_Modelo):
 
     anexo: Anexo
     cAtivSN: str = Field(pattern=r"^\d{2}$", description="Código de atividade do Simples (ex.: 01, revenda).")
-    pCBSSN: Porcentagem = Field(ge=0, lt=100)
-    pIBSSN: Porcentagem = Field(ge=0, lt=100)
+    pCBSSN: PorcentagemEntrada = Field(ge=0, lt=100)
+    pIBSSN: PorcentagemEntrada = Field(ge=0, lt=100)
     fonte: str | None = Field(
         default=None,
         max_length=200,
@@ -91,7 +103,7 @@ class PremissasDas(_Modelo):
 class ImpostoSeletivoEntrada(_Modelo):
     cst: str = Field(pattern=r"^\d{3}$")
     cClassTrib: str = Field(pattern=r"^\d{6}$")
-    litrosPorUnidade: Decimal | None = Field(default=None, gt=0)
+    litrosPorUnidade: QuantidadeEntrada | None = Field(default=None, gt=0)
 
 
 class ItemBase(_Modelo):
@@ -114,14 +126,14 @@ class ItemBase(_Modelo):
 
 
 class ItemEntrada(ItemBase):
-    quantidade: Decimal = Field(gt=0)
-    valorUnitario: Decimal = Field(gt=0, description="Valor do produto por unidade (vUnCom).")
-    custoUnitario: Decimal | None = Field(
+    quantidade: QuantidadeEntrada = Field(gt=0)
+    valorUnitario: ValorEntrada = Field(gt=0, description="Valor do produto por unidade (vUnCom).")
+    custoUnitario: ValorEntrada | None = Field(
         default=None,
         ge=0,
         description="Valor pago ao fornecedor por unidade, sem CBS/IBS por fora (vUnCom da compra). Ausente: sem margem.",
     )
-    creditoCompraUnitario: Decimal | None = Field(
+    creditoCompraUnitario: ValorEntrada | None = Field(
         default=None,
         ge=0,
         description="CBS + IBS da compra por unidade, lida do grupo IBSCBS da NF-e. No carrinho e no preço-alvo só é "
@@ -227,7 +239,7 @@ class _Simulacao(_Modelo):
 class CarrinhoRequisicao(Operacao):
     regime: Regime
     itens: list[ItemEntrada] = Field(min_length=1, max_length=200)
-    cargaAtualPct: Porcentagem | None = Field(
+    cargaAtualPct: PorcentagemEntrada | None = Field(
         default=None,
         ge=0,
         lt=100,
@@ -300,14 +312,14 @@ class CarrinhoResposta(_Simulacao):
 class PrecoAlvoRequisicao(Operacao):
     regime: Regime
     item: ItemBase
-    custoUnitario: Decimal = Field(ge=0)
-    creditoCompraUnitario: Decimal | None = Field(
+    custoUnitario: ValorEntrada = Field(ge=0)
+    creditoCompraUnitario: ValorEntrada | None = Field(
         default=None,
         ge=0,
         description="CBS + IBS da compra por unidade (grupo IBSCBS da NF-e). Só usada no Simples tradicional; "
         "ausente, vem do motor RR sobre o custo, com a hipótese exibida.",
     )
-    margemAlvoPct: Porcentagem = Field(gt=0, lt=100)
+    margemAlvoPct: PorcentagemEntrada = Field(gt=0, lt=100)
 
     @model_validator(mode="after")
     def validar_das_no_tradicional(self) -> PrecoAlvoRequisicao:
@@ -600,8 +612,43 @@ class EmpresaResumo(_Modelo):
     dataCenario: date
 
 
+class CenarioEmpresa(_Modelo):
+    """O cenário que a empresa usa em todo cálculo: o mesmo dos alertas (ADR 0011). A tela monta o carrinho,
+    o preço-alvo, a comparação de regimes, a explicação e o contexto do chat com `operacao`, sem repetir
+    nenhuma alíquota no próprio código (P6: são premissas, impressas nas respostas)."""
+
+    descricao: str = Field(description='Ex.: "Simulação de março de 2027".')
+    operacao: Operacao
+    cargaAtualPct: Porcentagem | None = Field(
+        default=None, description="Carga atual informada pelo usuário, só como número de comparação."
+    )
+
+
+class ItemCompraMensal(_Modelo):
+    itemId: str
+    quantidade: Decimal = Field(gt=0)
+
+
+class ClienteB2BEstado(_Modelo):
+    """Um cliente empresa e a compra mensal dele: a venda que a decisão de regime compara (E3, ADR 0011)."""
+
+    cnpj: str
+    nome: str
+    regime: Literal["regime_regular"]
+    uf: str
+    municipio: int
+    compraMensalDescricao: str
+    compraMensal: list[ItemCompraMensal]
+
+
 class CatalogoResposta(_Modelo):
     empresa: EmpresaResumo
+    cenario: CenarioEmpresa
+    clientesB2B: list[ClienteB2BEstado] = Field(description="Clientes empresa desta empresa (fictícios).")
+    loteReferencia: int = Field(
+        description="Unidades por cálculo de item no catálogo, na explicação e no preço-alvo (CBS/IBS a cada "
+        "N unidades). A tela usa este número, nunca uma cópia própria."
+    )
     itens: list[ItemCatalogoEstado]
     aviso: str = Field(description="Dados fictícios de demonstração (P10).")
 
@@ -811,6 +858,49 @@ class ChatResposta(_Modelo):
     avisoSimulacao: str | None = None
     premissas: list[Premissa] = Field(default=[], description="Premissas dos resultados usados, sem repetição.")
     aviso: str
+
+
+# ---------------------------------------------------------------------------
+# POST /catalogo/{itemId}/preco e POST /catalogo/{itemId}/classificacao (E5, ADR 0011)
+
+# Id de item do catálogo (data/demo): vai no caminho das rotas do catálogo, por isso só letras minúsculas,
+# dígitos e hífen. Os itens que a tela cadastra pelo chat (ItemBase.id) não passam por estas rotas.
+PADRAO_ID_ITEM = r"^[a-z0-9][a-z0-9-]{0,63}$"
+
+
+class AplicarPrecoRequisicao(_Modelo):
+    """Preço de venda novo, escolhido pelo usuário na tela (ex.: a ação "aplicar_preco" do chat, P3)."""
+
+    cnpj: str = Field(pattern=r"^\d{14}$")
+    valorUnitario: Decimal = Field(
+        gt=0, le=TETO_ENTRADA, decimal_places=2, description="Valor do produto por unidade (vUnCom), em centavos."
+    )
+
+
+class AplicarPrecoResposta(_Modelo):
+    """O preço virou o preço de venda do item (lançamento de preço com origem na tela). Alertas abertos do
+    item continuam abertos: eles fecham só pelo POST /alertas/{id}/aplicar."""
+
+    itemId: str
+    precoAnterior: Decimal
+    precoNovo: Decimal
+    vigenteDesde: datetime
+
+
+class CorrigirClassificacaoRequisicao(_Modelo):
+    """A classificação que o usuário confirmou (P3). O CST não vem da tela: o backend usa o da fundamentação
+    oficial da classificação escolhida, e só aceita uma classificação válida para a NCM do item."""
+
+    cnpj: str = Field(pattern=r"^\d{14}$")
+    cClassTrib: str = Field(pattern=r"^\d{6}$")
+
+
+class CorrigirClassificacaoResposta(_Modelo):
+    cstAnterior: str
+    cClassTribAnterior: str
+    classificacao: ClassificacaoCandidata
+    item: ItemCatalogoEstado
+    vigenteDesde: datetime
 
 
 # ---------------------------------------------------------------------------

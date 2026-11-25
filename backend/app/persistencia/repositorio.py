@@ -25,10 +25,11 @@ from decimal import Decimal
 from typing import Literal
 
 from app.contrato import Alerta
-from app.dados_demo import Cenario, Empresa, ItemCatalogo
+from app.dados_demo import Cenario, ClienteB2B, Empresa, ItemCatalogo
 from app.persistencia.banco import Banco
 
 FonteCredito = Literal["nfe", "motor"]
+OrigemPreco = Literal["semente", "alerta", "tela"]
 
 
 @dataclass(frozen=True)
@@ -135,15 +136,20 @@ class Sessao:
         )
 
     def itens(self, cnpj: str) -> list[ItemCatalogo]:
-        """Cadastro dos itens. O preço atual não está aqui: é o último lançamento (`preco_atual`)."""
+        """Cadastro dos itens, com a classificação atual. O preço atual não está aqui: é o último lançamento
+        (`preco_atual`)."""
         linhas = self._c.execute("SELECT item_json FROM itens WHERE cnpj = ? ORDER BY rowid", (cnpj,)).fetchall()
-        return [ItemCatalogo.model_validate_json(r["item_json"]) for r in linhas]
+        return [self._com_classificacao(cnpj, ItemCatalogo.model_validate_json(r["item_json"])) for r in linhas]
 
     def item(self, cnpj: str, item_id: str) -> ItemCatalogo | None:
         linha = self._c.execute(
             "SELECT item_json FROM itens WHERE cnpj = ? AND item_id = ?", (cnpj, item_id)
         ).fetchone()
-        return None if linha is None else ItemCatalogo.model_validate_json(linha["item_json"])
+        return (
+            None
+            if linha is None
+            else self._com_classificacao(cnpj, ItemCatalogo.model_validate_json(linha["item_json"]))
+        )
 
     def item_por_codigo(self, cnpj: str, cnpj_fornecedor: str, codigo: str) -> ItemCatalogo | None:
         linha = self._c.execute(
@@ -151,7 +157,46 @@ class Sessao:
             " WHERE c.cnpj = ? AND c.cnpj_fornecedor = ? AND c.codigo = ?",
             (cnpj, cnpj_fornecedor, codigo),
         ).fetchone()
-        return None if linha is None else ItemCatalogo.model_validate_json(linha["item_json"])
+        return (
+            None
+            if linha is None
+            else self._com_classificacao(cnpj, ItemCatalogo.model_validate_json(linha["item_json"]))
+        )
+
+    def _com_classificacao(self, cnpj: str, item: ItemCatalogo) -> ItemCatalogo:
+        """A classificação atual é a do último lançamento da tela; sem lançamento, a do cadastro (0002)."""
+        linha = self._c.execute(
+            "SELECT cst, cclasstrib, fonte FROM classificacoes WHERE cnpj = ? AND item_id = ? ORDER BY id DESC LIMIT 1",
+            (cnpj, item.id),
+        ).fetchone()
+        if linha is None:
+            return item
+        return item.model_copy(
+            update={"cst": linha["cst"], "cClassTrib": linha["cclasstrib"], "classificacaoFonte": linha["fonte"]}
+        )
+
+    def lancar_classificacao(
+        self, cnpj: str, item_id: str, cst: str, cclasstrib: str, fonte: str, vigente_desde: datetime
+    ) -> None:
+        self._c.execute(
+            "INSERT INTO classificacoes (cnpj, item_id, cst, cclasstrib, fonte, vigente_desde, origem)"
+            " VALUES (?, ?, ?, ?, ?, ?, 'tela')",
+            (cnpj, item_id, cst, cclasstrib, fonte, _utc(vigente_desde)),
+        )
+
+    # -- clientes B2B --------------------------------------------------------
+
+    def inserir_cliente_b2b(self, cnpj: str, cliente: ClienteB2B) -> None:
+        self._c.execute(
+            "INSERT INTO clientes_b2b (cnpj, cnpj_cliente, cliente_json) VALUES (?, ?, ?)",
+            (cnpj, cliente.cliente.cnpj, cliente.model_dump_json(by_alias=True)),
+        )
+
+    def clientes_b2b(self, cnpj: str) -> list[ClienteB2B]:
+        linhas = self._c.execute(
+            "SELECT cliente_json FROM clientes_b2b WHERE cnpj = ? ORDER BY cnpj_cliente", (cnpj,)
+        ).fetchall()
+        return [ClienteB2B.model_validate_json(r["cliente_json"]) for r in linhas]
 
     # -- preços (lançamentos) ---------------------------------------------
 
@@ -161,7 +206,7 @@ class Sessao:
         item_id: str,
         valor_unitario: Decimal,
         vigente_desde: datetime,
-        origem: Literal["semente", "alerta"],
+        origem: OrigemPreco,
         alerta_id: str | None = None,
     ) -> None:
         self._c.execute(
@@ -203,7 +248,8 @@ class Sessao:
             " VALUES (?, ?, ?, ?, ?, ?, ?, '{}')",
             (cnpj, cnpj_emitente, serie, numero, _documento(data_emissao), sha256, _utc(importada_em)),
         )
-        assert cursor.lastrowid is not None
+        if cursor.lastrowid is None:
+            raise RuntimeError("O SQLite não devolveu o id da nota inserida.")
         return cursor.lastrowid
 
     def numeros_das_notas(self) -> list[str]:

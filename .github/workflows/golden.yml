@@ -34,6 +34,7 @@ on:
       - "backend/app/nfe/**"
       - "backend/app/persistencia/**"
       - "backend/app/empresa.py"
+      - "backend/app/dados_demo.py"
       - "backend/tests/test_*_golden.py"
       - "backend/scripts/**"
       - "data/demo/**"

@@ -56,6 +56,9 @@ def test_explicar_post_e_get_demo(motores_falsos) -> None:
     r = ExplicarResposta.model_validate(cliente.post("/explicar", json=corpo).json())
     assert r.motor.value == "regime_regular" and r.reducaoPct == Decimal("100.00")
     assert [f.cClassTrib for f in r.fundamentacoes] == ["200003"] and r.memoria
+    # O GET lê o item do estado (ADR 0011): sem as sementes, a empresa não existe.
+    assert cliente.get("/explicar/arroz-5kg").status_code == 404
+    assert cliente.post("/demo/restaurar").status_code == 200
     g = cliente.get("/explicar/arroz-5kg", params={"regime": "simples_tradicional"})
     assert g.status_code == 200 and ExplicarResposta.model_validate(g.json()).motor.value == "simples_nacional"
     assert cliente.get("/explicar/nao-existe").status_code == 404
@@ -159,6 +162,8 @@ def test_busca_e_erros_com_os_motores() -> None:
         assert [c.cClassTrib for c in arroz.classificacoes] == ["200003", "200038", "515001", "000001"]
         e = ErroDescricao.model_validate(cliente.get("/erros/REG-011").json())
         assert e.titulo == "NCM não vinculada"
+        # O GET lê o item do estado (ADR 0011): primeiro as sementes, com os motores reais.
+        assert cliente.post("/demo/restaurar").status_code == 200
         x = ExplicarResposta.model_validate(cliente.get("/explicar/cerveja-lata?regime=simples_hibrido").json())
         assert x.estado.value == "CALCULO_SIMULADO" and x.erros == []
     finally:

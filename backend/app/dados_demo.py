@@ -9,6 +9,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.contrato import PADRAO_ID_ITEM
+
 PASTA_DEMO = Path(__file__).resolve().parents[2] / "data" / "demo"
 
 Anexo = Literal["I", "II", "III", "IV", "V"]
@@ -72,7 +74,7 @@ class ImpostoSeletivoDemo(_Modelo):
 
 
 class ItemCatalogo(_Modelo):
-    id: str
+    id: str = Field(pattern=PADRAO_ID_ITEM)
     descricao: str
     ncm: str = Field(pattern=r"^\d{8}$")
     ncmDescricaoOficial: str

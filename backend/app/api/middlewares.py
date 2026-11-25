@@ -1,6 +1,6 @@
-"""Middlewares: tamanho do upload da NF-e, limite por IP e cabeçalhos de segurança (ADR 0006 e ADR 0008).
+"""Middlewares: tamanho do corpo, limite por IP, Host, Origin e cabeçalhos de segurança (ADRs 0006, 0008 e 0011).
 
-As respostas de recusa (411, 413, 429) saem no formato da RFC 9457, como as das rotas (ADR 0009).
+As respostas de recusa (400, 403, 411, 413, 429) saem no formato da RFC 9457, como as das rotas (ADR 0009).
 """
 
 from __future__ import annotations
@@ -32,6 +32,7 @@ ROTAS_LIMITADAS = (
     "/alertas/",
     "/demo/restaurar",
     "/espacos",
+    "/catalogo/",  # POST /catalogo/{id}/preco e /classificacao (o GET /catalogo não chama os motores)
 )
 # Um limitador por processo. Os testes trocam estes objetos (monkeypatch neste módulo).
 LIMITE_CHAT = LimitadorPorIp(configuracao().limite_chat_por_minuto)
@@ -48,18 +49,57 @@ def _cfg_atual(request: Request) -> Configuracao:
     return request.app.dependency_overrides.get(configuracao, configuracao)()
 
 
-async def limitar_upload_nfe(request: Request, call_next: Proximo) -> Response:
-    """Recusa o upload grande antes de o corpo ser lido e gravado em disco pelo parser multipart.
+async def limitar_corpo(request: Request, call_next: Proximo) -> Response:
+    """Recusa corpo grande antes de ele ser lido (ADR 0008 para a NF-e; ADR 0011 para as rotas JSON).
 
-    O Starlette não limita o tamanho de uma parte de arquivo: sem esta checagem, o arquivo inteiro
-    seria recebido antes da validação na rota. O uvicorn recusa corpo maior que o Content-Length.
+    O Starlette não limita o corpo: sem esta checagem, um JSON de 1 GB seria lido inteiro na memória antes
+    da validação do contrato, e o arquivo da NF-e seria gravado em disco pelo parser multipart. O uvicorn
+    recusa corpo maior que o Content-Length declarado. Sem Content-Length e sem Transfer-Encoding, a
+    requisição não tem corpo (RFC 9112, 6.3); corpo em pedaços (chunked) é recusado, porque não diz o tamanho.
     """
-    if request.method == "POST" and request.url.path == ROTA_NFE:
-        declarado = request.headers.get("content-length")
+    if request.method != "POST":
+        return await call_next(request)
+    cfg = _cfg_atual(request)
+    declarado = request.headers.get("content-length")
+    if request.url.path == ROTA_NFE:
         if declarado is None or not declarado.isdigit():
             return simples(411, "Envie o tamanho do arquivo (Content-Length).")
-        if int(declarado) > _cfg_atual(request).tamanho_max_nfe_bytes + FOLGA_MULTIPART:
+        if int(declarado) > cfg.tamanho_max_nfe_bytes + FOLGA_MULTIPART:
             return simples(413, "Arquivo maior que o limite para uma NF-e.")
+        return await call_next(request)
+    if "transfer-encoding" in request.headers:
+        return simples(411, "Envie o tamanho do corpo (Content-Length).")
+    if declarado is not None and (not declarado.isdigit() or int(declarado) > cfg.tamanho_max_json_bytes):
+        return simples(413, "Corpo da requisição maior que o limite.")
+    return await call_next(request)
+
+
+def _host(valor: str) -> str:
+    """O nome do host sem a porta ("127.0.0.1:8000" → "127.0.0.1"; "[::1]:8000" → "[::1]")."""
+    if valor.startswith("["):
+        return valor.split("]", 1)[0] + "]"
+    return valor.rsplit(":", 1)[0] if valor.count(":") == 1 else valor
+
+
+async def verificar_host(request: Request, call_next: Proximo) -> Response:
+    """Só responde aos hosts configurados (ADR 0011). Contra DNS rebinding: uma página de outro domínio que
+    passe a resolver para 127.0.0.1 chega aqui com o Host dela, e é recusada. "*" na lista desliga a checagem."""
+    permitidos = _cfg_atual(request).hosts_permitidos
+    if "*" not in permitidos and _host(request.headers.get("host", "").lower()) not in permitidos:
+        return simples(400, "Host não autorizado.")
+    return await call_next(request)
+
+
+async def verificar_origem(request: Request, call_next: Proximo) -> Response:
+    """POST vindo de um navegador em outra origem é recusado (ADR 0011, defesa contra CSRF).
+
+    O navegador sempre manda Origin num POST de outra origem, até num formulário simples (que não passa pelo
+    preflight do CORS). Sem Origin (curl, scripts, testes), segue. As rotas que mudam o estado já exigem um
+    header próprio (token ou espaço); esta checagem cobre também as que não exigem, como POST /espacos.
+    """
+    origem = request.headers.get("origin")
+    if request.method == "POST" and origem is not None and origem not in _cfg_atual(request).cors_origens:
+        return simples(403, "Origem não autorizada.")
     return await call_next(request)
 
 
@@ -89,7 +129,9 @@ async def cabecalhos_de_seguranca(request: Request, call_next: Proximo) -> Respo
     resposta.headers["X-Content-Type-Options"] = "nosniff"
     resposta.headers["Referrer-Policy"] = "no-referrer"
     resposta.headers["X-Frame-Options"] = "DENY"
-    resposta.headers["Cross-Origin-Resource-Policy"] = "same-site"
+    # same-origin (ADR 0011, aviso do OWASP ZAP): o CORP só vale para requisições no-cors (padrão Fetch). A tela
+    # chama a API com fetch em modo CORS, que o CORP não bloqueia; uma <img>/<script> de outro site, sim.
+    resposta.headers["Cross-Origin-Resource-Policy"] = "same-origin"
     if not request.url.path.startswith(ROTAS_DOCUMENTACAO):
         resposta.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'"
         resposta.headers["Cache-Control"] = "no-store"

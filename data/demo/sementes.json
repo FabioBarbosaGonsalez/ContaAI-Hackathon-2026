@@ -1,7 +1,10 @@
 {
-  "_aviso": "Manifesto das sementes do estado (ADR 0008). Só dados fictícios (P10). A restauração apaga o estado, carrega estas empresas e importa estas notas pelo mesmo código do POST /nfe/importar. Ficam de fora, para a demonstração e a banca: notas/nfe-compra-2.xml (gera o alerta da cerveja) e notas/nfe-item-sem-par.xml (itens sem par).",
+  "_aviso": "Manifesto das sementes do estado (ADR 0008). Só dados fictícios (P10). A restauração apaga o estado, carrega estas empresas e importa estas notas pelo mesmo código do POST /nfe/importar. Os clientes B2B (clientesB2B) ficam ligados à empresa que vende para eles (CNPJ) e saem no GET /catalogo dela (ADR 0011). Ficam de fora, para a demonstração e a banca: notas/nfe-compra-2.xml (gera o alerta da cerveja) e notas/nfe-item-sem-par.xml (itens sem par).",
   "precosVigentesDesde": "2027-03-01T00:00:00-03:00",
   "empresas": ["distribuidora.json", "carteira/vale-verde.json", "carteira/lagoa.json"],
+  "clientesB2B": [
+    {"empresa": "36817420000113", "arquivo": "cliente-b2b.json"}
+  ],
   "notasIniciais": [
     "notas/nfe-compra-1.xml",
     "carteira/notas/nfe-vale-verde-1.xml",

@@ -3,11 +3,16 @@ line-length = 120
 target-version = "py312"
 
 [lint]
-select = ["E", "F", "W", "I", "B", "UP"]
+# S: as regras de segurança do bandit (flake8-bandit), no próprio ruff, sem dependência nova (ADR 0011).
+select = ["E", "F", "W", "I", "B", "UP", "S"]
 ignore = ["E501"]   # linhas longas de texto em scripts de documento
 
 [lint.per-file-ignores]
 "docs/gerar_plano.py" = ["E402"]
+# Testes: assert é o próprio teste; tokens são de teste; os XML lidos são os da demo (data/demo).
+"backend/tests/**" = ["S101", "S105", "S106", "S314"]
+# O conftest define a variável de ambiente dos hosts aceitos antes de importar o app.
+"backend/tests/conftest.py" = ["E402", "S101", "S105", "S106", "S314"]
 
 [lint.isort]
 # O backend roda de backend/, mas o lint roda da raiz: app e tests (backend/tests) são código do projeto.
