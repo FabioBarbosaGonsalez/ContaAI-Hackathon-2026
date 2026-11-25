@@ -3,7 +3,7 @@
 - Status: aceito
 - Data: 2026-11-25
 - Etapa: E4 (E4-01, E4-02, E4-04 e E4-05; a E4-03, telas de importar nota e do painel, passa para a E5)
-- Código: `backend/app/nfe/` (leitor, importação e consultas), `backend/app/persistencia/` (banco, migrações, repositório e sementes), `backend/app/empresa.py`, as rotas de notas em `backend/app/main.py` e a ferramenta `listar_alertas` em `backend/app/agente/ferramentas.py`
+- Código: `backend/app/nfe/` (leitor, importação e consultas), `backend/app/persistencia/` (banco, migrações, repositório e sementes), `backend/app/empresa.py`, as rotas de notas em `backend/app/main.py` (desde o ADR 0009, `backend/app/api/rotas/notas.py`) e a ferramenta `listar_alertas` em `backend/app/agente/ferramentas.py`
 
 ## Contexto
 

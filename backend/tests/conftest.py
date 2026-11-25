@@ -17,9 +17,10 @@ from typing import Any
 import httpx
 import pytest
 
-from app import main
+from app.api import middlewares
+from app.api.dependencias import cliente_motores, dados_abertos
 from app.config import Configuracao, configuracao
-from app.main import app, cliente_motores, dados_abertos
+from app.main import app
 from app.motores.cache import CacheRespostas
 from app.motores.cliente import ROTA_RR, ROTA_SN, ClienteMotores
 from app.motores.dados_abertos import CacheConsultas, DadosAbertos
@@ -300,6 +301,6 @@ def banco_isolado(tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.
 @pytest.fixture(autouse=True)
 def sem_limite_de_requisicoes(monkeypatch: pytest.MonkeyPatch) -> None:
     """Os limites por IP valem por processo; nos testes ficam desligados (test_seguranca liga de novo)."""
-    monkeypatch.setattr(main, "LIMITE_CHAT", LimitadorPorIp(0))
-    monkeypatch.setattr(main, "LIMITE_GERAL", LimitadorPorIp(0))
-    monkeypatch.setattr(main, "LIMITE_BUSCA", LimitadorPorIp(0))
+    monkeypatch.setattr(middlewares, "LIMITE_CHAT", LimitadorPorIp(0))
+    monkeypatch.setattr(middlewares, "LIMITE_GERAL", LimitadorPorIp(0))
+    monkeypatch.setattr(middlewares, "LIMITE_BUSCA", LimitadorPorIp(0))

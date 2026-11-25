@@ -16,7 +16,7 @@ import pytest
 from conftest import cbs_linear
 from fastapi.testclient import TestClient
 
-from app.contrato import PrecoAlvoRequisicao, PrecoAlvoResposta, RecusaCalculo
+from app.contrato import PrecoAlvoRequisicao, PrecoAlvoResposta, ProblemaCalculo
 from app.main import app
 from app.precificacao.preco_alvo import MAX_AVALIACOES, Avaliador, CalculoRecusado
 
@@ -154,14 +154,15 @@ def test_limite_de_avaliacoes() -> None:
 def test_margem_impossivel(motores_falsos) -> None:
     r = cliente.post("/item/preco-alvo", json=pedido("simples_tradicional", margem="99.5", creditoCompraUnitario="0"))
     assert r.status_code == 422
-    assert "Margem impossível" in RecusaCalculo.model_validate(r.json()).detail
+    recusado = ProblemaCalculo.model_validate(r.json())
+    assert recusado.type == "/problemas/calculo-recusado" and "Margem impossível" in recusado.detail
 
 
 def test_item_que_o_motor_nao_calcula_volta_com_os_erros(motores_falsos) -> None:
     motores_falsos.estados_rr = {"18063210": "INCONSISTENCIA_ENTRADA"}
     r = cliente.post("/item/preco-alvo", json=pedido("simples_hibrido"))
     assert r.status_code == 422
-    recusa = RecusaCalculo.model_validate(r.json())
+    recusa = ProblemaCalculo.model_validate(r.json())
     assert "INCONSISTENCIA_ENTRADA" in recusa.detail and [e.codigo for e in recusa.erros] == ["REG-011"]
     assert "127.0.0.1" not in r.text and len(motores_falsos.chamadas_de("rr")) == 1
 

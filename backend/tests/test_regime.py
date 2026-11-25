@@ -14,8 +14,8 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
-from app import main
-from app.contrato import FalhaMotorResposta, RecusaCalculo, RegimeCompararResposta
+from app.api import middlewares
+from app.contrato import ProblemaCalculo, ProblemaMotor, RegimeCompararResposta
 from app.main import app
 from app.seguranca import LimitadorPorIp
 from tests.apoio_regime import assert_comparacao_fecha
@@ -144,7 +144,7 @@ def test_item_que_o_rr_nao_calcula_recusa_a_comparacao(motores_falsos) -> None:
     motores_falsos.estados_rr = {"10000002": "INCONSISTENCIA_ENTRADA"}
     r = cliente.post("/regime/comparar", json=pedido(VENDA))
     assert r.status_code == 422
-    corpo = RecusaCalculo.model_validate(r.json())
+    corpo = ProblemaCalculo.model_validate(r.json())
     assert "motor" in corpo.detail and [e.codigo for e in corpo.erros] == ["REG-011"]
     assert "127.0.0.1" not in r.text
 
@@ -183,12 +183,12 @@ def test_falha_do_motor_nao_expoe_detalhe_interno(motores_falsos) -> None:
     motores_falsos.resposta_rr = (500, {"detail": "stack em http://127.0.0.1/interno"})
     r = cliente.post("/regime/comparar", json=pedido(VENDA))
     assert r.status_code == 503
-    assert FalhaMotorResposta.model_validate(r.json()).motor == "regime_regular"
+    assert ProblemaMotor.model_validate(r.json()).motor == "regime_regular"
     assert "127.0.0.1" not in r.text and "rr.interno" not in r.text
 
 
 def test_comparar_tem_limite_por_ip(motores_falsos, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(main, "LIMITE_GERAL", LimitadorPorIp(1))
+    monkeypatch.setattr(middlewares, "LIMITE_GERAL", LimitadorPorIp(1))
     assert cliente.post("/regime/comparar", json=pedido(VENDA)).status_code == 200
     assert cliente.post("/regime/comparar", json=pedido(VENDA)).status_code == 429
 

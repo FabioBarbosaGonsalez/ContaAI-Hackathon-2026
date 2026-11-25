@@ -16,11 +16,11 @@ from app.contrato import (
     ItemCalculado,
     ItemEntrada,
     Motor,
+    Operacao,
     Regime,
     Totais,
     Tributos,
     Versoes,
-    _Operacao,
 )
 from app.motores.cliente import Calculo, ClienteMotores
 from app.motores.conversao import LeituraItem
@@ -38,7 +38,7 @@ def pct(parte: Decimal, todo: Decimal) -> Decimal:
     return (parte / todo * 100).quantize(C2, ROUND_HALF_UP)
 
 
-def aliquotas_premissa(op: _Operacao) -> AliquotasPremissa | None:
+def aliquotas_premissa(op: Operacao) -> AliquotasPremissa | None:
     al = op.aliquotasNominais
     if al is None:
         return None
@@ -50,14 +50,14 @@ def aliquotas_premissa(op: _Operacao) -> AliquotasPremissa | None:
     )
 
 
-def das_premissa(op: _Operacao) -> DasPremissa | None:
+def das_premissa(op: Operacao) -> DasPremissa | None:
     das = op.premissasDas
     if das is None:
         return None
     return DasPremissa(anexo=das.anexo, cAtivSN=das.cAtivSN, pCBSSN=das.pCBSSN, pIBSSN=das.pIBSSN)
 
 
-async def calcular_venda(motores: ClienteMotores, op: _Operacao, regime: Regime, linhas: list[Linha]) -> Calculo:
+async def calcular_venda(motores: ClienteMotores, op: Operacao, regime: Regime, linhas: list[Linha]) -> Calculo:
     if regime == Regime.SIMPLES_TRADICIONAL:
         das = das_premissa(op)
         if das is None:  # o contrato já exige; a checagem protege quem chamar sem validar

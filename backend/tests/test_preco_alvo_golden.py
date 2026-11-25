@@ -16,7 +16,7 @@ from fastapi.testclient import TestClient
 
 from app import mocks
 from app.config import Configuracao, configuracao
-from app.contrato import PrecoAlvoResposta, RecusaCalculo, Regime
+from app.contrato import PrecoAlvoResposta, ProblemaCalculo, Regime
 from app.dados_demo import carregar_distribuidora
 from app.main import app
 
@@ -105,4 +105,4 @@ def test_carne_classificada_errada_e_recusada_com_o_erro_do_motor(regime: Regime
     extra = {"creditoCompraUnitario": "0"} if regime == Regime.SIMPLES_TRADICIONAL else {}
     r = cliente.post("/item/preco-alvo", json=pedido("carne-bovina-kg", regime, **extra))
     assert r.status_code == 422
-    assert [e.codigo for e in RecusaCalculo.model_validate(r.json()).erros] == [codigo]
+    assert [e.codigo for e in ProblemaCalculo.model_validate(r.json()).erros] == [codigo]

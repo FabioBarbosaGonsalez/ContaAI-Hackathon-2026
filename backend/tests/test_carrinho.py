@@ -13,7 +13,7 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
-from app.contrato import CarrinhoResposta, EstadoItem, FalhaMotorResposta
+from app.contrato import CarrinhoResposta, EstadoItem, ProblemaMotor
 from app.main import app
 
 cliente = TestClient(app)
@@ -232,8 +232,9 @@ def test_recusa_do_sn_vira_422_com_os_erros_do_motor(motores_falsos) -> None:
 
     r = cliente.post("/carrinho/calcular", json=pedido("simples_tradicional", [item("a", "10000001", "10.00")]))
     assert r.status_code == 422
-    falha = FalhaMotorResposta.model_validate(r.json())
+    falha = ProblemaMotor.model_validate(r.json())
     assert falha.motor == "simples_nacional" and [e.codigo for e in falha.erros] == ["VSN-015"]
+    assert falha.type == "/problemas/motor-recusou" and r.headers["content-type"] == "application/problem+json"
     assert "127.0.0.1" not in r.text and "sn.interno" not in r.text
 
 
@@ -242,7 +243,7 @@ def test_falha_do_motor_nao_expoe_detalhe_interno(motores_falsos, status_motor: 
     motores_falsos.resposta_rr = (status_motor, {"detail": "java.lang.NullPointerException em rr.interno"})
     r = cliente.post("/carrinho/calcular", json=pedido("simples_hibrido", [item("a", "10000001", "10.00")]))
     assert r.status_code == status_api
-    assert FalhaMotorResposta.model_validate(r.json()).motor == "regime_regular"
+    assert ProblemaMotor.model_validate(r.json()).motor == "regime_regular"
     assert "java" not in r.text and "interno" not in r.text
 
 

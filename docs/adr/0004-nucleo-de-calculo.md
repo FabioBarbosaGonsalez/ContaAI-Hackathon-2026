@@ -16,7 +16,7 @@ Na Etapa 0 todas as rotas respondiam com mocks gerados por `scripts/gerar_mocks.
 ### Clientes tipados (E1-01)
 
 - `app/motores/modelos.py` descreve em Pydantic só os campos que o ContaAI lê. O resto é ignorado (`extra="ignore"`), para que um campo novo do motor não derrube o cálculo. Um campo lido com tipo errado ou um estado desconhecido derruba, e vira `RespostaInvalida`.
-- `ClienteMotores` (httpx assíncrono) chama só os endpoints de observabilidade (P4) e transforma as falhas em três exceções, que a API devolve com o corpo `FalhaMotorResposta`:
+- `ClienteMotores` (httpx assíncrono) chama só os endpoints de observabilidade (P4) e transforma as falhas em três exceções, que a API devolve com o corpo `FalhaMotorResposta` (desde o ADR 0009, `ProblemaMotor`, no formato da RFC 9457):
 
 | Situação no motor | Exceção | Resposta da API |
 |---|---|---|

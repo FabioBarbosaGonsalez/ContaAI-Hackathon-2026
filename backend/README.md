@@ -4,6 +4,8 @@ FastAPI que orquestra os motores oficiais da Receita. Instruções no README da 
 
 | Pasta | O que tem |
 |---|---|
+| `app/main.py` | Montagem da API: ciclo de vida, ordem dos middlewares, tratadores de erro e routers (ADR 0009) |
+| `app/api/` | Camada HTTP: dependências, middlewares, erros RFC 9457 (`problemas.py`) e as rotas por área (`rotas/`) |
 | `app/contrato.py` | Contrato da API (fonte do `docs/contrato/openapi.json`) |
 | `app/motores/` | Modelos das respostas, cliente tipado (httpx) e montagem das requisições aos motores |
 | `app/precificacao/` | Carrinho real e preço-alvo (ajuste afim + bisseção) |

@@ -14,7 +14,7 @@ FONTE_DAS_DEMO = "Cenário de demonstração (data/demo): valores de exemplo do 
 
 
 def operacao_da_empresa(empresa: Empresa, cenario: Cenario, data: date | None = None) -> dict[str, Any]:
-    """Campos de _Operacao. Sem `data`, vale a data do cenário. Antes de 2027 não vão alíquotas (P6)."""
+    """Campos de Operacao. Sem `data`, vale a data do cenário. Antes de 2027 não vão alíquotas (P6)."""
     quando = data or cenario.data
     al = cenario.aliquotasNominais
     return {

@@ -393,7 +393,7 @@ def _nota_concorrente(numero: str, dia: str) -> bytes:
 
 def test_nota_concorrente_no_meio_refaz_a_importacao_com_o_custo_novo(demo, monkeypatch) -> None:
     """A3: outra nota do mesmo item entra enquanto esta chama os motores; a gravação percebe e refaz."""
-    from app import main as modulo_main
+    from app.api.dependencias import banco
     from app.nfe import importacao
     from app.persistencia.repositorio import Repositorio
 
@@ -402,7 +402,7 @@ def test_nota_concorrente_no_meio_refaz_a_importacao_com_o_custo_novo(demo, monk
     async def margens_com_concorrente(motores, reg, linhas):
         chamadas["n"] += 1
         if chamadas["n"] == 1:  # só na primeira tentativa: grava a nota 1500, de 10/03, no meio
-            repo = Repositorio(modulo_main._banco(configuracao().banco_caminho))
+            repo = Repositorio(banco(configuracao().banco_caminho))
             await importacao.importar_nota(_nota_concorrente("1500", "10"), repo, motores)
         return await original(motores, reg, linhas)
 
@@ -416,7 +416,7 @@ def test_nota_concorrente_no_meio_refaz_a_importacao_com_o_custo_novo(demo, monk
 
 
 def test_estado_que_muda_nas_duas_tentativas_da_409_sem_gravar(demo, monkeypatch) -> None:
-    from app import main as modulo_main
+    from app.api.dependencias import banco
     from app.nfe import importacao
     from app.persistencia.repositorio import Repositorio
 
@@ -425,7 +425,7 @@ def test_estado_que_muda_nas_duas_tentativas_da_409_sem_gravar(demo, monkeypatch
     async def sempre_concorrente(motores, reg, linhas):
         chamadas["n"] += 1
         if chamadas["n"] % 2 == 1:  # na 1ª chamada (margem "antes") de cada tentativa, outra nota entra no meio
-            repo = Repositorio(modulo_main._banco(configuracao().banco_caminho))
+            repo = Repositorio(banco(configuracao().banco_caminho))
             monkeypatch.setattr(importacao, "margens", original)
             await importacao.importar_nota(_nota_concorrente(next(numeros), "11"), repo, motores)
             monkeypatch.setattr(importacao, "margens", sempre_concorrente)
