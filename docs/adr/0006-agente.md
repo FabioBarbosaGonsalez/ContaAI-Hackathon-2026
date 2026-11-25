@@ -97,7 +97,7 @@ O log registra o nome, a duração e o resultado (ok ou não) de cada ferramenta
 ### Explicação e erros
 
 - **`POST /explicar`** (decisão 1) recebe a operação, o regime e o item. Calcula pelo carrinho real e junta a fundamentação dos dados abertos do motor RR para o cClassTrib.
-- **`GET /explicar/{itemId}`** no modo real usa o catálogo de demonstração: uma unidade pelo preço de venda da demo.
+- **`GET /explicar/{itemId}`** no modo real usa o catálogo de demonstração: uma unidade pelo preço de venda da demo. (Desde o [ADR 0011](0011-contrato-da-tela-e-seguranca.md), lê o item como está no estado, com `cnpj` e o espaço, no lote de referência de 100 unidades.)
 - **`GET /erros/{codigo}`** no modo real vem do catálogo de erros do motor (REG no RR, VSN no SN) e responde 404 para código inexistente.
 
 ### IS na revenda (decisão 2, resolve a pendência do ADR 0003)

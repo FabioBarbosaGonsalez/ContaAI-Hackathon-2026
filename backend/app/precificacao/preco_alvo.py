@@ -24,8 +24,8 @@ from app.motores.cliente import ClienteMotores
 from app.motores.conversao import LeituraItem
 from app.motores.requisicoes import Linha
 from app.precificacao.carrinho import aliquotas_premissa, calcular_venda
+from app.precificacao.lote import LOTE
 
-LOTE = Decimal(100)  # unidades por avaliação: reduz o efeito do arredondamento ao centavo do motor
 MAX_AVALIACOES = 25
 # Diferença máxima, por unidade, entre o tributo da confirmação e o previsto pela reta. Acima disso o
 # tributo não é linear nesse trecho e o preço do ajuste pode não ser o menor centavo: vai para a bisseção.

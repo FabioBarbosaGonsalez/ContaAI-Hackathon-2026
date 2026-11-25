@@ -1,4 +1,5 @@
-"""Estado (E4, ADR 0008): NF-e de compra, alertas de margem, catálogo e painel do contador.
+"""Estado (E4, ADR 0008): NF-e de compra, alertas de margem, catálogo e painel do contador. Desde a E5 (ADR 0011),
+também o preço e a classificação que o usuário escolhe na tela.
 
 Toda rota aceita o header X-ContaAI-Espaco (ADR 0010): com ele, lê e grava no espaço de avaliação do visitante;
 sem ele, na demonstração compartilhada. No próprio espaço, as rotas que mudam o estado dispensam o token.
@@ -15,6 +16,7 @@ from app import mocks
 from app.api import respostas
 from app.api.dependencias import (
     Cfg,
+    Dados,
     EspacoId,
     Motores,
     Token,
@@ -23,10 +25,16 @@ from app.api.dependencias import (
     marcar_mock,
     so_no_modo_real,
 )
+from app.classificacao.candidatos import classificacoes_da_ncm
 from app.contrato import (
+    PADRAO_ID_ITEM,
     AlertasResposta,
     AplicarAlertaResposta,
+    AplicarPrecoRequisicao,
+    AplicarPrecoResposta,
     CatalogoResposta,
+    CorrigirClassificacaoRequisicao,
+    CorrigirClassificacaoResposta,
     NfeImportarResposta,
     PainelContadorResposta,
 )
@@ -103,6 +111,59 @@ def aplicar_alerta(
     estado = abrir_estado(cfg, espaco)
     exigir_token_fora_do_espaco(cfg, token, estado)
     return consultas.aplicar(estado.repositorio, alerta_id, agora_utc())
+
+
+ItemId = Annotated[str, Path(pattern=PADRAO_ID_ITEM, description="Id do item no catálogo da empresa.")]
+RESPOSTAS_TELA: respostas.Respostas = {
+    **respostas.ESTADO,
+    **respostas.SO_MODO_REAL,
+    409: {"description": "O valor pedido já é o atual, ou o item mudou durante a conferência."},
+}
+
+
+@rotas.post("/catalogo/{item_id}/preco", response_model=AplicarPrecoResposta, responses=RESPOSTAS_TELA)
+def aplicar_preco(
+    cfg: Cfg, item_id: ItemId, req: AplicarPrecoRequisicao, token: Token = None, espaco: EspacoId = None
+) -> AplicarPrecoResposta:
+    """Lança o preço de venda escolhido na tela (ex.: a ação "aplicar_preco" do chat). Só com o clique do
+    usuário (P3). O preço é decisão dele: o backend só confere o formato e o teto de sanidade."""
+    so_no_modo_real(cfg)
+    estado = abrir_estado(cfg, espaco)
+    exigir_token_fora_do_espaco(cfg, token, estado)
+    return consultas.aplicar_preco(estado.repositorio, req.cnpj, item_id, req.valorUnitario, agora_utc())
+
+
+@rotas.post(
+    "/catalogo/{item_id}/classificacao",
+    response_model=CorrigirClassificacaoResposta,
+    responses={**RESPOSTAS_TELA, **respostas.MOTOR},
+)
+async def corrigir_classificacao(
+    cfg: Cfg,
+    da: Dados,
+    item_id: ItemId,
+    req: CorrigirClassificacaoRequisicao,
+    token: Token = None,
+    espaco: EspacoId = None,
+) -> CorrigirClassificacaoResposta:
+    """Grava a classificação que o usuário confirmou (correção do REG-011 ou do VSN-047, P3). Só aceita uma
+    classificação válida para a NCM do item nos dados abertos do motor RR, na data do cenário da empresa;
+    o CST é o da fundamentação oficial. Depois disso, catálogo, alertas e explicação usam a nova."""
+    so_no_modo_real(cfg)
+    estado = await asyncio.to_thread(abrir_estado, cfg, espaco)
+    exigir_token_fora_do_espaco(cfg, token, estado)
+    lido = await asyncio.to_thread(consultas.item_da_empresa, estado.repositorio, req.cnpj, item_id)
+    validas = await classificacoes_da_ncm(da, lido.item.ncm, lido.empresa.cenario.data)
+    escolhida = next((c for c in validas if c.cClassTrib == req.cClassTrib), None)
+    if escolhida is None:
+        raise HTTPException(
+            status_code=422,
+            detail="Classificação não válida para a NCM do item nos dados abertos do motor RR. Use uma das "
+            "candidatas da busca (GET /busca/ncm) ou da ação de correção do chat.",
+        )
+    return await asyncio.to_thread(
+        consultas.corrigir_classificacao, estado.repositorio, req.cnpj, lido.item, escolhida, agora_utc()
+    )
 
 
 @rotas.get("/catalogo", response_model=CatalogoResposta, responses=respostas.ESTADO)

@@ -30,7 +30,13 @@ class Configuracao(BaseSettings):
     # Versões fixadas (P5): os testes conferem que são as mesmas dos Dockerfiles.
     versao_rr: str = "1.7.2"
     versao_sn: str = "1.0.2"
-    cors_origens: list[str] = ["http://localhost:3000"]
+    # Origens do frontend (CORS e checagem de Origin nos POST, ADR 0011). A tela da E5 roda na porta 3000.
+    cors_origens: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    # Hosts aceitos no header Host (contra DNS rebinding, ADR 0011). No deploy, o domínio público (E6).
+    hosts_permitidos: list[str] = ["127.0.0.1", "localhost"]
+    # /docs, /redoc e /openapi.json. O Swagger carrega scripts de uma CDN: no deploy (E6), false.
+    docs_publica: bool = True
+    tamanho_max_json_bytes: int = Field(default=1_000_000, gt=0, description="Corpo máximo das rotas JSON.")
     timeout_motores_s: float = 3.0  # /saude
     timeout_calculo_s: float = 20.0  # chamadas de cálculo (a primeira depois da subida é mais lenta)
     cache_motores_itens: int = 512  # respostas dos motores guardadas em memória (0 desliga)

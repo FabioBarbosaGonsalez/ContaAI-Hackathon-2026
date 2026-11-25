@@ -70,6 +70,46 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "411": {
+            "description": "Corpo sem Content-Length (corpo em pedaços não é aceito).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo maior que o limite.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
           }
         }
       }
@@ -141,6 +181,46 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "411": {
+            "description": "Corpo sem Content-Length (corpo em pedaços não é aceito).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo maior que o limite.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
           }
         }
       }
@@ -160,6 +240,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PresetsResposta"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
                 }
               }
             }
@@ -232,6 +322,46 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemaMotor"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "411": {
+            "description": "Corpo sem Content-Length (corpo em pedaços não é aceito).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo maior que o limite.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
                 }
               }
             }
@@ -414,6 +544,26 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
           }
         }
       }
@@ -531,6 +681,16 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemaValidacao"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
                 }
               }
             }
@@ -663,6 +823,435 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "411": {
+            "description": "Corpo sem Content-Length (corpo em pedaços não é aceito).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo maior que o limite.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/catalogo/{item_id}/preco": {
+      "post": {
+        "tags": [
+          "notas"
+        ],
+        "summary": "Aplicar Preco",
+        "description": "Lança o preço de venda escolhido na tela (ex.: a ação \"aplicar_preco\" do chat). Só com o clique do\nusuário (P3). O preço é decisão dele: o backend só confere o formato e o teto de sanidade.",
+        "operationId": "aplicar_preco_catalogo__item_id__preco_post",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9-]{0,63}$",
+              "description": "Id do item no catálogo da empresa.",
+              "title": "Item Id"
+            },
+            "description": "Id do item no catálogo da empresa."
+          },
+          {
+            "name": "X-ContaAI-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Contaai-Token"
+            }
+          },
+          {
+            "name": "X-ContaAI-Espaco",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{32}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada.",
+              "title": "X-Contaai-Espaco"
+            },
+            "description": "Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AplicarPrecoRequisicao"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AplicarPrecoResposta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token da demo ausente ou errado (header X-ContaAI-Token).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Empresa ou alerta não encontrado, ou espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por minuto atingido (header Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Rota que só funciona no modo real (CONTAAI_MODO=real).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "O valor pedido já é o atual, ou o item mudou durante a conferência.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaValidacao"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "411": {
+            "description": "Corpo sem Content-Length (corpo em pedaços não é aceito).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo maior que o limite.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/catalogo/{item_id}/classificacao": {
+      "post": {
+        "tags": [
+          "notas"
+        ],
+        "summary": "Corrigir Classificacao",
+        "description": "Grava a classificação que o usuário confirmou (correção do REG-011 ou do VSN-047, P3). Só aceita uma\nclassificação válida para a NCM do item nos dados abertos do motor RR, na data do cenário da empresa;\no CST é o da fundamentação oficial. Depois disso, catálogo, alertas e explicação usam a nova.",
+        "operationId": "corrigir_classificacao_catalogo__item_id__classificacao_post",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9-]{0,63}$",
+              "description": "Id do item no catálogo da empresa.",
+              "title": "Item Id"
+            },
+            "description": "Id do item no catálogo da empresa."
+          },
+          {
+            "name": "X-ContaAI-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Contaai-Token"
+            }
+          },
+          {
+            "name": "X-ContaAI-Espaco",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{32}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada.",
+              "title": "X-Contaai-Espaco"
+            },
+            "description": "Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorrigirClassificacaoRequisicao"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorrigirClassificacaoResposta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token da demo ausente ou errado (header X-ContaAI-Token).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Empresa ou alerta não encontrado, ou espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por minuto atingido (header Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Rota que só funciona no modo real (CONTAAI_MODO=real).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "O valor pedido já é o atual, ou o item mudou durante a conferência.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "O motor recusou a operação (/problemas/motor-recusou, ex.: VSN-015) ou a entrada não segue o contrato (/problemas/entrada-invalida).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ProblemaMotor"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ProblemaValidacao"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "O motor devolveu uma resposta que o ContaAI não reconhece.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaMotor"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Motor indisponível.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaMotor"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "411": {
+            "description": "Corpo sem Content-Length (corpo em pedaços não é aceito).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo maior que o limite.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
           }
         }
       }
@@ -758,6 +1347,16 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
           }
         }
       }
@@ -818,6 +1417,16 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemaValidacao"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
                 }
               }
             }
@@ -900,6 +1509,46 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "411": {
+            "description": "Corpo sem Content-Length (corpo em pedaços não é aceito).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo maior que o limite.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
           }
         }
       }
@@ -963,6 +1612,16 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemaValidacao"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
                 }
               }
             }
@@ -1067,6 +1726,16 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
           }
         }
       }
@@ -1077,7 +1746,7 @@
           "explicação"
         ],
         "summary": "Explicar",
-        "description": "Só o catálogo de demonstração (uma unidade pelo preço de venda da demo). Para outro item, POST /explicar.",
+        "description": "Um item do catálogo da empresa, como está no estado: preço atual, classificação atual e o lote de\nreferência (o mesmo cálculo da linha do catálogo). Para um item fora do catálogo, POST /explicar.",
         "operationId": "explicar_explicar__item_id__get",
         "parameters": [
           {
@@ -1086,7 +1755,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "maxLength": 64,
+              "pattern": "^[a-z0-9][a-z0-9-]{0,63}$",
               "title": "Item Id"
             }
           },
@@ -1098,6 +1767,44 @@
               "$ref": "#/components/schemas/Regime",
               "default": "simples_tradicional"
             }
+          },
+          {
+            "name": "cnpj",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^\\d{14}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Empresa do item. Sem ele, a distribuidora da demo.",
+              "title": "Cnpj"
+            },
+            "description": "Empresa do item. Sem ele, a distribuidora da demo."
+          },
+          {
+            "name": "X-ContaAI-Espaco",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{32}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada.",
+              "title": "X-Contaai-Espaco"
+            },
+            "description": "Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada."
           }
         ],
         "responses": {
@@ -1149,7 +1856,7 @@
             }
           },
           "404": {
-            "description": "Item ou código não encontrado.",
+            "description": "Espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1160,6 +1867,16 @@
           },
           "429": {
             "description": "Limite de requisições por minuto atingido (header Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1256,6 +1973,46 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "411": {
+            "description": "Corpo sem Content-Length (corpo em pedaços não é aceito).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo maior que o limite.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
           }
         }
       }
@@ -1339,6 +2096,16 @@
           },
           "429": {
             "description": "Limite de requisições por minuto atingido (header Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1473,6 +2240,46 @@
           },
           "429": {
             "description": "Limite de mensagens por minuto atingido (header Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "411": {
+            "description": "Corpo sem Content-Length (corpo em pedaços não é aceito).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo maior que o limite.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1616,6 +2423,46 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "411": {
+            "description": "Corpo sem Content-Length (corpo em pedaços não é aceito).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo maior que o limite.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
           }
         }
       }
@@ -1635,6 +2482,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SaudeResposta"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
                 }
               }
             }
@@ -1689,6 +2546,16 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemaValidacao"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
                 }
               }
             }
@@ -2044,7 +2911,7 @@
         "title": "AliquotaEfetiva",
         "description": "Como o motor devolve: RR separa IBS estadual e municipal; SN traz o IBS inteiro."
       },
-      "AliquotasNominais": {
+      "AliquotasNominais-Input": {
         "properties": {
           "cbs": {
             "anyOf": [
@@ -2089,8 +2956,59 @@
             "anyOf": [
               {
                 "type": "number",
+                "maximum": 1000.0,
                 "minimum": 0.0
               },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Impostoseletivoadvalorem",
+            "description": "Exigida pelo motor para NCM sujeita ao IS, mesmo na revenda (REG-035)."
+          },
+          "fonte": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fonte",
+            "description": "De onde veio a premissa (ex.: o rótulo do preset escolhido). Sai impressa nas premissas."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cbs",
+          "ibsEstadual",
+          "ibsMunicipal"
+        ],
+        "title": "AliquotasNominais",
+        "description": "Premissas de alíquota do usuário. Obrigatórias a partir de 2027 e proibidas antes (P6)."
+      },
+      "AliquotasNominais-Output": {
+        "properties": {
+          "cbs": {
+            "type": "string",
+            "title": "Cbs"
+          },
+          "ibsEstadual": {
+            "type": "string",
+            "title": "Ibsestadual"
+          },
+          "ibsMunicipal": {
+            "type": "string",
+            "title": "Ibsmunicipal"
+          },
+          "impostoSeletivoAdValorem": {
+            "anyOf": [
               {
                 "type": "string"
               },
@@ -2148,6 +3066,68 @@
         ],
         "title": "AplicarAlertaResposta",
         "description": "O preço sugerido virou o preço de venda do item (lançamento de preço com origem no alerta)."
+      },
+      "AplicarPrecoRequisicao": {
+        "properties": {
+          "cnpj": {
+            "type": "string",
+            "pattern": "^\\d{14}$",
+            "title": "Cnpj"
+          },
+          "valorUnitario": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1000000000.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Valorunitario",
+            "description": "Valor do produto por unidade (vUnCom), em centavos."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cnpj",
+          "valorUnitario"
+        ],
+        "title": "AplicarPrecoRequisicao",
+        "description": "Preço de venda novo, escolhido pelo usuário na tela (ex.: a ação \"aplicar_preco\" do chat, P3)."
+      },
+      "AplicarPrecoResposta": {
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "title": "Itemid"
+          },
+          "precoAnterior": {
+            "type": "string",
+            "title": "Precoanterior"
+          },
+          "precoNovo": {
+            "type": "string",
+            "title": "Preconovo"
+          },
+          "vigenteDesde": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Vigentedesde"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "itemId",
+          "precoAnterior",
+          "precoNovo",
+          "vigenteDesde"
+        ],
+        "title": "AplicarPrecoResposta",
+        "description": "O preço virou o preço de venda do item (lançamento de preço com origem na tela). Alertas abertos do\nitem continuam abertos: eles fecham só pelo POST /alertas/{id}/aplicar."
       },
       "Body_nfe_importar_nfe_importar_post": {
         "properties": {
@@ -2275,7 +3255,7 @@
           "aliquotasNominais": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/AliquotasNominais"
+                "$ref": "#/components/schemas/AliquotasNominais-Input"
               },
               {
                 "type": "null"
@@ -2285,7 +3265,7 @@
           "premissasDas": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/PremissasDas"
+                "$ref": "#/components/schemas/PremissasDas-Input"
               },
               {
                 "type": "null"
@@ -2411,6 +3391,22 @@
           "empresa": {
             "$ref": "#/components/schemas/EmpresaResumo"
           },
+          "cenario": {
+            "$ref": "#/components/schemas/CenarioEmpresa"
+          },
+          "clientesB2B": {
+            "items": {
+              "$ref": "#/components/schemas/ClienteB2BEstado"
+            },
+            "type": "array",
+            "title": "Clientesb2B",
+            "description": "Clientes empresa desta empresa (fictícios)."
+          },
+          "loteReferencia": {
+            "type": "integer",
+            "title": "Lotereferencia",
+            "description": "Unidades por cálculo de item no catálogo, na explicação e no preço-alvo (CBS/IBS a cada N unidades). A tela usa este número, nunca uma cópia própria."
+          },
           "itens": {
             "items": {
               "$ref": "#/components/schemas/ItemCatalogoEstado"
@@ -2428,10 +3424,45 @@
         "type": "object",
         "required": [
           "empresa",
+          "cenario",
+          "clientesB2B",
+          "loteReferencia",
           "itens",
           "aviso"
         ],
         "title": "CatalogoResposta"
+      },
+      "CenarioEmpresa": {
+        "properties": {
+          "descricao": {
+            "type": "string",
+            "title": "Descricao",
+            "description": "Ex.: \"Simulação de março de 2027\"."
+          },
+          "operacao": {
+            "$ref": "#/components/schemas/Operacao"
+          },
+          "cargaAtualPct": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cargaatualpct",
+            "description": "Carga atual informada pelo usuário, só como número de comparação."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "descricao",
+          "operacao"
+        ],
+        "title": "CenarioEmpresa",
+        "description": "O cenário que a empresa usa em todo cálculo: o mesmo dos alertas (ADR 0011). A tela monta o carrinho,\no preço-alvo, a comparação de regimes, a explicação e o contexto do chat com `operacao`, sem repetir\nnenhuma alíquota no próprio código (P6: são premissas, impressas nas respostas)."
       },
       "ChatRequisicao": {
         "properties": {
@@ -2625,6 +3656,55 @@
         ],
         "title": "ClienteB2B"
       },
+      "ClienteB2BEstado": {
+        "properties": {
+          "cnpj": {
+            "type": "string",
+            "title": "Cnpj"
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "regime": {
+            "type": "string",
+            "const": "regime_regular",
+            "title": "Regime"
+          },
+          "uf": {
+            "type": "string",
+            "title": "Uf"
+          },
+          "municipio": {
+            "type": "integer",
+            "title": "Municipio"
+          },
+          "compraMensalDescricao": {
+            "type": "string",
+            "title": "Compramensaldescricao"
+          },
+          "compraMensal": {
+            "items": {
+              "$ref": "#/components/schemas/ItemCompraMensal"
+            },
+            "type": "array",
+            "title": "Compramensal"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cnpj",
+          "nome",
+          "regime",
+          "uf",
+          "municipio",
+          "compraMensalDescricao",
+          "compraMensal"
+        ],
+        "title": "ClienteB2BEstado",
+        "description": "Um cliente empresa e a compra mensal dele: a venda que a decisão de regime compara (E3, ADR 0011)."
+      },
       "ContextoChat": {
         "properties": {
           "data": {
@@ -2646,7 +3726,7 @@
           "aliquotasNominais": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/AliquotasNominais"
+                "$ref": "#/components/schemas/AliquotasNominais-Input"
               },
               {
                 "type": "null"
@@ -2656,7 +3736,7 @@
           "premissasDas": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/PremissasDas"
+                "$ref": "#/components/schemas/PremissasDas-Input"
               },
               {
                 "type": "null"
@@ -2699,6 +3779,61 @@
         ],
         "title": "ContextoChat",
         "description": "O que a tela já sabe: a operação, o regime e os itens que o usuário já confirmou (P3).\n\nO backend não guarda estado: a cada mensagem a tela manda o contexto. O agente só calcula os\nitens daqui, pelo id; um item que só aparece no texto da conversa precisa ser confirmado antes."
+      },
+      "CorrigirClassificacaoRequisicao": {
+        "properties": {
+          "cnpj": {
+            "type": "string",
+            "pattern": "^\\d{14}$",
+            "title": "Cnpj"
+          },
+          "cClassTrib": {
+            "type": "string",
+            "pattern": "^\\d{6}$",
+            "title": "Cclasstrib"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cnpj",
+          "cClassTrib"
+        ],
+        "title": "CorrigirClassificacaoRequisicao",
+        "description": "A classificação que o usuário confirmou (P3). O CST não vem da tela: o backend usa o da fundamentação\noficial da classificação escolhida, e só aceita uma classificação válida para a NCM do item."
+      },
+      "CorrigirClassificacaoResposta": {
+        "properties": {
+          "cstAnterior": {
+            "type": "string",
+            "title": "Cstanterior"
+          },
+          "cClassTribAnterior": {
+            "type": "string",
+            "title": "Cclasstribanterior"
+          },
+          "classificacao": {
+            "$ref": "#/components/schemas/ClassificacaoCandidata"
+          },
+          "item": {
+            "$ref": "#/components/schemas/ItemCatalogoEstado"
+          },
+          "vigenteDesde": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Vigentedesde"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cstAnterior",
+          "cClassTribAnterior",
+          "classificacao",
+          "item",
+          "vigenteDesde"
+        ],
+        "title": "CorrigirClassificacaoResposta"
       },
       "Emitente": {
         "properties": {
@@ -2998,7 +4133,7 @@
           "aliquotasNominais": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/AliquotasNominais"
+                "$ref": "#/components/schemas/AliquotasNominais-Input"
               },
               {
                 "type": "null"
@@ -3008,7 +4143,7 @@
           "premissasDas": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/PremissasDas"
+                "$ref": "#/components/schemas/PremissasDas-Input"
               },
               {
                 "type": "null"
@@ -3159,6 +4294,7 @@
             "anyOf": [
               {
                 "type": "number",
+                "maximum": 1000000000.0,
                 "exclusiveMinimum": 0.0
               },
               {
@@ -3618,6 +4754,25 @@
         "title": "ItemComparado",
         "description": "Uma linha da venda nos dois regimes. Os totais dos lados são a soma destas linhas."
       },
+      "ItemCompraMensal": {
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "title": "Itemid"
+          },
+          "quantidade": {
+            "type": "string",
+            "title": "Quantidade"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "itemId",
+          "quantidade"
+        ],
+        "title": "ItemCompraMensal"
+      },
       "ItemEntrada": {
         "properties": {
           "id": {
@@ -3686,6 +4841,7 @@
             "anyOf": [
               {
                 "type": "number",
+                "maximum": 1000000000.0,
                 "exclusiveMinimum": 0.0
               },
               {
@@ -3698,6 +4854,7 @@
             "anyOf": [
               {
                 "type": "number",
+                "maximum": 1000000000.0,
                 "exclusiveMinimum": 0.0
               },
               {
@@ -3711,6 +4868,7 @@
             "anyOf": [
               {
                 "type": "number",
+                "maximum": 1000000000.0,
                 "minimum": 0.0
               },
               {
@@ -3727,6 +4885,7 @@
             "anyOf": [
               {
                 "type": "number",
+                "maximum": 1000000000.0,
                 "minimum": 0.0
               },
               {
@@ -4219,6 +5378,54 @@
         ],
         "title": "NotaResumo"
       },
+      "Operacao": {
+        "properties": {
+          "data": {
+            "type": "string",
+            "format": "date",
+            "title": "Data",
+            "description": "Data do fato gerador. Rege as vigências nos dois motores."
+          },
+          "uf": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$",
+            "title": "Uf"
+          },
+          "municipio": {
+            "type": "integer",
+            "title": "Municipio",
+            "description": "Código IBGE do município."
+          },
+          "aliquotasNominais": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AliquotasNominais-Output"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "premissasDas": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PremissasDas-Output"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "data",
+          "uf",
+          "municipio"
+        ],
+        "title": "Operacao"
+      },
       "OrigemAlerta": {
         "properties": {
           "tipo": {
@@ -4294,7 +5501,7 @@
           "aliquotasNominais": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/AliquotasNominais"
+                "$ref": "#/components/schemas/AliquotasNominais-Input"
               },
               {
                 "type": "null"
@@ -4304,7 +5511,7 @@
           "premissasDas": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/PremissasDas"
+                "$ref": "#/components/schemas/PremissasDas-Input"
               },
               {
                 "type": "null"
@@ -4321,6 +5528,7 @@
             "anyOf": [
               {
                 "type": "number",
+                "maximum": 1000000000.0,
                 "minimum": 0.0
               },
               {
@@ -4333,6 +5541,7 @@
             "anyOf": [
               {
                 "type": "number",
+                "maximum": 1000000000.0,
                 "minimum": 0.0
               },
               {
@@ -4507,7 +5716,7 @@
         "title": "Premissa",
         "description": "Toda premissa aparece impressa junto do resultado (P6, P7, P8)."
       },
-      "PremissasDas": {
+      "PremissasDas-Input": {
         "properties": {
           "anexo": {
             "type": "string",
@@ -4550,6 +5759,58 @@
                 "type": "string"
               }
             ],
+            "title": "Pibssn"
+          },
+          "fonte": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fonte",
+            "description": "De onde veio a premissa (ex.: o rótulo do preset escolhido). Sai impressa nas premissas."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "anexo",
+          "cAtivSN",
+          "pCBSSN",
+          "pIBSSN"
+        ],
+        "title": "PremissasDas",
+        "description": "Linha de alíquotas efetivas do Simples do contribuinte (premissa rotulada, P8 e ADR 0001)."
+      },
+      "PremissasDas-Output": {
+        "properties": {
+          "anexo": {
+            "type": "string",
+            "enum": [
+              "I",
+              "II",
+              "III",
+              "IV",
+              "V"
+            ],
+            "title": "Anexo"
+          },
+          "cAtivSN": {
+            "type": "string",
+            "pattern": "^\\d{2}$",
+            "title": "Cativsn",
+            "description": "Código de atividade do Simples (ex.: 01, revenda)."
+          },
+          "pCBSSN": {
+            "type": "string",
+            "title": "Pcbssn"
+          },
+          "pIBSSN": {
+            "type": "string",
             "title": "Pibssn"
           },
           "fonte": {
@@ -4837,7 +6098,7 @@
           "aliquotasNominais": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/AliquotasNominais"
+                "$ref": "#/components/schemas/AliquotasNominais-Input"
               },
               {
                 "type": "null"
@@ -4847,7 +6108,7 @@
           "premissasDas": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/PremissasDas"
+                "$ref": "#/components/schemas/PremissasDas-Input"
               },
               {
                 "type": "null"

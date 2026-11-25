@@ -63,6 +63,7 @@ from app.contrato import (  # noqa: E402
 from app.dados_demo import PASTA_DEMO, ItemCatalogo, carregar_cliente_b2b, carregar_distribuidora  # noqa: E402
 from app.motores.conversao import LeituraItem, ler_resposta, versoes  # noqa: E402
 from app.motores.requisicoes import AliquotasPremissa, DasPremissa, Linha, operacao_rr, operacao_sn  # noqa: E402
+from app.precificacao.lote import LOTE  # noqa: E402
 
 MOTOR_RR_URL = os.environ.get("MOTOR_RR_URL", "http://127.0.0.1:8080/api")
 MOTOR_SN_URL = os.environ.get("MOTOR_SN_URL", "http://127.0.0.1:8082/api")
@@ -70,7 +71,6 @@ MOTOR_SN_URL = os.environ.get("MOTOR_SN_URL", "http://127.0.0.1:8082/api")
 PASTA_MOCKS = Path(os.environ.get("CONTAAI_SAIDA_MOCKS") or Path(__file__).resolve().parents[1] / "app" / "mocks")
 NS = {"n": "http://www.portalfiscal.inf.br/nfe"}
 
-LOTE = Decimal(100)  # quantidade por chamada: reduz o efeito do arredondamento ao centavo dos motores
 C2, C4 = Decimal("0.01"), Decimal("0.0001")
 NCM_NEUTRA = "84381000"  # máquina industrial: referência sem redução específica de produto (ADR 0003)
 
@@ -171,7 +171,9 @@ class Custo:
 def ler_notas() -> list[Nota]:
     notas = []
     for caminho in sorted((PASTA_DEMO / "notas").glob("nfe-compra-*.xml")):
-        inf = ET.parse(caminho).getroot().find("n:infNFe", NS)
+        # Notas fictícias do próprio repositório (data/demo), não arquivo de terceiro. O backend lê nota
+        # recebida pelo leitor estrito de app/nfe/leitor.py (sem DTD nem entidades).
+        inf = ET.parse(caminho).getroot().find("n:infNFe", NS)  # noqa: S314
         itens = []
         for det in inf.findall("n:det", NS):
             p = det.find("n:prod", NS)
@@ -533,8 +535,8 @@ def producao(
 ) -> tuple[dict[str, CarrinhoResposta], dict[str, PrecoAlvoResposta], dict[str, dict[str, ExplicarResposta]]]:
     import asyncio
 
-    from app.api.rotas.explicacao import requisicao_demo
     from app.contrato import CarrinhoRequisicao, ItemBase, PrecoAlvoRequisicao
+    from app.empresa import requisicao_explicar
     from app.explicacao import explicar_item
     from app.motores.cliente import ClienteMotores
     from app.motores.dados_abertos import DadosAbertos
@@ -568,7 +570,11 @@ def producao(
                     motores,
                 )
             for cat in DEMO.catalogo:
-                expl[cat.id] = {r.value: await explicar_item(requisicao_demo(cat.id, r), motores, da) for r in Regime}
+                # O mesmo pedido do GET /explicar/{id} no estado das sementes (preço de venda da semente).
+                expl[cat.id] = {
+                    r.value: await explicar_item(requisicao_explicar(EMP, CEN, cat, cat.precoVenda, r), motores, da)
+                    for r in Regime
+                }
             return car, preco, expl
 
     car, preco, expl = asyncio.run(rodar())

@@ -8,9 +8,9 @@ FastAPI que orquestra os motores oficiais da Receita. Instruções no README da 
 | `app/api/` | Camada HTTP: dependências, middlewares, erros RFC 9457 (`problemas.py`) e as rotas por área (`rotas/`) |
 | `app/contrato.py` | Contrato da API (fonte do `docs/contrato/openapi.json`) |
 | `app/motores/` | Modelos das respostas, cliente tipado (httpx) e montagem das requisições aos motores |
-| `app/precificacao/` | Carrinho real e preço-alvo (ajuste afim + bisseção) |
+| `app/precificacao/` | Carrinho real, preço-alvo (ajuste afim + bisseção) e o lote de referência (`lote.py`, ADR 0011) |
 | `app/regime/` | Comparação Simples tradicional × híbrido (E3) |
-| `app/nfe/` | Leitor seguro da NF-e, importação (casamento, crédito, histórico e alertas) e consultas do estado (E4) |
+| `app/nfe/` | Leitor seguro da NF-e, importação (casamento, crédito, histórico e alertas) e consultas do estado (E4), com o preço e a classificação gravados pela tela (ADR 0011) |
 | `app/persistencia/` | SQLite: migrações versionadas (`migracoes/`), repositório, sementes de `data/demo` (E4, ADR 0008) e espaços de avaliação (`espacos.py`, ADR 0010) |
 | `app/empresa.py` | Operação de cálculo de uma empresa cadastrada (data, local e premissas do cenário dela) |
 | `app/cenarios/` | Premissas, aviso de simulação e presets de 2027 com fonte |
@@ -18,6 +18,6 @@ FastAPI que orquestra os motores oficiais da Receita. Instruções no README da 
 | `app/classificacao/` | Índice de NCM (gerado por `scripts/gerar_indice_ncm.py`) e candidatos de classificação |
 | `app/motores/dados_abertos.py` | Consultas GET aos dados abertos e ao catálogo de erros dos motores |
 | `app/explicacao.py` | Memória de cálculo, fundamentação e premissas de um item |
-| `app/seguranca.py` | Limite de requisições por IP e token da demo |
+| `app/seguranca.py` | Limite de requisições por IP e token da demo (Host, Origin e tamanho do corpo ficam em `app/api/middlewares.py`, ADR 0011) |
 | `app/mocks/` | Mocks do modo mock, gerados por `scripts/gerar_mocks.py` a partir dos motores |
 | `tests/conftest.py` | Motores e dados abertos falsos para o CI (valores fictícios, só para testar a orquestração) |

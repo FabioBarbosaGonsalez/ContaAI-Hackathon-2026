@@ -122,7 +122,8 @@ def _texto(pai: ET.Element, caminho: str, nome: str, maximo: int, obrigatorio: b
 
 def _padrao(pai: ET.Element, caminho: str, nome: str, padrao: str) -> str:
     valor = _texto(pai, caminho, nome, 60)
-    assert valor is not None
+    if valor is None:  # _texto já recusa o campo obrigatório ausente; sem assert, que some com python -O
+        raise NotaInvalida(f"Campo {nome} ausente.")
     if not re.fullmatch(padrao, valor):
         raise NotaInvalida(f"Campo {nome} fora do formato da NF-e.")
     return valor
@@ -130,7 +131,8 @@ def _padrao(pai: ET.Element, caminho: str, nome: str, padrao: str) -> str:
 
 def _decimal(pai: ET.Element, caminho: str, nome: str, positivo: bool = True) -> Decimal:
     valor = _texto(pai, caminho, nome, 30)
-    assert valor is not None
+    if valor is None:  # _texto já recusa o campo obrigatório ausente; sem assert, que some com python -O
+        raise NotaInvalida(f"Campo {nome} ausente.")
     if not _DECIMAL.fullmatch(valor):
         raise NotaInvalida(f"Campo {nome} não é um número decimal válido.")
     numero = Decimal(valor)

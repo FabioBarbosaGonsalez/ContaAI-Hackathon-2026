@@ -154,7 +154,8 @@ def simples(status: int, detalhe: str | None, headers: dict[str, str] | None = N
 
 def tipado(nome: str, status: int, detalhe: str) -> Problema:
     tipo = TIPOS[nome]
-    assert status in tipo.status, f"{nome} não é usado com {status}"
+    if status not in tipo.status:  # erro de programação, não de entrada
+        raise ValueError(f"{nome} não é usado com {status}")
     return Problema(type=tipo.type, title=tipo.title, status=status, detail=detalhe)
 
 
@@ -297,11 +298,23 @@ def _incluir_modelos(esquemas: dict[str, Any], *modelos: type[Problema]) -> None
         esquemas.setdefault(modelo.__name__, esquema)
 
 
+# Recusas dos middlewares (app/api/middlewares.py, ADR 0011), que valem para toda rota ou para todo POST.
+RECUSA_HOST = {"400": {"description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding)."}}
+RECUSAS_POST = {
+    "403": {"description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF)."},
+    "411": {"description": "Corpo sem Content-Length (corpo em pedaços não é aceito)."},
+    "413": {"description": "Corpo maior que o limite."},
+}
+
+
 def ajustar_openapi(spec: dict[str, Any]) -> dict[str, Any]:
     esquemas = spec.setdefault("components", {}).setdefault("schemas", {})
     _incluir_modelos(esquemas, Problema, ProblemaValidacao)
     for operacoes in spec.get("paths", {}).values():
-        for operacao in operacoes.values():
+        for metodo, operacao in operacoes.items():
+            respostas = operacao.setdefault("responses", {})
+            for codigo, resp in (RECUSA_HOST | (RECUSAS_POST if metodo == "post" else {})).items():
+                respostas.setdefault(codigo, dict(resp))
             for codigo, resp in operacao.get("responses", {}).items():
                 if not codigo.isdigit() or int(codigo) < 400:
                     continue

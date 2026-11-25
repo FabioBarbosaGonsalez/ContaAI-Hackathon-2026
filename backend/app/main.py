@@ -70,26 +70,37 @@ async def ciclo_de_vida(_: FastAPI) -> AsyncIterator[None]:
     yield
 
 
+_DOCS = configuracao().docs_publica
+
 app = FastAPI(
     title="ContaAI",
     lifespan=ciclo_de_vida,
     version="0.1.0",
     description="Copiloto de preço e margem na reforma tributária. Toda conta vem das calculadoras oficiais da "
     f"Receita Federal; a IA só interpreta e explica. {AVISO_LEGAL}",
+    # CONTAAI_DOCS_PUBLICA=false no deploy (ADR 0011): o Swagger carrega scripts de uma CDN, e na mesma origem
+    # da tela eles alcançariam o que a tela guarda no navegador. O contrato continua em docs/contrato/openapi.json.
+    docs_url="/docs" if _DOCS else None,
+    redoc_url="/redoc" if _DOCS else None,
+    openapi_url="/openapi.json" if _DOCS else None,
 )
 
 # Ordem: cada middleware adicionado fica POR FORA dos anteriores. De fora para dentro: cabeçalhos de
-# segurança, CORS, limite por IP, tamanho da NF-e. O CORS fica por fora dos limites para que um 411, 413
-# ou 429 também leve Access-Control-Allow-Origin e o frontend consiga ler o erro.
-app.add_middleware(BaseHTTPMiddleware, dispatch=middlewares.limitar_upload_nfe)
+# segurança, Host, CORS, Origin, limite por IP, tamanho do corpo. O CORS fica por fora dos limites para que
+# um 403, 411, 413 ou 429 também leve Access-Control-Allow-Origin e o frontend consiga ler o erro.
+app.add_middleware(BaseHTTPMiddleware, dispatch=middlewares.limitar_corpo)
 app.add_middleware(BaseHTTPMiddleware, dispatch=middlewares.limitar_requisicoes)
+app.add_middleware(BaseHTTPMiddleware, dispatch=middlewares.verificar_origem)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=configuracao().cors_origens,
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type", "X-ContaAI-Token", "X-ContaAI-Espaco"],
+    # Sem isto, o JavaScript de outra origem não lê estes headers (só os da lista segura do padrão Fetch).
+    expose_headers=["Retry-After", "X-ContaAI-Mock"],
     allow_credentials=False,
 )
+app.add_middleware(BaseHTTPMiddleware, dispatch=middlewares.verificar_host)
 app.add_middleware(BaseHTTPMiddleware, dispatch=middlewares.cabecalhos_de_seguranca)
 
 problemas.registrar(app)
