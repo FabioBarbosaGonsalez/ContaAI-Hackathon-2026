@@ -20,6 +20,7 @@ from app.contrato import (
     ErroDescricao,
     ExplicarResposta,
     NfeImportarResposta,
+    NotasResposta,
     PainelContadorResposta,
     PrecoAlvoResposta,
     Regime,
@@ -38,6 +39,7 @@ class Mocks:
     alertas: AlertasResposta
     catalogo: CatalogoResposta
     contador_painel: PainelContadorResposta
+    notas: NotasResposta
     busca_ncm: dict[str, BuscaNcmResposta]
     explicar: dict[str, dict[Regime, ExplicarResposta]]
     erros: dict[str, ErroDescricao]
@@ -59,6 +61,7 @@ def carregar() -> Mocks:
         alertas=AlertasResposta.model_validate(_ler("alertas.json")),
         catalogo=CatalogoResposta.model_validate(_ler("catalogo.json")),
         contador_painel=PainelContadorResposta.model_validate(_ler("contador-painel.json")),
+        notas=NotasResposta.model_validate(_ler("notas.json")),
         busca_ncm={k: BuscaNcmResposta.model_validate(v) for k, v in _ler("busca-ncm.json").items()},
         explicar={
             item: {Regime(r): ExplicarResposta.model_validate(e) for r, e in por_regime.items()}

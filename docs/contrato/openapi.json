@@ -1361,6 +1361,125 @@
         }
       }
     },
+    "/notas": {
+      "get": {
+        "tags": [
+          "notas"
+        ],
+        "summary": "Listar Notas",
+        "description": "NF-e de compra já importadas pela empresa, da emissão mais recente para a mais antiga, com os itens\ncasados e sem par e os alertas que cada uma gerou. Não chama os motores.",
+        "operationId": "listar_notas_notas_get",
+        "parameters": [
+          {
+            "name": "cnpj",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{14}$",
+              "description": "CNPJ da empresa (14 dígitos).",
+              "title": "Cnpj"
+            },
+            "description": "CNPJ da empresa (14 dígitos)."
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "description": "Quantas notas, no máximo.",
+              "default": 50,
+              "title": "Limite"
+            },
+            "description": "Quantas notas, no máximo."
+          },
+          {
+            "name": "X-ContaAI-Espaco",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{32}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada.",
+              "title": "X-Contaai-Espaco"
+            },
+            "description": "Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotasResposta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token da demo ausente ou errado (header X-ContaAI-Token).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Empresa ou alerta não encontrado, ou espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por minuto atingido (header Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaValidacao"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/contador/painel": {
       "get": {
         "tags": [
@@ -5321,6 +5440,52 @@
         ],
         "title": "NfeImportarResposta"
       },
+      "NotaImportada": {
+        "properties": {
+          "nota": {
+            "$ref": "#/components/schemas/NotaResumo"
+          },
+          "importadaEm": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Importadaem",
+            "description": "Quando a nota entrou no sistema (UTC)."
+          },
+          "itensCasados": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Itenscasados"
+          },
+          "itensSemPar": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Itenssempar"
+          },
+          "alertasGerados": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Alertasgerados"
+          },
+          "alertasAbertos": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Alertasabertos",
+            "description": "Alertas desta nota ainda sem o preço sugerido aplicado."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "nota",
+          "importadaEm",
+          "itensCasados",
+          "itensSemPar",
+          "alertasGerados",
+          "alertasAbertos"
+        ],
+        "title": "NotaImportada",
+        "description": "Uma NF-e de compra já importada. O resumo e as contagens de itens vêm do recibo gravado na importação;\nas de alertas, do estado atual (um alerta aplicado depois deixa de contar como aberto)."
+      },
       "NotaResumo": {
         "properties": {
           "serie": {
@@ -5377,6 +5542,34 @@
           "temGrupoIbsCbs"
         ],
         "title": "NotaResumo"
+      },
+      "NotasResposta": {
+        "properties": {
+          "empresa": {
+            "$ref": "#/components/schemas/EmpresaResumo"
+          },
+          "notas": {
+            "items": {
+              "$ref": "#/components/schemas/NotaImportada"
+            },
+            "type": "array",
+            "title": "Notas"
+          },
+          "aviso": {
+            "type": "string",
+            "title": "Aviso",
+            "description": "Dados fictícios de demonstração (P10)."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "empresa",
+          "notas",
+          "aviso"
+        ],
+        "title": "NotasResposta",
+        "description": "Notas de compra da empresa, da emissão mais recente para a mais antiga."
       },
       "Operacao": {
         "properties": {

@@ -668,6 +668,30 @@ class PainelContadorResposta(_Modelo):
     aviso: str
 
 
+# ---------------------------------------------------------------------------
+# GET /notas (E5, PR 3b)
+
+
+class NotaImportada(_Modelo):
+    """Uma NF-e de compra já importada. O resumo e as contagens de itens vêm do recibo gravado na importação;
+    as de alertas, do estado atual (um alerta aplicado depois deixa de contar como aberto)."""
+
+    nota: NotaResumo
+    importadaEm: datetime = Field(description="Quando a nota entrou no sistema (UTC).")
+    itensCasados: int = Field(ge=0)
+    itensSemPar: int = Field(ge=0)
+    alertasGerados: int = Field(ge=0)
+    alertasAbertos: int = Field(ge=0, description="Alertas desta nota ainda sem o preço sugerido aplicado.")
+
+
+class NotasResposta(_Modelo):
+    """Notas de compra da empresa, da emissão mais recente para a mais antiga."""
+
+    empresa: EmpresaResumo
+    notas: list[NotaImportada]
+    aviso: str = Field(description="Dados fictícios de demonstração (P10).")
+
+
 class EspacoResposta(_Modelo):
     """Espaço de avaliação (ADR 0010): cópia própria dos dados fictícios da demonstração. Envie `id` no header
     X-ContaAI-Espaco nas rotas de notas, alertas, catálogo, painel, restauração e chat. O id é a chave do espaço:

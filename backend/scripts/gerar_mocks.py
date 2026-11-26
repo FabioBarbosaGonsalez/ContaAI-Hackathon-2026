@@ -6,7 +6,7 @@ usam as fórmulas do ADR 0003 sobre esses valores, só com soma, subtração e d
 
 É a implementação de referência que as etapas E1 a E4 substituem pelo código de produção, com testes.
 Carrinho, preço-alvo, explicação, chat e comparação de regimes já saem do código de produção (E1 a E3,
-ADR 0007), e desde a E4 também NF-e, alertas, catálogo e painel do contador (ADR 0008), num banco
+ADR 0007), e desde a E4 também NF-e, alertas, catálogo, painel do contador e notas (ADR 0008), num banco
 temporário com as sementes. O carrinho, o preço-alvo e a importação da nota 2 de referência continuam
 aqui como conferência: se a produção divergir deles, nenhum mock é gravado.
 
@@ -676,7 +676,7 @@ CAMPOS_CASADO |= {"creditoCompraUnitario", "fonteCredito"}
 
 def producao_nfe(
     referencia: NfeImportarResposta,
-) -> tuple[NfeImportarResposta, AlertasResposta, Any, Any]:
+) -> tuple[NfeImportarResposta, AlertasResposta, Any, Any, Any]:
     import asyncio
     import tempfile
 
@@ -690,7 +690,7 @@ def producao_nfe(
     def relogio() -> datetime:
         return RELOGIO_MOCKS
 
-    async def rodar() -> tuple[NfeImportarResposta, AlertasResposta, Any, Any]:
+    async def rodar() -> tuple[NfeImportarResposta, AlertasResposta, Any, Any, Any]:
         with tempfile.TemporaryDirectory() as pasta:
             banco = Banco(Path(pasta) / "mocks.db")
             banco.migrar()
@@ -705,9 +705,10 @@ def producao_nfe(
                 AlertasResposta(alertas=consultas.alertas(repo, None, None)),
                 consultas.catalogo(repo, EMP.cnpj),
                 consultas.painel(repo),
+                consultas.notas(repo, EMP.cnpj, 50),
             )
 
-    importacao, alertas, catalogo, painel = asyncio.run(rodar())
+    importacao, alertas, catalogo, painel, notas = asyncio.run(rodar())
     if [a.model_dump(include=CAMPOS_ALERTA) for a in importacao.alertas] != [
         a.model_dump(include=CAMPOS_ALERTA) for a in referencia.alertas
     ]:
@@ -716,7 +717,7 @@ def producao_nfe(
         c.model_dump(include=CAMPOS_CASADO) for c in referencia.itensCasados
     ]:
         raise Divergencia("itens casados da nota 2")
-    return importacao, alertas, catalogo, painel
+    return importacao, alertas, catalogo, painel, notas
 
 
 # ---------------------------------------------------------------------------
@@ -901,7 +902,7 @@ def main() -> None:
         car, preco, expl = producao(
             atuais, {Regime.SIMPLES_TRADICIONAL: car_trad, Regime.SIMPLES_HIBRIDO: car_hib}, ref_preco
         )
-        nfe, alertas, catalogo, painel = producao_nfe(importacao)
+        nfe, alertas, catalogo, painel, notas = producao_nfe(importacao)
 
         print("Mocks gravados em backend/app/mocks/:")
         gravar("carrinho.json", car)
@@ -911,6 +912,7 @@ def main() -> None:
         gravar("alertas.json", alertas)
         gravar("catalogo.json", catalogo)
         gravar("contador-painel.json", painel)
+        gravar("notas.json", notas)
         gravar("busca-ncm.json", busca)
         gravar("explicar.json", expl)
         gravar("erros.json", erros(motores))

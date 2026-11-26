@@ -36,6 +36,7 @@ from app.contrato import (
     CorrigirClassificacaoRequisicao,
     CorrigirClassificacaoResposta,
     NfeImportarResposta,
+    NotasResposta,
     PainelContadorResposta,
 )
 from app.nfe import consultas
@@ -174,6 +175,22 @@ def catalogo(cfg: Cfg, response: Response, cnpj: CNPJ, espaco: EspacoId = None) 
         marcar_mock(response)
         return mocks.carregar().catalogo
     return consultas.catalogo(abrir_estado(cfg, espaco).repositorio, cnpj)
+
+
+@rotas.get("/notas", response_model=NotasResposta, responses=respostas.ESTADO)
+def listar_notas(
+    cfg: Cfg,
+    response: Response,
+    cnpj: CNPJ,
+    limite: Annotated[int, Query(ge=1, le=200, description="Quantas notas, no máximo.")] = 50,
+    espaco: EspacoId = None,
+) -> NotasResposta:
+    """NF-e de compra já importadas pela empresa, da emissão mais recente para a mais antiga, com os itens
+    casados e sem par e os alertas que cada uma gerou. Não chama os motores."""
+    if cfg.modo == "mock":
+        marcar_mock(response)
+        return mocks.carregar().notas
+    return consultas.notas(abrir_estado(cfg, espaco).repositorio, cnpj, limite)
 
 
 @rotas.get("/contador/painel", response_model=PainelContadorResposta, responses=respostas.ESPACO)
