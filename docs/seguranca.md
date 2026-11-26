@@ -142,6 +142,7 @@ A tela é a próxima camada exposta a XSS. A fundação do frontend (PR 2 da E5)
    - o campo oferece só XML (`.xml`, `application/xml`, `text/xml`);
    - o tipo e o tamanho (1.000.000 bytes) são conferidos antes de enviar, e o teste do backend confere que são os mesmos dele;
    - o backend continua sendo quem decide (411, 413 e 415).
+   - Desde o 3b ([ADR 0014](adr/0014-telas-notas-e-regime.md)), a tela de Notas usa estas conferências. Ela mostra a recusa do backend (409, 413, 415 e 422) pelo `detail`, como texto. O arquivo fica só na memória da aba até o envio e não vai ao armazenamento do navegador. O recibo mostra o texto da nota (emitente e `xProd`) como texto.
 8. **Dependências:**
    - `npm ci` com o lockfile;
    - `frontend/.npmrc`: só versões publicadas há mais de 7 dias, versões exatas e sem scripts de instalação;

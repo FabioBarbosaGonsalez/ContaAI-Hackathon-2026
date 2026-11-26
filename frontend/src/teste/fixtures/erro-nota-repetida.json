@@ -1,0 +1,6 @@
+{
+  "type": "/problemas/nota-recusada",
+  "title": "NF-e não pode ser importada",
+  "status": 409,
+  "detail": "Esta nota (mesmo emitente, série e número) já foi importada com outro conteúdo. Nada foi gravado."
+}

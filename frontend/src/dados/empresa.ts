@@ -3,10 +3,21 @@
 // A empresa da demonstração é a Distribuidora Serra Azul ME (fictícia, data/demo). O seletor de CNPJ do
 // painel do contador (D1) entra no PR 3c; até lá, toda tela abre esta empresa.
 
-import { chamar } from '../api/cliente.ts';
+import { chamar, type ClienteApi, type Resposta } from '../api/cliente.ts';
 import { useSessao } from '../sessao/contexto.tsx';
 import { useEspaco, useModo, useTemToken } from '../sessao/ganchos.ts';
-import { pedidoDoCatalogo, type Alerta, type Carrinho, type Catalogo, type Regime } from './pedidos.ts';
+import {
+  pedidoDeRegime,
+  pedidoDoCatalogo,
+  type Alerta,
+  type Carrinho,
+  type Catalogo,
+  type ClienteB2B,
+  type Comparacao,
+  type Notas,
+  type ReciboNota,
+  type Regime,
+} from './pedidos.ts';
 import { useRecurso, type EstadoRecurso } from './recurso.ts';
 
 /** CNPJ fictício da distribuidora da demonstração (data/demo/distribuidora.json). */
@@ -49,6 +60,49 @@ export function useAlertasAbertos(cnpj: string = CNPJ_DEMONSTRACAO): EstadoRecur
   const origem = useOrigemDosDados();
   return useRecurso(origem && `alertas:${cnpj}:${origem}`, (sinal) =>
     chamar(api.GET('/alertas', { params: { query: { cnpj, abertos: true } }, signal: sinal })),
+  );
+}
+
+/** As NF-e de compra já importadas, da emissão mais recente para a mais antiga (GET /notas). */
+export function useNotas(cnpj: string = CNPJ_DEMONSTRACAO): EstadoRecurso<Notas> {
+  const { api } = useSessao();
+  const origem = useOrigemDosDados();
+  return useRecurso(origem && `notas:${cnpj}:${origem}`, (sinal) =>
+    chamar(api.GET('/notas', { params: { query: { cnpj } }, signal: sinal })),
+  );
+}
+
+/**
+ * A venda mensal ao cliente comparada nos dois regimes (POST /regime/comparar). Sem pedido (antes de 2027,
+ * ou com um item da venda fora do catálogo), não chama a API.
+ */
+export function useComparacao(catalogo: Catalogo | undefined, cliente: ClienteB2B | undefined): EstadoRecurso<Comparacao> {
+  const { api } = useSessao();
+  const pedido = catalogo && cliente ? pedidoDeRegime(catalogo, cliente) : null;
+  // A chave leva o pedido inteiro: um preço aplicado ou uma nota nova muda a venda ou o crédito.
+  const chave = pedido ? `regime:${JSON.stringify(pedido)}` : null;
+  return useRecurso(chave, (sinal) => {
+    if (!pedido) {
+      return Promise.reject(new Error('sem pedido'));
+    }
+    return chamar(api.POST('/regime/comparar', { body: pedido, signal: sinal }));
+  });
+}
+
+/**
+ * Envia o XML da nota (POST /nfe/importar, multipart com o campo `arquivo`). O arquivo já passou por
+ * conferirArquivoDaNota; quem decide é o backend (411, 413, 415, 409 e 422).
+ */
+export function importarNota(api: ClienteApi, arquivo: File): Promise<Resposta<ReciboNota>> {
+  const corpo = new FormData();
+  corpo.append('arquivo', arquivo, arquivo.name);
+  return chamar(
+    api.POST('/nfe/importar', {
+      // O tipo gerado descreve o campo como texto; o corpo real é o FormData, que o openapi-fetch envia
+      // como está, sem Content-Type, para o navegador pôr o boundary do multipart.
+      body: corpo as unknown as { arquivo: string },
+      bodySerializer: (b) => b as unknown as FormData,
+    }),
   );
 }
 

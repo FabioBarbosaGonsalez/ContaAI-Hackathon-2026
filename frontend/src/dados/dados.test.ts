@@ -1,5 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { cnpj, dataDoDocumento, inteiro, ncm, noMeioDaFrase, pontos, porcentagem, reais, TRACO } from './formatar.ts';
+import {
+  cnpj,
+  dataDoDocumento,
+  inteiro,
+  ncm,
+  noMeioDaFrase,
+  pontos,
+  porcentagem,
+  reais,
+  reaisComSinal,
+  reaisPorUnidade,
+  TRACO,
+} from './formatar.ts';
 import {
   abaixoDoAlvo,
   estadoEmPalavras,
@@ -12,6 +24,17 @@ import {
 } from './pedidos.ts';
 
 describe('formatar', () => {
+  it('valor com sinal tipográfico, e valor por unidade com as casas que a API manda', () => {
+    expect(reaisComSinal('-125.79')).toBe('−R$ 125,79');
+    expect(reaisComSinal('0.03')).toBe('+R$ 0,03');
+    expect(reaisComSinal('0.00')).toBe('R$ 0,00');
+    expect(reaisComSinal(null)).toBe(TRACO);
+    expect(reaisPorUnidade('0.2715')).toBe('R$ 0,2715');
+    expect(reaisPorUnidade('3.05')).toBe('R$ 3,05');
+    expect(reaisPorUnidade('0.12345')).toBe('R$ 0,1235');
+    expect(reaisPorUnidade(undefined)).toBe(TRACO);
+  });
+
   it('dinheiro e porcentagem no padrão brasileiro; ausente é traço, zero é zero', () => {
     expect(reais('3.97')).toBe('R$ 3,97');
     expect(reais('2790.00')).toBe('R$ 2.790,00');

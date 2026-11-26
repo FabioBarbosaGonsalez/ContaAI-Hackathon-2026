@@ -39,14 +39,14 @@ const barra = () => within(screen.getByRole('banner'));
 
 describe('navegação', () => {
   it('tem os cinco destinos, com a página atual marcada', async () => {
-    // Notas ainda não chama a API (entra no PR 3b); as telas com dados têm testes em src/telas.
-    await montar(() => json(SAUDE_MOCK), '/notas');
+    // Contador ainda não chama a API (entra no PR 3c); as telas com dados têm testes em src/telas.
+    await montar(() => json(SAUDE_MOCK), '/contador');
     const nav = within(screen.getByRole('navigation', { name: 'Principal' }));
     expect(nav.getAllByRole('link').map((l) => l.textContent)).toEqual(ROTAS.map((r) => r.nome));
-    expect(nav.getByRole('link', { name: 'Notas' }).getAttribute('aria-current')).toBe('page');
+    expect(nav.getByRole('link', { name: 'Contador' }).getAttribute('aria-current')).toBe('page');
     expect(nav.getByRole('link', { name: 'Painel' }).getAttribute('aria-current')).toBeNull();
-    expect(screen.getByRole('heading', { level: 1, name: 'Notas' })).toBeDefined();
-    expect(document.title).toBe('Notas · ContaAI');
+    expect(screen.getByRole('heading', { level: 1, name: 'Contador' })).toBeDefined();
+    expect(document.title).toBe('Contador · ContaAI');
   });
 
   it('clique comum troca a página sem recarregar, põe o foco no título e o voltar funciona', async () => {
@@ -80,8 +80,8 @@ describe('navegação', () => {
   });
 
   it('aceita a barra final e maiúsculas', async () => {
-    await montar(() => json(SAUDE_MOCK), '/Notas/');
-    expect(screen.getByRole('heading', { level: 1, name: 'Notas' })).toBeDefined();
+    await montar(() => json(SAUDE_MOCK), '/Contador/');
+    expect(screen.getByRole('heading', { level: 1, name: 'Contador' })).toBeDefined();
   });
 
   it('endereço desconhecido mostra a página não encontrada, com caminho de volta', async () => {

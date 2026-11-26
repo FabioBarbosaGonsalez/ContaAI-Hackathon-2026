@@ -17,6 +17,12 @@ export type ErroMotor = Esquemas['ErroMotor'];
 export type Premissa = Esquemas['Premissa'];
 export type Explicacao = Esquemas['ExplicarResposta'];
 export type Candidata = Esquemas['ClassificacaoCandidata'];
+export type ReciboNota = Esquemas['NfeImportarResposta'];
+export type Notas = Esquemas['NotasResposta'];
+export type NotaImportada = Esquemas['NotaImportada'];
+export type ClienteB2B = Esquemas['ClienteB2BEstado'];
+export type PedidoDeRegime = Esquemas['RegimeCompararRequisicao'];
+export type Comparacao = Esquemas['RegimeCompararResposta'];
 
 type ItemCarrinho = Esquemas['CarrinhoRequisicao']['itens'][number];
 
@@ -62,6 +68,43 @@ export function pedidoDoCatalogo(catalogo: Catalogo, regime: Regime): Esquemas['
     ...semVazios(catalogo.cenario.operacao),
     regime,
     itens: catalogo.itens.map((item) => linhaDoItem(item, catalogo.loteReferencia)),
+  };
+}
+
+/** A data do cenário é anterior a 2027: não há lado tradicional para comparar (VSN-015, ADR 0007). */
+export function antesDaComparacao(catalogo: Catalogo): boolean {
+  return Number(catalogo.cenario.operacao.data.slice(0, 4)) < 2027;
+}
+
+/**
+ * A venda mensal ao cliente empresa, como o catálogo a descreve (`compraMensal`), ao preço de venda atual
+ * e com o custo da última nota de cada item (teste do backend test_tela.py::entrada).
+ *
+ * O crédito por unidade só vai quando veio do grupo IBSCBS da nota (`fonteCredito: 'nfe'`), que é o que o
+ * contrato define para `creditoCompraUnitario`. O crédito que o motor calculou numa nota sem o grupo fica
+ * de fora: o backend o refaz sobre o custo e responde `fonteCredito: 'motor'`, com a hipótese impressa.
+ * Mandar esse crédito faria a comparação dizer que ele foi lido da nota (ADR 0014).
+ *
+ * Devolve null se algum item da venda não estiver no catálogo (o backend não deixa isso acontecer nas
+ * sementes, mas a tela não inventa um item).
+ */
+export function pedidoDeRegime(catalogo: Catalogo, cliente: ClienteB2B): PedidoDeRegime | null {
+  const itens: ItemCarrinho[] = [];
+  for (const compra of cliente.compraMensal) {
+    const item = catalogo.itens.find((i) => i.id === compra.itemId);
+    if (!item) {
+      return null;
+    }
+    const linha = linhaDoItem(item, compra.quantidade);
+    if (item.custoAtual?.fonteCredito !== 'nfe') {
+      delete linha.creditoCompraUnitario;
+    }
+    itens.push(linha);
+  }
+  return {
+    ...semVazios(catalogo.cenario.operacao),
+    cliente: { nome: cliente.nome, regime: cliente.regime },
+    itens,
   };
 }
 

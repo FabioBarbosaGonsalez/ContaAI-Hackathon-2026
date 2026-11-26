@@ -79,7 +79,8 @@ Valores do cenário de demonstração (simulação de março de 2027, premissas 
 
 ### Decisão de regime (detail: a venda ao Mercado Bom Preço)
 - **Pergunta:** para vender ao Bom Preço, tradicional ou híbrido?
-- **Achado:** no híbrido o Mercado Bom Preço leva R$ 1.626,26 de crédito por mês, contra R$ 233,63 no tradicional; em troca, a distribuidora paga R$ 125,79 a mais de imposto por mês. Isso vale para estas premissas. (Até a E3 a cesta tinha arroz, e o achado dependia da premissa da redução dentro do DAS; ADR 0007.)
+- **Achado:** no híbrido o Mercado Bom Preço leva R$ 1.626,26 de crédito por mês, contra R$ 233,63 no tradicional; em troca, a distribuidora paga R$ 125,79 a mais de imposto por mês. Isso vale para estas premissas.
+  - Esses números pedem a nota 2 importada (crédito do grupo IBSCBS). Na demonstração recém-aberta, só com a nota 1, o crédito das compras vem do motor e a diferença de caixa é −R$ 173,90 (ADR 0014). (Até a E3 a cesta tinha arroz, e o achado dependia da premissa da redução dentro do DAS; ADR 0007.)
 - **Tarefa:** levar ao contador. A tela nunca diz "opte pelo híbrido" (seção 10 do plano).
 - **Blocos:**
   - a régua do crédito (elemento-assinatura, seção 3 abaixo), que é o maior bloco;
@@ -163,4 +164,5 @@ Valores do cenário de demonstração (simulação de março de 2027, premissas 
   - tokens deste estilo em `frontend/src/estilo/tokens.css`, com o fundo `#f2f4f7` (a troca que a folha sugere para um livro-caixa) e `--borda-campo` `#8a8a8a` (3:1 na borda de campo, WCAG 1.4.11);
   - o shell sem barra lateral, com o rodapé do aviso legal e das versões dos motores;
   - as páginas ainda sem conteúdo, à espera do PR 3.
+- **Telas feitas:** Painel, Catálogo e explicação lateral no 3a ([ADR 0013](../../docs/adr/0013-telas-painel-e-catalogo.md)); Notas e Regime no 3b ([ADR 0014](../../docs/adr/0014-telas-notas-e-regime.md), crítica em `critica-3b.md`).
 - **Arquivos da skill:** `assets/app.css` e `assets/charts.js` não declaram licença e não são copiados para o repositório (público, MIT). O CSS e os SVG (a barra de margem contra o alvo e a régua) são escritos no projeto, seguindo as regras do capítulo. A skill entra como referência e como portão, rodando da pasta dela.

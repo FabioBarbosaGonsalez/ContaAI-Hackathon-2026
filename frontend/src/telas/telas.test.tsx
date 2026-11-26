@@ -137,6 +137,18 @@ describe('Painel', () => {
     expect(aplicar?.headers.get('X-ContaAI-Token')).toBe('token-de-teste');
   });
 
+  it('sem alerta aberto, a resposta fica no topo das margens, na linha inteira, sem cartão vazio', async () => {
+    await montar(
+      '/',
+      api(SAUDE_REAL, (pedido) => (new URL(pedido.url).pathname === '/alertas' ? json({ alertas: [] }) : undefined)),
+    );
+    const margens = await screen.findByRole('region', { name: 'Margem de cada item contra o alvo' });
+    await within(margens).findByText('Nenhum item com a margem abaixo do alvo.');
+    expect(margens.className).toContain('painel__margens--inteira');
+    expect(within(margens).getByRole('link', { name: 'Importar uma nota' }).getAttribute('href')).toBe('/notas');
+    expect(screen.queryByRole('region', { name: 'Margem abaixo do alvo' })).toBeNull();
+  });
+
   it('corrigir a classificação: as candidatas oficiais da NCM e a escolhida gravada', async () => {
     const gravados: Record<string, unknown>[] = [];
     await montar(

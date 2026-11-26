@@ -1,7 +1,8 @@
 // Painel do negócio (inventário §2): "qual item está perdendo margem e o que eu faço?".
 //
 // Blocos, na ordem das perguntas:
-// 1. o alerta de margem, o maior bloco, com "Aplicar" (a tarefa mais frequente, a um clique);
+// 1. o alerta de margem, o maior bloco, com "Aplicar" (a tarefa mais frequente, a um clique); sem alerta
+//    aberto, a resposta ("nenhum item abaixo do alvo") vai para o topo do bloco das margens, na linha inteira;
 // 2. a última nota de compra e as pendências de cadastro (a carne com a NCM que não combina);
 // 3. a margem de cada item contra o alvo, e as premissas da simulação.
 //
@@ -156,15 +157,7 @@ function BlocoAlerta(props: {
   } else if (alertas === undefined) {
     corpo = <Carregando linhas={4} />;
   } else if (alertas.length === 0) {
-    corpo = (
-      <div className="vazio">
-        <p>Nenhum item com a margem abaixo do alvo.</p>
-        <p className="texto-suave">
-          Quando uma nota de compra baixar a margem de um item, o alerta aparece aqui com o preço que volta ao
-          alvo. <Link para="/notas">Importar uma nota</Link>
-        </p>
-      </div>
-    );
+    corpo = null; // o Painel não mostra este bloco sem alerta (NenhumAlerta, no bloco das margens)
   } else {
     const [primeiro, ...outros] = alertas;
     corpo = primeiro && (
@@ -251,10 +244,32 @@ function BlocoPendencias({
   );
 }
 
-function BlocoMargens({ catalogo, calculo }: { catalogo: Catalogo | undefined; calculo: Carrinho | undefined }) {
+interface PropsMargens {
+  catalogo: Catalogo | undefined;
+  calculo: Carrinho | undefined;
+  /** Sem alerta aberto, o bloco ocupa a linha inteira e responde à pergunta da tela no topo. */
+  semAlerta: boolean;
+}
+
+/** A resposta da tela quando nenhum item está abaixo do alvo: dita no topo do bloco das margens. */
+function NenhumAlerta() {
+  return (
+    <div className="margens__achado">
+      <p className="achado achado--linha">Nenhum item com a margem abaixo do alvo.</p>
+      <p className="texto-suave">
+        Quando uma nota de compra baixar a margem de um item, o alerta aparece aqui com o preço que volta ao alvo.{' '}
+        <Link para="/notas">Importar uma nota</Link>
+      </p>
+    </div>
+  );
+}
+
+function BlocoMargens({ catalogo, calculo, semAlerta }: PropsMargens) {
+  const classe = semAlerta ? 'painel__margens painel__margens--inteira' : 'painel__margens';
   if (catalogo === undefined || calculo === undefined) {
     return (
-      <Bloco titulo="Margem de cada item contra o alvo" className="painel__margens">
+      <Bloco titulo="Margem de cada item contra o alvo" className={classe}>
+        {semAlerta && <NenhumAlerta />}
         <Carregando linhas={5} />
       </Bloco>
     );
@@ -263,13 +278,14 @@ function BlocoMargens({ catalogo, calculo }: { catalogo: Catalogo | undefined; c
   return (
     <Bloco
       titulo="Margem de cada item contra o alvo"
-      className="painel__margens"
+      className={classe}
       extra={
         <span className="bloco__meta">
           {NOME_REGIME[calculo.regime]}, a cada {inteiro(catalogo.loteReferencia)} unidades
         </span>
       }
     >
+      {semAlerta && <NenhumAlerta />}
       <table className="tabela tabela--margens">
         <thead>
           <tr>
@@ -321,6 +337,9 @@ export function Painel() {
     alertas.recarregar();
   };
 
+  // Sem alerta aberto, o cartão do alerta ficaria com uma frase e um vão do tamanho da tabela ao lado
+  // (panel-void na demonstração compartilhada, ADR 0014): a frase vai para o topo das margens.
+  const semAlerta = alertas.erro === undefined && alertas.dados?.alertas.length === 0;
   const empresa = catalogo.dados?.empresa;
   const subtitulo = [empresa?.razaoSocial, calculo.dados?.avisoSimulacao].filter(Boolean).join(' · ');
 
@@ -335,19 +354,25 @@ export function Painel() {
   return (
     <Pagina titulo="Painel" {...(subtitulo ? { subtitulo } : {})}>
       <div className="grade">
-        <BlocoAlerta
-          alertas={alertas.dados?.alertas}
-          erro={alertas.erro}
-          aoTentar={alertas.recarregar}
-          aoAplicado={recarregarTudo}
-          aoExplicar={setExplicacao}
-        />
+        {!semAlerta && (
+          <BlocoAlerta
+            alertas={alertas.dados?.alertas}
+            erro={alertas.erro}
+            aoTentar={alertas.recarregar}
+            aoAplicado={recarregarTudo}
+            aoExplicar={setExplicacao}
+          />
+        )}
         {calculo.erro !== undefined ? (
-          <Bloco titulo="Margem de cada item contra o alvo" className="painel__margens">
+          <Bloco
+            titulo="Margem de cada item contra o alvo"
+            className={semAlerta ? 'painel__margens painel__margens--inteira' : 'painel__margens'}
+          >
+            {semAlerta && <NenhumAlerta />}
             <FalhaNoBloco erro={calculo.erro} aoTentar={calculo.recarregar} />
           </Bloco>
         ) : (
-          <BlocoMargens catalogo={catalogo.dados} calculo={calculo.dados} />
+          <BlocoMargens catalogo={catalogo.dados} calculo={calculo.dados} semAlerta={semAlerta} />
         )}
         <BlocoNota catalogo={catalogo.dados} />
         <BlocoPendencias catalogo={catalogo.dados} calculo={calculo.dados} aoCorrigir={setCorrecao} />

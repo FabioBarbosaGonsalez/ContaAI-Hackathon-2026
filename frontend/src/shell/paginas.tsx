@@ -1,7 +1,9 @@
-// As páginas da tela. Painel e Catálogo entraram no PR 3a; Regime e Notas entram no 3b, e Contador no 3c.
+// As páginas da tela. Painel e Catálogo entraram no PR 3a, Regime e Notas no 3b; Contador entra no 3c.
 
 import { Catalogo } from '../telas/Catalogo.tsx';
+import { Notas } from '../telas/Notas.tsx';
 import { Painel } from '../telas/Painel.tsx';
+import { Regime } from '../telas/Regime.tsx';
 import { Link } from './navegacao.tsx';
 import { Pagina } from './Pagina.tsx';
 import type { Caminho } from './rotas.ts';
@@ -13,16 +15,8 @@ function EmConstrucao() {
 export const PAGINAS: Record<Caminho, () => React.JSX.Element> = {
   '/': Painel,
   '/catalogo': Catalogo,
-  '/regime': () => (
-    <Pagina titulo="Regime">
-      <EmConstrucao />
-    </Pagina>
-  ),
-  '/notas': () => (
-    <Pagina titulo="Notas">
-      <EmConstrucao />
-    </Pagina>
-  ),
+  '/regime': Regime,
+  '/notas': Notas,
   '/contador': () => (
     <Pagina titulo="Contador">
       <EmConstrucao />
