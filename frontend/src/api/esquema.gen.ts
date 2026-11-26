@@ -876,6 +876,12 @@ export interface components {
              * @description Nome da organização (escritório ou empresa).
              */
             organizacao: string;
+            /**
+             * Termosaceitos
+             * @description A versão dos termos de uso aceita ao marcar a caixa do cadastro (a atual, e só ela).
+             * @enum {string}
+             */
+            termosAceitos: "2026-11-26";
         };
         /**
          * CadastroResposta
@@ -1128,6 +1134,8 @@ export interface components {
              */
             criadaEm: string;
             organizacao: components["schemas"]["OrganizacaoDaConta"];
+            /** @description A versão dos termos de uso aceita no cadastro e quando. Vazio para conta de antes do aceite. */
+            termos: components["schemas"]["TermosDaConta"] | null;
             /**
              * Empresas
              * @description CNPJs que a organização acessa (a C3 cadastra a empresa própria).
@@ -2380,6 +2388,16 @@ export interface components {
             novoCodigoRecuperacao?: string | null;
             /** Aviso */
             aviso?: string | null;
+        };
+        /** TermosDaConta */
+        TermosDaConta: {
+            /** Versao */
+            versao: string;
+            /**
+             * Aceitosem
+             * Format: date-time
+             */
+            aceitosEm: string;
         };
         /**
          * TipoProblema

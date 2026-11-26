@@ -27,6 +27,7 @@ from app.contas.servico import (
     _espera,
     normalizar_codigo_recuperacao,
 )
+from app.contas.termos import MENSAGEM_VERSAO_ANTIGA, VERSAO_TERMOS
 from app.contrato import AtivacaoResposta, CadastroResposta, ContaResposta, SegundaEtapaResposta
 from app.main import app
 from app.seguranca import LimitadorPorIp
@@ -73,7 +74,7 @@ def codigo(segredo: str, quando: datetime, passos: int = 0) -> str:
 
 
 def cadastrar(c: TestClient, email: str = "ana@exemplo.com.br", **kw: str) -> CadastroResposta:
-    corpo = {"email": email, "senha": SENHA, "organizacao": "Escritório da Ana"} | kw
+    corpo = {"email": email, "senha": SENHA, "organizacao": "Escritório da Ana", "termosAceitos": VERSAO_TERMOS} | kw
     r = c.post("/contas", json=corpo)
     assert r.status_code == 201, r.text
     return CadastroResposta.model_validate(r.json())
@@ -181,7 +182,15 @@ def test_endereco_otpauth() -> None:
 
 def test_cadastro_ativacao_e_cookies(real) -> None:
     c = navegador()
-    r = c.post("/contas", json={"email": "Ana@Exemplo.com.BR", "senha": SENHA, "organizacao": " Escritório "})
+    r = c.post(
+        "/contas",
+        json={
+            "email": "Ana@Exemplo.com.BR",
+            "senha": SENHA,
+            "organizacao": " Escritório ",
+            "termosAceitos": VERSAO_TERMOS,
+        },
+    )
     assert r.status_code == 201, r.text
     feito = CadastroResposta.model_validate(r.json())
     assert feito.otpauth.startswith("otpauth://totp/ContaAI%3Aana@exemplo.com.br?")
@@ -232,15 +241,64 @@ def test_nenhum_token_vai_no_corpo_e_o_banco_so_guarda_hashes(real) -> None:
 def test_email_repetido_e_cadastro_pendente_que_vence(real) -> None:
     c = navegador()
     cadastrar(c)
-    r = navegador().post("/contas", json={"email": "ANA@exemplo.com.br", "senha": SENHA, "organizacao": "Outra"})
+    r = navegador().post(
+        "/contas",
+        json={"email": "ANA@exemplo.com.br", "senha": SENHA, "organizacao": "Outra", "termosAceitos": VERSAO_TERMOS},
+    )
     assert r.status_code == 409 and "já tem uma conta" in r.json()["detail"]
     real.andar(minutes=31)  # o cadastro pendente vence e o e-mail fica livre
     cadastrar(navegador())
 
 
 def test_senha_recusada_no_cadastro_responde_422_com_a_frase(real) -> None:
-    r = navegador().post("/contas", json={"email": "b@exemplo.com", "senha": "password", "organizacao": "B"})
+    r = navegador().post(
+        "/contas",
+        json={"email": "b@exemplo.com", "senha": "password", "organizacao": "B", "termosAceitos": VERSAO_TERMOS},
+    )
     assert r.status_code == 422 and "muito comum" in r.json()["detail"]
+
+
+def test_cadastro_exige_o_aceite_da_versao_atual_dos_termos(real) -> None:
+    corpo = {"email": "b@exemplo.com", "senha": SENHA, "organizacao": "B"}
+    r = navegador().post("/contas", json=corpo)
+    assert r.status_code == 422
+    assert (
+        r.json()["campos"][0]["campo"].endswith("termosAceitos")
+        and r.json()["campos"][0]["detalhe"] == "Campo obrigatório."
+    )
+    # Uma aba aberta antes de uma mudança dos termos manda a versão antiga: a frase diz o que fazer.
+    for antiga in ("2026-01-01", "", True):
+        r = navegador().post("/contas", json=corpo | {"termosAceitos": antiga})
+        assert r.status_code == 422, antiga
+    r = navegador().post("/contas", json=corpo | {"termosAceitos": "2026-01-01"})
+    assert r.json()["campos"][0]["detalhe"] == MENSAGEM_VERSAO_ANTIGA
+    # Nada foi criado: o e-mail segue livre.
+    cadastrar(navegador(), "b@exemplo.com")
+
+
+def test_o_aceite_fica_gravado_com_a_versao_e_a_data(real) -> None:
+    c = navegador()
+    feito = cadastrar(c)
+    r = c.post("/contas/ativar", json={"codigo": codigo(feito.segredo, real.agora)})
+    termos = AtivacaoResposta.model_validate(r.json()).conta.termos
+    assert termos is not None and termos.versao == VERSAO_TERMOS and termos.aceitosEm == real.agora
+    with sqlite3.connect(configuracao().contas_caminho) as b:
+        linha = b.execute("SELECT termos_versao, termos_aceitos_em FROM usuarios").fetchone()
+    assert linha[0] == VERSAO_TERMOS and datetime.fromisoformat(linha[1]) == real.agora
+    # O contrato leva a versão ao tipo gerado da tela (enum do OpenAPI).
+    esquema = app.openapi()["components"]["schemas"]["CadastroRequisicao"]
+    assert esquema["properties"]["termosAceitos"]["enum"] == [VERSAO_TERMOS]
+    assert "termosAceitos" in esquema["required"]
+
+
+def test_conta_de_antes_da_migracao_dos_termos_fica_sem_aceite(tmp_path) -> None:
+    servico = Contas(tmp_path / "contas.db")
+    feito = servico.cadastrar("ana@exemplo.com.br", SENHA, "Ana", VERSAO_TERMOS, INICIO)
+    nova, _ = servico.ativar(feito.passe, codigo(feito.segredo, INICIO), INICIO)
+    with sqlite3.connect(tmp_path / "contas.db") as b:
+        b.execute("UPDATE usuarios SET termos_versao = NULL, termos_aceitos_em = NULL")
+    sessao = servico.sessao(nova.token, INICIO)
+    assert sessao is not None and servico.conta(sessao).termos is None
 
 
 def test_ativacao_vence_em_5_minutos(real) -> None:
@@ -356,7 +414,7 @@ def test_codigo_errado_soma_falhas_e_sucesso_zera(real) -> None:
 def test_cem_falhas_bloqueiam_e_so_o_administrador_desbloqueia(tmp_path) -> None:
     servico = Contas(tmp_path / "contas.db")
     agora = INICIO
-    feito = servico.cadastrar("ana@exemplo.com.br", SENHA, "Ana", agora)
+    feito = servico.cadastrar("ana@exemplo.com.br", SENHA, "Ana", VERSAO_TERMOS, agora)
     servico.ativar(feito.passe, codigo(feito.segredo, agora), agora)
     for _ in range(FALHAS_PARA_BLOQUEAR):
         with pytest.raises(EntradaRecusada):
@@ -556,7 +614,12 @@ def test_contas_so_no_modo_real() -> None:
     app.dependency_overrides[configuracao] = lambda: Configuracao(modo="mock")
     try:
         c = navegador()
-        assert c.post("/contas", json={"email": "a@b.com", "senha": SENHA, "organizacao": "A"}).status_code == 501
+        assert (
+            c.post(
+                "/contas", json={"email": "a@b.com", "senha": SENHA, "organizacao": "A", "termosAceitos": VERSAO_TERMOS}
+            ).status_code
+            == 501
+        )
         assert c.get("/conta").status_code == 501
     finally:
         app.dependency_overrides.clear()
@@ -566,7 +629,7 @@ def test_comando_do_administrador(capsys: pytest.CaptureFixture[str]) -> None:
     from app.contas.__main__ import main
 
     servico = Contas(configuracao().contas_caminho)
-    feito = servico.cadastrar("ana@exemplo.com.br", SENHA, "Ana", INICIO)
+    feito = servico.cadastrar("ana@exemplo.com.br", SENHA, "Ana", VERSAO_TERMOS, INICIO)
     servico.ativar(feito.passe, codigo(feito.segredo, INICIO), INICIO)
     assert main(["desbloquear", "ana@exemplo.com.br"]) == 0
     assert main(["desbloquear", "ninguem@exemplo.com.br"]) == 1

@@ -120,6 +120,8 @@ class Conta:
     empresas: list[str]
     codigos_restantes: int
     eventos: list[tuple[str, datetime]]
+    # A versão dos termos de uso aceita no cadastro e quando; None para conta de antes da migração 0002.
+    termos: tuple[str, datetime] | None
 
 
 @dataclass(frozen=True)
@@ -284,9 +286,9 @@ class Contas:
 
     # -- cadastro e ativação ----------------------------------------------------------------------------
 
-    def cadastrar(self, email: str, senha: str, organizacao: str, agora: datetime) -> Cadastro:
-        """Cria a pessoa (pendente) e a organização dela, com o segredo do TOTP. A conta só vale depois de
-        confirmar o primeiro código (ativar)."""
+    def cadastrar(self, email: str, senha: str, organizacao: str, termos_versao: str, agora: datetime) -> Cadastro:
+        """Cria a pessoa (pendente) e a organização dela, com o segredo do TOTP e a versão dos termos de uso
+        aceita (o contrato já conferiu que é a atual). A conta só vale depois de confirmar o primeiro código."""
         email = normalizar_email(email)
         try:
             normalizada = regras.conferir_nova(senha, email)
@@ -308,9 +310,10 @@ class Contas:
                 (organizacao_id, organizacao, _t(agora)),
             )
             c.execute(
-                "INSERT INTO usuarios (id, email, senha_hash, situacao, pendente_ate, criado_em) "
-                "VALUES (?, ?, ?, 'pendente', ?, ?)",
-                (usuario_id, email, senha_hash, _t(agora + PENDENTE), _t(agora)),
+                "INSERT INTO usuarios "
+                "(id, email, senha_hash, situacao, pendente_ate, criado_em, termos_versao, termos_aceitos_em) "
+                "VALUES (?, ?, ?, 'pendente', ?, ?, ?, ?)",
+                (usuario_id, email, senha_hash, _t(agora + PENDENTE), _t(agora), termos_versao, _t(agora)),
             )
             c.execute(
                 "INSERT INTO membros (organizacao_id, usuario_id, papel, desde) VALUES (?, ?, 'dono', ?)",
@@ -491,7 +494,9 @@ class Contas:
 
     def conta(self, sessao: SessaoAtiva) -> Conta:
         with self.banco.transacao() as c:
-            usuario = c.execute("SELECT criado_em FROM usuarios WHERE id = ?", (sessao.usuario_id,)).fetchone()
+            usuario = c.execute(
+                "SELECT criado_em, termos_versao, termos_aceitos_em FROM usuarios WHERE id = ?", (sessao.usuario_id,)
+            ).fetchone()
             org = c.execute("SELECT nome FROM organizacoes WHERE id = ?", (sessao.organizacao_id,)).fetchone()
             empresas = [
                 r["cnpj"]
@@ -518,6 +523,7 @@ class Contas:
             empresas,
             restantes,
             eventos,
+            (usuario["termos_versao"], _d(usuario["termos_aceitos_em"])) if usuario["termos_versao"] else None,
         )
 
     def empresas(self, organizacao_id: str) -> frozenset[str]:

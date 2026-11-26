@@ -31,14 +31,16 @@ Por isso entram três etapas de contas (C1 a C3) entre o 3b e o 3c. O 3c depende
 | 3a: Painel, Catálogo e explicação lateral | PR #18, ADR 0013 |
 | `GET /notas` (antes do 3b) | PR #19, revisão no ADR 0008 |
 | 3b: Notas e Regime (e o Painel sem alerta) | PR #20, ADR 0014 |
+| C1: contas no backend | PR #21, ADR 0015 |
+| B0: aceite dos termos (antes das telas da C2) | revisão no ADR 0015 |
 
 ## A ordem
 
 | # | Etapa | Entrega | Depende de |
 |---|---|---|---|
 | 1 | **3b** (feito) | Telas de Notas e de Regime | `GET /notas` (feito) |
-| 2 | **C1** | Contas no backend | 3b |
-| 3 | **C2** | Telas de entrada | C1 |
+| 2 | **C1** (feito) | Contas no backend | 3b |
+| 3 | **C2** (B0 feito) | Telas de entrada | C1 |
 | 4 | **C3** | Dados da própria empresa | C1 e C2 |
 | 5 | **3c** | Contador, seletor de empresa e chat | C1 a C3 |
 | 6 | **E6** | Hospedagem, HTTPS, testes de ponta a ponta, vídeo e pitch | todas |
@@ -167,7 +169,81 @@ O que mudou em relação a este mapa:
 
 **Cuidado:** o texto dos termos e da privacidade não é parecer jurídico. Ele precisa de revisão humana antes da publicação.
 
-**Saída:** portão da skill nas telas novas; dá para entrar, sair e voltar à demonstração.
+**Decisões do usuário (2026-11-26):**
+1. **Endereços:** a página inicial fica em `/`, e o Painel passa para `/painel`.
+2. **Quem tem conta vê a demonstração como todo mundo.** É a demonstração compartilhada, só para ver, com "Criar meu espaço" para gravar. A pessoa continua conectada, e uma faixa mostra "Voltar à minha conta".
+   - Os pedidos da demonstração saem com `credentials: 'omit'`, sem o cookie da sessão: a API responde como a quem não tem conta, e o backend não muda.
+   - Não depende de sobrar espaço (pendência do ADR 0010).
+   - Fica fora: criar um espaço sozinho a cada visita, porque ele vence em 120 min e gasta os espaços da demo pública.
+3. **QR code com a `uqr` 0.1.3**, desenhado como SVG de elementos React a partir da matriz.
+   - Lido em 2026-11-26, no pacote do npm:
+     - o `LICENSE` é MIT, "Copyright (c) Project Nayuki" e "Copyright (c) 2023 Anthony Fu";
+     - não tem dependências;
+     - o `dist` tem 84 KB;
+     - o `encode()` devolve `data: boolean[][]`.
+   - Fica fora:
+     - o `renderSVG()`, que devolve texto e pediria `dangerouslySetInnerHTML`;
+     - a `qrcode-generator` 2.0.4, porque o `package.json` diz MIT, mas o pacote não traz o arquivo de licença.
+   - **Não verificado:** o README e a data de publicação da 0.1.3.
+4. **Quem responde pelos dados: "Equipe ContaAI", sem e-mail.**
+   - A página mostra só "Equipe ContaAI": sem e-mail, sem nome e sem frase do tipo "contato a definir".
+   - **Regra do usuário: o nome e o e-mail dos integrantes nunca vazam.** Eles não entram no repositório, que é público, nem no código, nos testes, nos mocks, nos logs, nos commits, nos PRs ou na página publicada.
+   - **Sem e-mail, os direitos da LGPD são exercidos dentro do app:**
+     - ver os próprios dados no menu da conta (T6);
+     - excluir a conta (T6, art. 18 VI).
+   - **Risco a conferir antes da publicação (E6):** pelo que lembro, a LGPD pede as informações de contato do controlador (art. 9º) e a divulgação pública do contato do encarregado (art. 41 §1º). Isso não foi lido no texto da lei. Se confirmado, a política sem canal de contato fica incompleta, e o usuário decide de novo (por exemplo, um e-mail só do projeto, configurado no servidor e fora do git).
+5. **Aceite dos termos com registro:** uma caixa obrigatória no cadastro, com a versão aceita e a data gravadas.
+   - A política de privacidade entra como link, para ler, e não como consentimento.
+   - **A conferir:** a base legal na LGPD (provavelmente o art. 7º V, execução de contrato), que ainda não foi lida.
+6. **As notas de exemplo** (pendência do 3b) entram na C2.
+
+**Achados do mapeamento:**
+1. **Com o cookie da sessão e sem espaço, a API abre o banco da organização** (`abrir_estado`), que fica vazio até a C3. As telas pedem o CNPJ fixo da Serra Azul (`CNPJ_DEMONSTRACAO`) e dariam 404. Por isso, a conta sem empresa tem um estado vazio próprio (decisão 2 para a demonstração).
+2. **Uma sessão vencida responde 401 em qualquer rota.** O middleware só trata o 401 de um pedido com o token da demo. O cookie é `HttpOnly`, então a tela só sabe da sessão pelo `GET /conta`.
+3. **No modo mock, as rotas de conta respondem 501.** Lá, Entrar e Criar conta não aparecem.
+4. **A CSP fecha o caminho do QR pronto:**
+   - `img-src 'self'`, sem `data:`;
+   - Trusted Types `'none'`;
+   - `dangerouslySetInnerHTML` proibido.
+
+   Também fica fora um serviço externo de QR: ele receberia o segredo do TOTP.
+5. **O segredo e os códigos de recuperação** ficam só na memória do componente: nada vai ao `localStorage`, ao endereço ou ao log. Tudo é apagado quando o passo acaba.
+6. **O `ChaveRota` só aceita GET e POST,** mas sair usa DELETE (`/sessoes/atual` e `/sessoes`).
+7. **Hoje `/` é o Painel** (decisão 1).
+
+**Segmentos:** um PR de backend (B0) e, depois, um PR de tela.
+
+| # | Segmento | O que entra |
+|---|---|---|
+| B0 | Aceite dos termos (backend) | Migração 0002 do `contas.db`, com a versão dos termos e a data do aceite. Um campo novo no `POST /contas`, que recusa a falta do aceite e a versão errada. O `GET /conta` mostra a versão aceita. Testes, contrato e OpenAPI regerados, revisão no ADR 0015 |
+| T1 | Rotas | Rotas públicas (`/`, `/entrar`, `/criar-conta`, `/termos` e `/privacidade`) separadas das do app (`/painel` e as outras). A barra mostra só as do app. O `ChaveRota` passa a aceitar DELETE |
+| T2 | Estado da conta | `SessaoConta`: carregando, anônimo, conectado ou encerrada, a partir do `GET /conta` ao abrir, só no modo real. O 401 vira "sessão encerrada, entre de novo", e os dados recarregam. A origem dos dados e o `useGravacao` passam a considerar a conta |
+| T3 | Página inicial | O que é o ContaAI e a frase de simulação. "Explorar a demonstração" é o primeiro botão e não pede cadastro (decisão 1 do plano). Depois vêm "Criar conta" e "Entrar" |
+| T4 | Criar conta | Três passos: (1) e-mail, senha (mínimo de 8, sem regra de composição), organização e o aceite; (2) QR, segredo para digitar à mão e o primeiro código, com a contagem dos 5 min; (3) os 10 códigos de recuperação, mostrados uma vez, com copiar, baixar e "guardei". O 409 do e-mail repetido usa a frase da API |
+| T5 | Entrar | Duas etapas: e-mail e senha, depois o código do aplicativo ou um código de recuperação. O 429 mostra a espera do `Retry-After`. O passe vencido volta ao começo. O código de recuperação novo aparece uma vez |
+| T6 | Menu da conta | E-mail, organização, códigos restantes (com aviso quando estiverem acabando) e eventos ("código de recuperação usado"). Sair, sair de todos os aparelhos e excluir a conta com a senha (o 409 pede passar a posse antes) |
+| T7 | Barra e faixa | `StatusSessao` refeito para a demonstração compartilhada, o espaço e a conta. A faixa da demonstração leva a Criar conta ou volta à conta. A conta sem empresa tem um estado vazio que diz que o cadastro da empresa entra na C3 |
+| T8 | Termos e privacidade | Rascunho marcado "sem revisão jurídica". Cobre: o e-mail sem confirmação (ADR 0015), os dados fictícios da demonstração, o cookie de sessão, o segundo fator, a exclusão da conta (LGPD, art. 18 VI) e quem responde pelos dados (decisão 4) |
+| T9 | Notas de exemplo | Baixar os três XML fictícios de `data/demo/notas/` na tela de Notas, com uma fonte só e sem cópia à mão |
+| T10 | Verificação e documentação | Testes com fetch falso e TOTP calculado no teste. Portão `inspect.mjs --app` em 1440, 768 e 390 px. Chrome com o build: CSP, Trusted Types e o fluxo inteiro pelo DevTools Protocol. Teclado, leitor de tela e `autocomplete` (`username`, `new-password`, `current-password` e `one-time-code`). ADR 0016, este plano, o README e a varredura de inconsistências |
+
+**A conferir durante o código:**
+- o README e a data da `uqr` 0.1.3;
+- se baixar os códigos como `.txt` por `blob:` passa pela CSP atual, no Chrome;
+- se os gerenciadores de senha funcionam com `form-action 'none'` (o envio é por `fetch`);
+- se o `credentials: 'omit'` da demonstração passa pela conferência de CSRF (sem cookie, valem as regras de antes);
+- a LGPD, art. 7º, 9º e 41, e o guia de cookies da ANPD, ainda não lidos, para os termos e a privacidade.
+
+**Custo:** nenhum serviço pago e nenhuma chamada externa. A única dependência nova é a `uqr` (MIT).
+
+**Saída:** portão da skill nas telas novas; dá para criar a conta, entrar, sair e voltar à demonstração.
+
+**Feito: B0 (2026-11-26, revisão no [ADR 0015](adr/0015-contas.md)):**
+- o `POST /contas` exige `termosAceitos` com a versão atual (`2026-11-26`). Sem ele, ou com outra versão, responde 422 com a frase em português, e nada é criado;
+- a versão tem uma fonte só (`app/contas/termos.py`), e o tipo gerado da tela só aceita ela;
+- a migração 0002 grava a versão e a data, conferida também num `contas.db` de antes dela;
+- o `GET /conta` mostra o aceite;
+- 489 testes do backend e 252 da tela passam, com 97% de cobertura.
 
 ## C3: dados da própria empresa
 

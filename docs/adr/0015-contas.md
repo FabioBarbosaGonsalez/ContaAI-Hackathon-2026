@@ -179,3 +179,22 @@ As rotas de conta respondem 501 no modo mock, como as outras que mudam o estado.
 - **Os termos do NCSC** sobre a lista de senhas não foram verificados (o endereço do NCSC respondeu 404). A licença MIT do SecLists foi lida.
 - **O segredo do TOTP fica em texto no `contas.db`.** O NIST pede controle de acesso, e não cifra. Cifrar exigiria uma chave fora do banco e uma dependência, porque a biblioteca padrão não tem AES. Revisar no deploy (E6), com o volume e as permissões do container.
 - **Atrás de proxy, o limite por IP vira global** (já registrado no ADR 0006). O contador por conta não depende do IP.
+
+## Revisão de 2026-11-26: o aceite dos termos (B0, antes da C2)
+
+- Código: `backend/app/contas/termos.py`, `backend/app/contas/migracoes/0002_termos.sql`, `CadastroRequisicao.termosAceitos` e `ContaResposta.termos` em `backend/app/contrato.py`.
+- Decisão do usuário (plano v2.1, C2, decisão 5): uma caixa obrigatória no cadastro, com a versão aceita e a data gravadas.
+
+**O que mudou:**
+- **O `POST /contas` exige `termosAceitos`,** com a versão atual dos termos de uso (`VERSAO_TERMOS`, hoje `2026-11-26`, a data em que o texto passa a valer).
+  - Sem o campo: 422, "Campo obrigatório.".
+  - Com outra versão (uma aba aberta antes de os termos mudarem): 422, "Os termos de uso mudaram. Recarregue a página, leia a versão atual e aceite de novo.".
+  - Nada é criado quando o aceite falta: o e-mail segue livre.
+- **Uma fonte só para a versão.** Ela entra no OpenAPI como o único valor do `enum`, e o tipo gerado da tela fica `termosAceitos: "2026-11-26"`: a tela só compila mandando a versão daqui. O validador do contrato dá a frase em português (ADR 0009).
+- **A migração 0002 do `contas.db`** acrescenta `termos_versao` e `termos_aceitos_em` em `usuarios`, um `ADD COLUMN` por comando, portável para o PostgreSQL. Quem se cadastrou antes dela fica com as duas vazias. Conferido num `contas.db` só com a 0001: a 0002 entra, e a conta que já existia fica sem aceite.
+- **O `GET /conta` mostra `termos`** (versão e data), ou `null` para conta de antes da migração.
+- **A política de privacidade não tem caixa.** Ela é informação ao titular, e não consentimento: a caixa vale só para os termos de uso.
+
+**Em aberto:**
+- **Pedir o aceite de novo quando os termos mudarem:** fica para a primeira mudança. A conta guarda a versão aceita, então dá para saber quem aceitou qual.
+- **A base legal na LGPD** (provavelmente o art. 7º V, execução de contrato) não foi lida no texto da lei.

@@ -47,6 +47,7 @@ from app.contrato import (
     OrganizacaoDaConta,
     SegundaEtapaRequisicao,
     SegundaEtapaResposta,
+    TermosDaConta,
 )
 from app.nfe.importacao import agora_utc
 
@@ -95,6 +96,7 @@ def _conta(c: ContaServico, expira: datetime) -> ContaResposta:
         email=c.email,
         criadaEm=c.criada_em,
         organizacao=OrganizacaoDaConta(id=c.organizacao_id, nome=c.organizacao_nome, papel=c.papel),
+        termos=TermosDaConta(versao=c.termos[0], aceitosEm=c.termos[1]) if c.termos else None,
         empresas=c.empresas,
         codigosRecuperacaoRestantes=c.codigos_restantes,
         eventos=[EventoSeguranca(tipo=t, em=em) for t, em in c.eventos],
@@ -136,7 +138,9 @@ async def cadastrar(cfg: Cfg, req: CadastroRequisicao, response: Response) -> Ca
     so_no_modo_real(cfg)
     agora = agora_utc()
     try:
-        feito = await asyncio.to_thread(contas(cfg).cadastrar, req.email, req.senha, req.organizacao.strip(), agora)
+        feito = await asyncio.to_thread(
+            contas(cfg).cadastrar, req.email, req.senha, req.organizacao.strip(), req.termosAceitos, agora
+        )
     except CadastroRecusado as e:
         raise _recusa(e) from None
     _gravar_cookie(response, COOKIE_PASSE, feito.passe, feito.expira_em, agora)

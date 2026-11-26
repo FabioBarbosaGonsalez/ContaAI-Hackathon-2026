@@ -4085,6 +4085,14 @@
             "minLength": 1,
             "title": "Organizacao",
             "description": "Nome da organização (escritório ou empresa)."
+          },
+          "termosAceitos": {
+            "type": "string",
+            "enum": [
+              "2026-11-26"
+            ],
+            "title": "Termosaceitos",
+            "description": "A versão dos termos de uso aceita ao marcar a caixa do cadastro (a atual, e só ela)."
           }
         },
         "additionalProperties": false,
@@ -4092,7 +4100,8 @@
         "required": [
           "email",
           "senha",
-          "organizacao"
+          "organizacao",
+          "termosAceitos"
         ],
         "title": "CadastroRequisicao"
       },
@@ -4680,6 +4689,17 @@
           "organizacao": {
             "$ref": "#/components/schemas/OrganizacaoDaConta"
           },
+          "termos": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TermosDaConta"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "A versão dos termos de uso aceita no cadastro e quando. Vazio para conta de antes do aceite."
+          },
           "empresas": {
             "items": {
               "type": "string"
@@ -4713,6 +4733,7 @@
           "email",
           "criadaEm",
           "organizacao",
+          "termos",
           "empresas",
           "codigosRecuperacaoRestantes",
           "eventos",
@@ -7648,6 +7669,26 @@
           "conta"
         ],
         "title": "SegundaEtapaResposta"
+      },
+      "TermosDaConta": {
+        "properties": {
+          "versao": {
+            "type": "string",
+            "title": "Versao"
+          },
+          "aceitosEm": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Aceitosem"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "versao",
+          "aceitosEm"
+        ],
+        "title": "TermosDaConta"
       },
       "TipoProblema": {
         "properties": {
