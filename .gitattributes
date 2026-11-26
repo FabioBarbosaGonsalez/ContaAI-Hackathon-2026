@@ -7,3 +7,6 @@
 *.gz  binary
 *.bat text eol=crlf
 *.cmd text eol=crlf
+
+# Tipos gerados do contrato (npm run contrato): o GitHub recolhe o diff.
+frontend/src/api/esquema.gen.ts linguist-generated=true

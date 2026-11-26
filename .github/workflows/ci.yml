@@ -85,22 +85,45 @@ jobs:
           "$RUNNER_TEMP/gitleaks" git . --redact --no-banner --verbose
 
   frontend:
-    name: Frontend (lint, testes e build)
+    name: Frontend (lint, tipos, testes, build e dependências)
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
     steps:
       - uses: actions/checkout@v7
+      # Node 24 (LTS). O frontend/package.json exige ^24.15.0 (engines, com engine-strict no .npmrc).
       - uses: actions/setup-node@v7
-        if: hashFiles('frontend/package.json') != ''
         with:
           node-version: "24"
-      - name: Instalar, lint, testes e build
-        if: hashFiles('frontend/package.json') != ''
-        working-directory: frontend
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      # npm ci instala exatamente o package-lock.json (falha se ele divergir do package.json)
+      # e, pelo frontend/.npmrc, sem rodar scripts de instalação de terceiros.
+      - name: Instalar as dependências travadas
+        run: npm ci
+      # npm audit confere o lock no banco de vulnerabilidades do registro público do npm (sem conta
+      # nem chave); falha em qualquer severidade. audit signatures confere a assinatura do registro
+      # de cada pacote instalado.
+      - name: Dependências (npm audit)
         run: |
-          npm ci
-          npm run lint
-          npm test --if-present
-          npm run build
+          npm audit --audit-level=low
+          npm audit signatures
+      # Os tipos da tela são gerados de docs/contrato/openapi.json; falha se ficarem para trás do contrato.
+      - name: Contrato (tipos gerados em dia)
+        run: npm run contrato:checar
+      - name: Lint (ESLint)
+        run: npm run lint
+      - name: Tipos (tsc)
+        run: npm run typecheck
+      - name: Testes (Vitest)
+        run: npm test
+      - name: Build (Vite)
+        run: npx vite build
+      # Segunda barreira, depois do lint: busca no código e confere o build publicado (CSP no <meta>, sem
+      # script ou estilo embutido, sem mapa de código, sem endereço de terceiro). docs/seguranca.md.
+      - name: Segurança da tela
+        run: npm run seguranca
 
   compose:
     name: Docker Compose (validação)

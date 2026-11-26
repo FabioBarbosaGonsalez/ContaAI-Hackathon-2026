@@ -20,8 +20,15 @@
 uv run --project backend ruff check . && uv run --project backend ruff format --check .   # lint (na raiz)
 cd backend && uv run mypy                                     # tipos
 cd backend && uv run coverage run -m pytest && uv run coverage report   # testes do CI + cobertura (mínimo 90%)
-cd frontend && npm run lint && npm test    # quando o frontend existir
+cd frontend && npm ci && npm run lint && npm run typecheck && npm test && npm run build && npm run seguranca   # frontend
 ```
+
+O frontend usa Node 24 (`^24.15.0`). O `frontend/.npmrc` faz o npm:
+- instalar só versões publicadas há mais de 7 dias;
+- gravar a versão exata;
+- não rodar scripts de instalação de terceiros.
+
+Para adicionar um pacote, rode `npm install <pacote>` dentro de `frontend/` e versione o `package-lock.json` junto. A tela de desenvolvimento roda em http://127.0.0.1:3000 (`npm run dev`), a origem liberada no CORS do backend.
 
 Se mexeu na integração com os motores, rode também os testes de referência com os motores de pé:
 
@@ -30,13 +37,13 @@ docker compose up -d
 cd backend && uv run pytest -m golden
 ```
 
-No Linux e no macOS, `make lint`, `make tipos`, `make test`, `make cobertura`, `make auditoria` e `make golden` fazem o mesmo. O CI também roda o pip-audit (dependências) e o gitleaks (segredos no histórico); ver [docs/seguranca.md](docs/seguranca.md). No Windows sem `make`, use os comandos acima.
+No Linux e no macOS, `make lint`, `make tipos`, `make test`, `make cobertura`, `make auditoria`, `make tela-checar` e `make golden` fazem o mesmo. O CI também roda o pip-audit (dependências) e o gitleaks (segredos no histórico); ver [docs/seguranca.md](docs/seguranca.md). No Windows sem `make`, use os comandos acima.
 
 No GitHub, o workflow **Golden** roda os mesmos testes de referência: sozinho nos PRs que mexem em `motores/`, `backend/app/motores/`, `backend/app/precificacao/`, `backend/app/cenarios/`, `backend/scripts/`, `backend/tests/golden/` ou `data/demo/`, e à mão em Actions → Golden → Run workflow. Ele não é exigido pela proteção da `main`, porque o build dos motores leva alguns minutos; confira o resultado antes de aprovar.
 
 ## Mudou o contrato ou os dados de demonstração?
 
-- **Contrato** (`backend/app/contrato.py`): reexporte com `cd backend && uv run python scripts/exportar_openapi.py`. O teste `test_openapi_exportado_esta_atualizado` falha se o arquivo `docs/contrato/openapi.json` ficar para trás. Registre a mudança no [ADR 0003](docs/adr/0003-contrato-da-api.md).
+- **Contrato** (`backend/app/contrato.py`): reexporte com `cd backend && uv run python scripts/exportar_openapi.py`. O teste `test_openapi_exportado_esta_atualizado` falha se o arquivo `docs/contrato/openapi.json` ficar para trás. Depois, regere os tipos da tela com `cd frontend && npm run contrato`; o CI roda `npm run contrato:checar` e falha se `frontend/src/api/esquema.gen.ts` ficar para trás. Registre a mudança no [ADR 0003](docs/adr/0003-contrato-da-api.md).
 - **Dados de demonstração** (`data/demo/`): com os motores de pé, regere as notas (`scripts/gerar_notas_demo.py`) e os mocks (`scripts/gerar_mocks.py`), e revise a diferença. Os testes `golden` exigem que notas e mocks sejam reproduzíveis a partir dos motores: nenhum número dos mocks é digitado à mão.
 
 ## Trocar a versão de um motor

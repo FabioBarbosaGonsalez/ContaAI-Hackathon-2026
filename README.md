@@ -12,6 +12,7 @@ O dono de uma ME do Simples conversa com o copiloto sobre o que vende. O ContaAI
 
 - Docker com Compose (Docker Desktop no Windows e no macOS, Docker Engine no Linux). Não é preciso instalar Java nem Maven: os motores são compilados dentro dos containers.
 - [uv](https://docs.astral.sh/uv/) para o backend; ele baixa o Python 3.12 se faltar. Também funciona com `pip`.
+- [Node.js](https://nodejs.org/) 24 (a partir da 24.15) para a tela.
 
 ### Motores oficiais
 
@@ -66,7 +67,21 @@ curl -H "X-ContaAI-Espaco: $ID" -F "arquivo=@../data/demo/notas/nfe-compra-2.xml
 
 Com `CONTAAI_TOKEN_DEMO` definido, as rotas que mudam a demonstração compartilhada (importar, aplicar e restaurar sem o header do espaço) e o `/chat` pedem o header `X-ContaAI-Token`. Uma nota cujo destinatário não é uma das empresas fictícias é recusada antes de gravar qualquer coisa: dado real não entra no banco.
 
-`GET /cenarios/presets` (valores de 2027 com fonte) e `GET /saude` (estado e versões dos motores) são reais nos dois modos. O CORS libera só `http://localhost:3000`; para outra origem, use `CONTAAI_CORS_ORIGENS='["http://..."]'`.
+`GET /cenarios/presets` (valores de 2027 com fonte) e `GET /saude` (estado e versões dos motores) são reais nos dois modos. O CORS libera só `http://localhost:3000` e `http://127.0.0.1:3000`; para outra origem, use `CONTAAI_CORS_ORIGENS='["http://..."]'`.
+
+### Tela
+
+```bash
+cd frontend
+npm ci        # dependências travadas no package-lock.json, sem scripts de instalação
+npm run dev   # http://127.0.0.1:3000, falando com a API em http://127.0.0.1:8000
+```
+
+Com a API em outro endereço: `VITE_CONTAAI_API=http://127.0.0.1:8010 npm run dev`. Toda variável `VITE_*` vai para o navegador; nunca ponha segredo nela.
+
+A barra mostra o modo da API. No modo real, "Criar meu espaço" cria um espaço de avaliação, e o id fica só no navegador. O rodapé traz o aviso legal e as versões dos motores.
+
+A fundação está pronta: cliente tipado do contrato, sessão, tokens do estilo, shell e segurança ([ADR 0012](docs/adr/0012-fundacao-do-frontend.md)). As telas entram no PR 3 da E5. Para ver o build com a CSP e os cabeçalhos de segurança: `npx vite build && npx vite preview`.
 
 **Agente.** O padrão é o provedor `roteiro`: responde às frases do roteiro da demo sem IA, sem chave e sem custo. Para ligar uma IA, escreva o adaptador em `backend/app/agente/provedores/` e configure no `backend/.env` (fora do git) `CONTAAI_LLM_PROVEDOR`, `CONTAAI_LLM_MODELO` e `CONTAAI_LLM_CHAVE` ([ADR 0006](docs/adr/0006-agente.md)). Na demo pública, defina `CONTAAI_TOKEN_DEMO`: o `/chat` e as rotas que mudam o estado passam a exigir o header `X-ContaAI-Token`. Há limite de requisições por IP (`CONTAAI_LIMITE_CHAT_POR_MINUTO`, `CONTAAI_LIMITE_GERAL_POR_MINUTO`, `CONTAAI_LIMITE_BUSCA_POR_MINUTO`).
 
@@ -80,11 +95,15 @@ uv run mypy                # tipos
 uv run coverage run -m pytest && uv run coverage report   # cobertura (o CI exige 90% no app/)
 uv run pytest -m golden    # testes de referência contra os motores em execução
 uv run pytest -m llm       # as 20 perguntas com o provedor de IA do .env (GASTA crédito)
+
+cd frontend
+npm run lint && npm run typecheck && npm test   # lint, tipos e testes da tela
+npx vite build && npm run seguranca             # build e checagem de segurança (CSP, script embutido, terceiros)
 ```
 
 No GitHub, o workflow **Golden** sobe os motores e roda os testes de referência: à mão (Actions → Golden → Run workflow) e sozinho nos PRs que mexem nos motores, no cliente, nos geradores ou nos dados de demonstração.
 
-No Linux e no macOS, o [Makefile](Makefile) tem atalhos para os mesmos comandos: `make motores`, `make api`, `make real`, `make sementes`, `make test`, `make golden`, `make llm`, `make indice` e `make lint`.
+No Linux e no macOS, o [Makefile](Makefile) tem atalhos para os mesmos comandos: `make motores`, `make api`, `make real`, `make sementes`, `make test`, `make golden`, `make llm`, `make indice`, `make lint`, `make tela` e `make tela-checar`.
 
 ## Arquitetura (resumo)
 
@@ -94,7 +113,7 @@ No Linux e no macOS, o [Makefile](Makefile) tem atalhos para os mesmos comandos:
 | Motor Simples Nacional 1.0.2 (Receita, Java 25) | Lado "Simples tradicional" da decisão de regime: CBS e IBS por item a partir das alíquotas efetivas informadas ([ADR 0001](docs/adr/0001-lado-tradicional-do-simples.md)) |
 | Backend (FastAPI) | Orquestra, preço-alvo, comparação de regimes, leitura de NF-e e alertas |
 | Agente (tool use, provedor de IA trocável) | Só chama as ferramentas do backend; não faz conta. Toda resposta passa pelo verificador de números |
-| Frontend (Vite + React, páginas estáticas; E5) | Telas construídas com a skill design-taste-frontend. Troca do Next.js do plano aprovada pelo usuário: CSP estrita sem servidor Node ([ADR 0011](docs/adr/0011-contrato-da-tela-e-seguranca.md)) |
+| Frontend (Vite + React, páginas estáticas; E5) | Telas construídas com a skill design-taste-frontend. Troca do Next.js do plano aprovada pelo usuário: CSP estrita sem servidor Node ([ADR 0011](docs/adr/0011-contrato-da-tela-e-seguranca.md)). Fundação: cliente tipado do contrato, espaço de avaliação, tokens do estilo, shell, CSP com Trusted Types ([ADR 0012](docs/adr/0012-fundacao-do-frontend.md)) |
 
 ## Princípios
 
@@ -124,6 +143,7 @@ No Linux e no macOS, o [Makefile](Makefile) tem atalhos para os mesmos comandos:
 - [ADR 0009](docs/adr/0009-camada-http-e-erros.md): camada HTTP em routers, erros no formato da RFC 9457 e ordem dos middlewares
 - [ADR 0010](docs/adr/0010-espacos-de-avaliacao.md): espaço de avaliação por visitante (um SQLite por espaço, cópia do banco-modelo, validade e teto)
 - [ADR 0011](docs/adr/0011-contrato-da-tela-e-seguranca.md): contrato para a tela da E5 (cenário, clientes B2B, lote, preço e classificação pela tela), proteções do navegador (XSS, CSRF, DNS rebinding) e testes de segurança
+- [ADR 0012](docs/adr/0012-fundacao-do-frontend.md): fundação do frontend (Vite + React, cliente tipado, espaço e token na tela, tokens do estilo, shell, CSP com Trusted Types e testes de ataque no navegador)
 - [Segurança](docs/seguranca.md): o que o projeto protege, como, e o que está em aberto; para relatar uma vulnerabilidade, [SECURITY.md](SECURITY.md)
 - [Contrato OpenAPI](docs/contrato/openapi.json): o que frontend e agente consomem
 - [Dados de demonstração](data/demo/README.md): distribuidora, carteira do contador, cliente B2B, notas de compra fictícias e sementes do estado
@@ -143,7 +163,9 @@ Etapa 3 (diferencial B2B) concluída no backend: `POST /regime/comparar` real, c
 
 Etapa 4 (recorrência) concluída no backend: leitor seguro da NF-e, casamento com o catálogo, histórico de custo em SQLite com migrações versionadas, alerta de margem com o preço-alvo (24,12% → 11,19%, R$ 3,97, em menos de 5 s), aplicar preço, catálogo com o estado atual, painel do contador com três CNPJs fictícios (D1) e a ferramenta `listar_alertas` do agente. As telas (importar nota, painel e contador) ficam para a Etapa 5, como na E3 (ADR 0008).
 
-Antes da Etapa 5: espaço de avaliação por visitante (ADR 0010) e o contrato para a tela, com as proteções do navegador e os testes de segurança (ADR 0011). Próxima: Etapa 5, interface (fundação do frontend e telas).
+Antes da Etapa 5: espaço de avaliação por visitante (ADR 0010) e o contrato para a tela, com as proteções do navegador e os testes de segurança (ADR 0011).
+
+Etapa 5 (interface) em andamento: a fundação do frontend está pronta (ADR 0012): projeto e CI, cliente tipado do contrato, espaço de avaliação e modo, tokens e fontes, shell e segurança da tela. Próximo: as telas, com o portão da skill (PR 3).
 
 ## Créditos e licenças
 

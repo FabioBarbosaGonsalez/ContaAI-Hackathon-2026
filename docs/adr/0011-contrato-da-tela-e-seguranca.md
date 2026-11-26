@@ -152,7 +152,7 @@ Ao todo: 389 testes do CI (antes, 317), 52 golden (antes, 50), cobertura de 96% 
   - o domínio público em `CONTAAI_HOSTS_PERMITIDOS` e em `CONTAAI_CORS_ORIGENS`;
   - `CONTAAI_DOCS_PUBLICA=false`;
   - HSTS e a API em `/api` no proxy.
-- **Na fundação do frontend:**
-  - a CSP da tela e o Trusted Types: a compatibilidade com o React fica a conferir no navegador;
-  - as regras de exibição de texto em `docs/seguranca.md`, com teste.
+- **Na fundação do frontend** (resolvido no [ADR 0012](0012-fundacao-do-frontend.md)):
+  - a CSP da tela e o Trusted Types: conferidos no Chrome, funcionam com o React;
+  - as regras de exibição de texto em `docs/seguranca.md`, com lint, teste e checagem no CI.
 - O erro 500 segue sem os cabeçalhos de segurança ([ADR 0009](0009-camada-http-e-erros.md)). Na bateria nova, nenhuma rota chegou a 500.
