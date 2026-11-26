@@ -11,7 +11,7 @@ Para relatar uma vulnerabilidade, veja o [SECURITY.md](../SECURITY.md).
 | Motores oficiais da Receita (RR e SN) | Não têm autenticação (`anyRequest().permitAll()` no código oficial). Quem alcança o motor usa a CPU dele à vontade |
 | Crédito do provedor de IA | Cada mensagem do chat custa dinheiro quando uma IA real é ligada |
 | Estado da demonstração (SQLite) | Notas, custos, alertas e preços aplicados das empresas fictícias, compartilhados por quem usa a demo |
-| Contas (`contas.db`, [ADR 0015](adr/0015-contas.md)) | E-mail, hash da senha, segredo do segundo fator e sessões de quem tem conta: o primeiro dado pessoal do projeto |
+| Contas (`contas.db`, [ADR 0015](adr/0015-contas.md)) | E-mail, hash da senha, segredo do segundo fator, sessões e o aceite dos termos (versão e data) de quem tem conta: o primeiro dado pessoal do projeto |
 | Estado de cada organização (`organizacoes/<id>.db`) | Notas, catálogo e preços de uma empresa real, a partir da C3. Não pode chegar a outra organização |
 | Chave do provedor de IA e token da demo | Segredos do servidor |
 | Confiança no número mostrado | O produto mostra tributo e margem: um número inventado ou adulterado é o pior defeito possível |

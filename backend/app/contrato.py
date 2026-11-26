@@ -21,7 +21,9 @@ from decimal import Decimal
 from enum import StrEnum
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
+
+from app.contas.termos import VERSAO_TERMOS, conferir_versao
 
 AVISO_LEGAL = "Estimativa baseada nas calculadoras oficiais. Não é parecer fiscal e não substitui o contador."
 
@@ -1039,6 +1041,16 @@ Email = Annotated[str, Field(pattern=PADRAO_EMAIL, max_length=254, description="
 # O teto do contrato só evita corpo absurdo; a regra (8 a 128 caracteres, lista de senhas comuns) fica em
 # app/contas/senha.py e responde com a frase dela.
 SenhaEntrada = Annotated[str, Field(min_length=1, max_length=256)]
+# A versão dos termos que a pessoa aceitou ao marcar a caixa do cadastro. O enum leva a versão ao tipo gerado da
+# tela; o validador dá a frase em português para uma aba aberta com a versão antiga.
+TermosAceitos = Annotated[
+    str,
+    AfterValidator(conferir_versao),
+    Field(
+        json_schema_extra={"enum": [VERSAO_TERMOS]},
+        description="A versão dos termos de uso aceita ao marcar a caixa do cadastro (a atual, e só ela).",
+    ),
+]
 
 
 class CadastroRequisicao(_Modelo):
@@ -1048,6 +1060,7 @@ class CadastroRequisicao(_Modelo):
         "e-mail e o nome do produto são recusados."
     )
     organizacao: str = Field(min_length=1, max_length=120, description="Nome da organização (escritório ou empresa).")
+    termosAceitos: TermosAceitos
 
 
 class CadastroResposta(_Modelo):
@@ -1100,10 +1113,18 @@ class EventoSeguranca(_Modelo):
     em: datetime
 
 
+class TermosDaConta(_Modelo):
+    versao: str
+    aceitosEm: datetime
+
+
 class ContaResposta(_Modelo):
     email: str
     criadaEm: datetime
     organizacao: OrganizacaoDaConta
+    termos: TermosDaConta | None = Field(
+        description="A versão dos termos de uso aceita no cadastro e quando. Vazio para conta de antes do aceite."
+    )
     empresas: list[str] = Field(description="CNPJs que a organização acessa (a C3 cadastra a empresa própria).")
     codigosRecuperacaoRestantes: int
     eventos: list[EventoSeguranca] = Field(description="Os mais recentes primeiro (ex.: código de recuperação usado).")
