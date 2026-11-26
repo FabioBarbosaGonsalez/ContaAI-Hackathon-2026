@@ -288,13 +288,14 @@ def _premissas_da_importacao(reg: EmpresaRegistro, nota: NotaLida, pelo_motor: l
     return lista
 
 
+DESTINATARIO_DESCONHECIDO = "O destinatário da nota não é uma empresa cadastrada no ContaAI. Nada foi gravado."
+
+
 def _ler(repo: Repositorio, nota: NotaLida, sha: str) -> _Leitura | NfeImportarResposta:
     with repo.leitura() as s:
         reg = s.empresa(nota.destinatario.cnpj)
         if reg is None:
-            raise NotaRecusada(
-                "O destinatário da nota não é uma empresa cadastrada no ContaAI. Nada foi gravado.", status=422
-            )
+            raise NotaRecusada(DESTINATARIO_DESCONHECIDO, status=422)
         existente = s.nota(nota.destinatario.cnpj, nota.emitente.cnpj, nota.serie, nota.numero)
         if existente is not None:
             return _recibo_existente(existente.sha256, existente.recibo_json, sha)
@@ -313,9 +314,17 @@ def _recibo_existente(sha_gravado: str, recibo_json: str, sha: str) -> NfeImport
 
 
 async def importar_nota(
-    conteudo: bytes, repo: Repositorio, motores: ClienteMotores, relogio: Relogio = agora_utc
+    conteudo: bytes,
+    repo: Repositorio,
+    motores: ClienteMotores,
+    relogio: Relogio = agora_utc,
+    cnpjs: frozenset[str] | None = None,
 ) -> NfeImportarResposta:
+    """Com `cnpjs`, só entra a nota de uma empresa desse conjunto; as outras recebem a mesma recusa de um
+    destinatário que não existe (ADR 0015)."""
     nota = ler_nfe(conteudo)
+    if cnpjs is not None and nota.destinatario.cnpj not in cnpjs:
+        raise NotaRecusada(DESTINATARIO_DESCONHECIDO, status=422)
     sha = hashlib.sha256(conteudo).hexdigest()
     for _ in range(TENTATIVAS):
         try:

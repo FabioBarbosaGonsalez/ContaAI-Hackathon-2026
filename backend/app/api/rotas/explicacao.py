@@ -9,7 +9,16 @@ from fastapi import APIRouter, HTTPException, Path, Query, Response
 
 from app import mocks
 from app.api import respostas
-from app.api.dependencias import Cfg, Dados, EspacoId, Motores, abrir_estado, marcar_mock, so_no_modo_real
+from app.api.dependencias import (
+    Cfg,
+    Dados,
+    EspacoId,
+    Motores,
+    SessaoCookie,
+    abrir_estado,
+    marcar_mock,
+    so_no_modo_real,
+)
 from app.config import Configuracao
 from app.contrato import PADRAO_ID_ITEM, ErroDescricao, ExplicarRequisicao, ExplicarResposta, Regime
 from app.dados_demo import carregar_distribuidora
@@ -23,12 +32,14 @@ NAO_ENCONTRADO: respostas.Respostas = {404: {"description": "Item ou código nã
 
 
 def requisicao_do_estado(
-    cfg: Configuracao, espaco: str | None, cnpj: str | None, item_id: str, regime: Regime
+    cfg: Configuracao, espaco: str | None, cnpj: str | None, item_id: str, regime: Regime, sessao: str | None = None
 ) -> ExplicarRequisicao:
     """O item do catálogo da empresa como está no estado (preço atual, classificação corrigida), com o cenário
-    dela e no lote de referência (ADR 0011). Sem `cnpj`, vale a distribuidora da demonstração."""
-    estado = abrir_estado(cfg, espaco)
+    dela e no lote de referência (ADR 0011). Sem `cnpj`, vale a distribuidora da demonstração. Só as empresas
+    que quem chama alcança (ADR 0015)."""
+    estado = abrir_estado(cfg, espaco, sessao)
     alvo = cnpj or carregar_distribuidora(cfg.pasta_demo).empresa.cnpj
+    estado.exigir_empresa(alvo)
     achado = consultas.item_da_empresa(estado.repositorio, alvo, item_id)
     return requisicao_explicar(achado.empresa.empresa, achado.empresa.cenario, achado.item, achado.preco_atual, regime)
 
@@ -49,11 +60,12 @@ async def explicar(
         str | None, Query(pattern=r"^\d{14}$", description="Empresa do item. Sem ele, a distribuidora da demo.")
     ] = None,
     espaco: EspacoId = None,
+    sessao: SessaoCookie = None,
 ) -> ExplicarResposta:
     """Um item do catálogo da empresa, como está no estado: preço atual, classificação atual e o lote de
     referência (o mesmo cálculo da linha do catálogo). Para um item fora do catálogo, POST /explicar."""
     if cfg.modo != "mock":
-        req = await asyncio.to_thread(requisicao_do_estado, cfg, espaco, cnpj, item_id, regime)
+        req = await asyncio.to_thread(requisicao_do_estado, cfg, espaco, cnpj, item_id, regime, sessao)
         return await explicar_item(req, motores, da)
     marcar_mock(response)
     try:

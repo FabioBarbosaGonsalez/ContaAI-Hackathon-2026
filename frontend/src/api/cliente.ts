@@ -1,7 +1,8 @@
 // Cliente tipado da API. Os tipos são gerados de docs/contrato/openapi.json (npm run contrato).
 //
 // Toda requisição:
-// - sai sem cookies nem credenciais (o CORS do backend não aceita credenciais);
+// - leva cookies só na mesma origem (`credentials: 'same-origin'`): a sessão da conta é um cookie HttpOnly que
+//   o JavaScript não lê, e a API fica em /api, no mesmo endereço (ADR 0015). Para outra origem, nada vai;
 // - sem Referer e sem cache;
 // - recusa redirecionamento, para nunca seguir para outro endereço;
 // - tem tempo limite;
@@ -65,7 +66,7 @@ export function criarCliente(opcoes: OpcoesCliente = {}): ClienteApi {
         }),
       ),
     headers: { Accept: 'application/json, application/problem+json' },
-    credentials: 'omit',
+    credentials: 'same-origin',
     mode: 'cors',
     cache: 'no-store',
     redirect: 'error',

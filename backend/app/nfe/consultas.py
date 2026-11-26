@@ -244,11 +244,14 @@ def alertas(repo: Repositorio, cnpj: str | None, abertos: bool | None) -> list[A
     return [_saida(r) for r in registros]
 
 
-def aplicar(repo: Repositorio, alerta_id: str, agora: datetime) -> AplicarAlertaResposta:
-    """Lança o preço sugerido como preço de venda e marca o alerta como aplicado (P3: só com o clique)."""
+def aplicar(
+    repo: Repositorio, alerta_id: str, agora: datetime, cnpjs: frozenset[str] | None = None
+) -> AplicarAlertaResposta:
+    """Lança o preço sugerido como preço de venda e marca o alerta como aplicado (P3: só com o clique). Com
+    `cnpjs`, um alerta de outra empresa responde como inexistente (ADR 0015)."""
     with repo.escrita() as s:
         achado = s.alerta(alerta_id)
-        if achado is None:
+        if achado is None or (cnpjs is not None and achado[0] not in cnpjs):
             raise NaoEncontrado("Alerta não encontrado.")
         cnpj, reg = achado
         if reg.aplicado_em is not None:
@@ -263,11 +266,14 @@ def aplicar(repo: Repositorio, alerta_id: str, agora: datetime) -> AplicarAlerta
     return AplicarAlertaResposta(alerta=_saida(atualizado), precoAnterior=anterior, precoNovo=sugerido)
 
 
-def painel(repo: Repositorio) -> PainelContadorResposta:
+def painel(repo: Repositorio, cnpjs: frozenset[str] | None = None) -> PainelContadorResposta:
+    """Com `cnpjs`, só as empresas desse conjunto (ADR 0015)."""
     with repo.leitura() as s:
         linhas = []
         for reg in s.empresas():
             cnpj = reg.empresa.cnpj
+            if cnpjs is not None and cnpj not in cnpjs:
+                continue
             todos = s.alertas(cnpj)
             abertos = [a for a in todos if a.aplicado_em is None]
             linhas.append(

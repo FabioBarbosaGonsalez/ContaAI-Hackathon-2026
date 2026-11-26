@@ -1,14 +1,15 @@
-// Endereço da API (ADR 0011, L11).
+// Endereço da API (ADR 0011, L11; ADR 0015).
 //
-// - No desenvolvimento, a API roda em http://127.0.0.1:8000, e a tela em :3000 é uma origem liberada no CORS.
-// - No build publicado, a API fica em /api, no mesmo endereço da tela, atrás do proxy (E6). Assim, as rotas
-//   /catalogo e /contador da tela não colidem com as da API, e a CSP `connect-src 'self'` basta.
+// A API fica em /api, no mesmo endereço da tela: no desenvolvimento e no `vite preview`, pelo proxy do Vite
+// (vite.config.ts); publicada, pelo proxy da E6. Assim, as rotas /catalogo e /contador da tela não colidem
+// com as da API, a CSP `connect-src 'self'` basta, e o cookie da sessão (SameSite=Strict, sem Domain) anda
+// junto, porque a requisição é da mesma origem.
 //
 // VITE_CONTAAI_API troca o padrão. Como toda variável VITE_*, ela vai para o navegador e é pública:
-// nunca ponha segredo nela (docs/seguranca.md, regras da interface, item 4).
+// nunca ponha segredo nela (docs/seguranca.md, regras da interface, item 4). Com um endereço de outra origem, a
+// demonstração funciona, mas a conta não: o cliente só manda cookies na mesma origem.
 
-const PADRAO_DESENVOLVIMENTO = 'http://127.0.0.1:8000';
-const PADRAO_PUBLICADO = '/api';
+const PADRAO = '/api';
 
 const HOSTS_LOCAIS = new Set(['127.0.0.1', 'localhost', '[::1]']);
 
@@ -57,5 +58,5 @@ export function enderecoApi(): string {
   if (configurado !== undefined && configurado !== '') {
     return validarEnderecoApi(configurado);
   }
-  return import.meta.env.DEV ? PADRAO_DESENVOLVIMENTO : PADRAO_PUBLICADO;
+  return PADRAO;
 }

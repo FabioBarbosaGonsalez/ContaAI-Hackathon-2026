@@ -1026,3 +1026,103 @@ class SaudeResposta(_Modelo):
     status: Literal["ok", "degradado"]
     modo: Literal["mock", "real"]
     motores: list[SaudeMotor]
+
+
+# ---------------------------------------------------------------------------
+# Contas (C1, ADR 0015): cadastro com segundo fator (TOTP), entrada em duas etapas, sessão em cookie e exclusão.
+# A sessão e o passe vão só em cookies HttpOnly; nenhum token aparece no corpo.
+
+PADRAO_EMAIL = r"^[^@\s]{1,64}@[^@\s]+\.[^@\s]+$"
+PADRAO_CODIGO = r"^\d{6}$"
+PADRAO_RECUPERACAO = r"^[A-Za-z2-7]{4}-?[A-Za-z2-7]{4}-?[A-Za-z2-7]{5}$"
+Email = Annotated[str, Field(pattern=PADRAO_EMAIL, max_length=254, description="E-mail de quem entra.")]
+# O teto do contrato só evita corpo absurdo; a regra (8 a 128 caracteres, lista de senhas comuns) fica em
+# app/contas/senha.py e responde com a frase dela.
+SenhaEntrada = Annotated[str, Field(min_length=1, max_length=256)]
+
+
+class CadastroRequisicao(_Modelo):
+    email: Email
+    senha: SenhaEntrada = Field(
+        description="De 8 a 128 caracteres, sem regra de composição. Senhas comuns, o "
+        "e-mail e o nome do produto são recusados."
+    )
+    organizacao: str = Field(min_length=1, max_length=120, description="Nome da organização (escritório ou empresa).")
+
+
+class CadastroResposta(_Modelo):
+    """O segredo do segundo fator. A conta só vale depois de POST /contas/ativar com o primeiro código, dentro de
+    `expiraEm` (o passe vai no cookie)."""
+
+    otpauth: str = Field(description="Endereço otpauth:// para o QR code do aplicativo autenticador.")
+    segredo: str = Field(description="O mesmo segredo, em base32, para digitar à mão no aplicativo.")
+    expiraEm: datetime
+    aviso: str
+
+
+class CodigoRequisicao(_Modelo):
+    codigo: str = Field(pattern=PADRAO_CODIGO, description="Os 6 dígitos do aplicativo autenticador.")
+
+
+class EntrarRequisicao(_Modelo):
+    email: Email
+    senha: SenhaEntrada
+
+
+class EntrarResposta(_Modelo):
+    """Senha certa: falta o código (POST /sessoes/codigo, com o passe que foi no cookie)."""
+
+    etapa: Literal["codigo"] = "codigo"
+    expiraEm: datetime
+
+
+class SegundaEtapaRequisicao(_Modelo):
+    codigo: str | None = Field(default=None, pattern=PADRAO_CODIGO, description="Código do aplicativo.")
+    codigoRecuperacao: str | None = Field(
+        default=None, pattern=PADRAO_RECUPERACAO, description="Um dos códigos de recuperação (uso único)."
+    )
+
+    @model_validator(mode="after")
+    def um_dos_dois(self) -> SegundaEtapaRequisicao:
+        if (self.codigo is None) == (self.codigoRecuperacao is None):
+            raise ValueError("Envie o código do aplicativo ou um código de recuperação (um dos dois).")
+        return self
+
+
+class OrganizacaoDaConta(_Modelo):
+    id: str
+    nome: str
+    papel: Literal["dono", "membro"]
+
+
+class EventoSeguranca(_Modelo):
+    tipo: Literal["codigo-recuperacao-usado"]
+    em: datetime
+
+
+class ContaResposta(_Modelo):
+    email: str
+    criadaEm: datetime
+    organizacao: OrganizacaoDaConta
+    empresas: list[str] = Field(description="CNPJs que a organização acessa (a C3 cadastra a empresa própria).")
+    codigosRecuperacaoRestantes: int
+    eventos: list[EventoSeguranca] = Field(description="Os mais recentes primeiro (ex.: código de recuperação usado).")
+    sessaoExpiraEm: datetime = Field(description="Limite total da sessão (8 h). Sem uso por 30 min, ela acaba antes.")
+
+
+class AtivacaoResposta(_Modelo):
+    conta: ContaResposta
+    codigosRecuperacao: list[str] = Field(description="Mostrados uma vez só. Cada um vale uma vez.")
+    aviso: str
+
+
+class SegundaEtapaResposta(_Modelo):
+    conta: ContaResposta
+    novoCodigoRecuperacao: str | None = Field(
+        default=None, description="Com um código de recuperação: o código que entra no lugar dele (mostrado uma vez)."
+    )
+    aviso: str | None = None
+
+
+class ExcluirContaRequisicao(_Modelo):
+    senha: SenhaEntrada

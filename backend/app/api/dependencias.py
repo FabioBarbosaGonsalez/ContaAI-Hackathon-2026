@@ -1,22 +1,26 @@
-"""Dependências das rotas: configuração, clientes dos motores e dos dados abertos, estado (banco da demonstração
-ou espaço de avaliação, ADR 0010) e token da demo."""
+"""Dependências das rotas: configuração, clientes dos motores e dos dados abertos, estado (banco da demonstração,
+espaço de avaliação, ADR 0010, ou banco da organização de quem entrou com a conta, ADR 0015) e token da demo."""
 
 from __future__ import annotations
 
+import logging
+import re
 from collections.abc import AsyncIterator
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import timedelta
 from functools import lru_cache
 from pathlib import Path
 from typing import Annotated
 
 import httpx
-from fastapi import Depends, Header, HTTPException, Response
+from fastapi import Cookie, Depends, Header, HTTPException, Response
 
 from app.config import Configuracao, configuracao
+from app.contas.servico import Contas, SessaoAtiva
 from app.motores.cache import CacheRespostas
 from app.motores.cliente import ClienteMotores
 from app.motores.dados_abertos import CacheConsultas, DadosAbertos
+from app.nfe.consultas import NaoEncontrado
 from app.nfe.importacao import agora_utc
 from app.persistencia.banco import Banco
 from app.persistencia.espacos import PADRAO_ID, Espaco, Espacos
@@ -33,6 +37,21 @@ EspacoId = Annotated[
         description="Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada.",
     ),
 ]
+
+log = logging.getLogger("contaai")
+
+# Cookies da conta (ADR 0015): HttpOnly, Secure, SameSite=Strict, Path=/ e sem Domain, o que o prefixo __Host-
+# exige do navegador. A sessão dura até 8 h; o passe, entre a senha e o código, 5 min.
+COOKIE_SESSAO = "__Host-contaai_sessao"
+COOKIE_PASSE = "__Host-contaai_passe"
+SessaoCookie = Annotated[str | None, Cookie(alias=COOKIE_SESSAO, include_in_schema=False)]
+PasseCookie = Annotated[str | None, Cookie(alias=COOKIE_PASSE, include_in_schema=False)]
+_ID_ORGANIZACAO = re.compile(r"^[0-9a-f]{32}$")
+
+
+def cookie_apagado(nome: str) -> str:
+    return f"{nome}=; Max-Age=0; Path=/; Secure; HttpOnly; SameSite=Strict"
+
 
 # Um cache por processo, compartilhado entre as requisições (app/motores/cache.py).
 CACHE_MOTORES = CacheRespostas(configuracao().cache_motores_itens)
@@ -88,26 +107,96 @@ def espacos(cfg: Configuracao) -> Espacos:
 
 @dataclass(frozen=True)
 class Estado:
-    """Onde a requisição lê e grava: a demonstração compartilhada (espaco None) ou um espaço de avaliação."""
+    """Onde a requisição lê e grava: a demonstração compartilhada (espaco e sessao None), um espaço de avaliação
+    ou o banco da organização de quem entrou com a conta (ADR 0015)."""
 
     repositorio: Repositorio
     espaco: Espaco | None = None
+    sessao: SessaoAtiva | None = None
+    cnpjs: frozenset[str] = field(default_factory=frozenset)
+
+    @property
+    def na_demo(self) -> bool:
+        return self.espaco is None and self.sessao is None
+
+    def exigir_empresa(self, cnpj: str) -> None:
+        """CNPJ fora do alcance de quem chama: o mesmo 404 de uma empresa que não existe, para não dizer quais
+        CNPJs existem (ADR 0015)."""
+        if cnpj not in self.cnpjs:
+            raise NaoEncontrado("Empresa não cadastrada.")
 
 
-def abrir_estado(cfg: Configuracao, espaco_id: str | None) -> Estado:
-    """Só no ramo do modo real. Espaço desconhecido ou vencido: EspacoInexistente (404)."""
-    if espaco_id is None:
-        return Estado(repositorio(cfg))
-    gerenciador = espacos(cfg)
-    espaco = gerenciador.abrir(espaco_id, agora_utc())
-    # banco() migra uma vez por processo: um espaço copiado antes de uma migração nova (ex.: a 0002, com o
-    # processo anterior no ar) recebe a migração ao ser aberto, em vez de falhar na primeira gravação.
-    return Estado(Repositorio(banco(gerenciador.banco(espaco.id).caminho)), espaco)
+@lru_cache
+def _contas(caminho: Path) -> Contas:
+    return Contas(caminho)
+
+
+def contas(cfg: Configuracao) -> Contas:
+    return _contas(cfg.contas_caminho)
+
+
+def banco_da_organizacao(cfg: Configuracao, organizacao_id: str) -> Banco:
+    if not _ID_ORGANIZACAO.fullmatch(organizacao_id):  # o id vira nome de arquivo: só depois de conferido
+        raise ValueError("Id de organização fora do padrão.")
+    cfg.pasta_organizacoes.mkdir(parents=True, exist_ok=True)
+    return banco(cfg.pasta_organizacoes / f"{organizacao_id}.db")
+
+
+def apagar_banco_da_organizacao(cfg: Configuracao, organizacao_id: str) -> None:
+    """Depois de excluir a organização (LGPD, art. 18 VI). Um arquivo preso (Windows) fica registrado no log."""
+    if not _ID_ORGANIZACAO.fullmatch(organizacao_id):
+        return
+    base = cfg.pasta_organizacoes / f"{organizacao_id}.db"
+    banco.cache_clear()  # o Banco guardado no cache apontaria para um arquivo apagado
+    for caminho in (base, base.with_name(base.name + "-wal"), base.with_name(base.name + "-shm")):
+        try:
+            caminho.unlink(missing_ok=True)
+        except OSError:
+            log.warning("Arquivo de estado de uma organização excluída ficou no disco: %s", caminho.name)
+
+
+def sessao_do_cookie(cfg: Configuracao, token: str | None) -> SessaoAtiva | None:
+    """A sessão do cookie, ou None sem cookie. Cookie vencido ou desconhecido: 401, e a resposta apaga o cookie."""
+    if token is None:
+        return None
+    sessao = contas(cfg).sessao(token, agora_utc())
+    if sessao is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Sessão encerrada ou expirada. Entre de novo.",
+            headers={"Set-Cookie": cookie_apagado(COOKIE_SESSAO)},
+        )
+    return sessao
+
+
+def _cnpjs_do_banco(repo: Repositorio) -> frozenset[str]:
+    with repo.leitura() as s:
+        return frozenset(reg.empresa.cnpj for reg in s.empresas())
+
+
+def abrir_estado(cfg: Configuracao, espaco_id: str | None, token_sessao: str | None = None) -> Estado:
+    """Só no ramo do modo real. Ordem: o espaço do header (escolha explícita, também para quem tem conta), depois
+    a sessão do cookie, depois a demonstração compartilhada. Espaço desconhecido ou vencido: EspacoInexistente
+    (404); sessão vencida: 401."""
+    if espaco_id is not None:
+        gerenciador = espacos(cfg)
+        espaco = gerenciador.abrir(espaco_id, agora_utc())
+        # banco() migra uma vez por processo: um espaço copiado antes de uma migração nova (ex.: a 0002, com o
+        # processo anterior no ar) recebe a migração ao ser aberto, em vez de falhar na primeira gravação.
+        repo = Repositorio(banco(gerenciador.banco(espaco.id).caminho))
+        return Estado(repo, espaco, cnpjs=_cnpjs_do_banco(repo))
+    sessao = sessao_do_cookie(cfg, token_sessao)
+    if sessao is not None:
+        repo = Repositorio(banco_da_organizacao(cfg, sessao.organizacao_id))
+        return Estado(repo, sessao=sessao, cnpjs=contas(cfg).empresas(sessao.organizacao_id))
+    repo = repositorio(cfg)
+    return Estado(repo, cnpjs=_cnpjs_do_banco(repo))
 
 
 def exigir_token_fora_do_espaco(cfg: Configuracao, token: str | None, estado: Estado) -> None:
-    """No próprio espaço, mudar o estado não exige o token: o espaço é isolado e expira (ADR 0010)."""
-    if estado.espaco is None:
+    """O token protege só a demonstração compartilhada. No espaço (isolado e com validade, ADR 0010) e no banco
+    da organização (a sessão já diz quem é, ADR 0015), mudar o estado não exige o token."""
+    if estado.na_demo:
         exigir_token(cfg, token)
 
 

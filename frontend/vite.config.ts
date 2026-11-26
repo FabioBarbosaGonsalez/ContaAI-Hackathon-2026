@@ -3,9 +3,22 @@ import react from '@vitejs/plugin-react';
 import { defineConfig, loadEnv, type Plugin } from 'vite';
 import { cabecalhosDeSeguranca, politicaDeSeguranca } from './csp.ts';
 
-// A tela roda em http://127.0.0.1:3000, a origem liberada no CORS do backend (ADR 0011).
-// strictPort: se a porta estiver ocupada, falha em vez de subir em outra porta que o CORS recusaria.
+// A tela roda em http://127.0.0.1:3000, uma origem da lista do backend (Origin nos POST, ADR 0011).
+// strictPort: se a porta estiver ocupada, falha em vez de subir em outra porta, que o backend recusaria.
 const PORTA = { host: '127.0.0.1', port: 3000, strictPort: true } as const;
+
+// Endereço da API para o proxy /api (ADR 0015). Fica no servidor do Vite e não vai para o navegador (não é
+// VITE_*). O proxy tira o /api do caminho: /api/catalogo chega à API como /catalogo.
+const API_LOCAL = 'http://127.0.0.1:8000';
+
+function proxyDaApi(alvo: string) {
+  return {
+    '/api': {
+      target: alvo,
+      rewrite: (caminho: string) => caminho.replace(/^\/api/, ''),
+    },
+  };
+}
 
 const CHARSET = '<meta charset="UTF-8" />';
 
@@ -34,11 +47,12 @@ function cspNoBuild(api: string | undefined): Plugin {
 export default defineConfig(({ mode }) => {
   // Só as variáveis VITE_*, que já são públicas (vão para o navegador).
   const api = loadEnv(mode, import.meta.dirname, 'VITE_').VITE_CONTAAI_API;
+  const alvo = loadEnv(mode, import.meta.dirname, 'CONTAAI_').CONTAAI_API_ALVO || API_LOCAL;
   return {
     plugins: [react(), cspNoBuild(api)],
-    server: PORTA,
-    // O preview serve o build com os cabeçalhos que a E6 vai repetir no proxy.
-    preview: { ...PORTA, headers: cabecalhosDeSeguranca(api) },
+    server: { ...PORTA, proxy: proxyDaApi(alvo) },
+    // O preview serve o build com os cabeçalhos e o proxy /api que a E6 vai repetir.
+    preview: { ...PORTA, headers: cabecalhosDeSeguranca(api), proxy: proxyDaApi(alvo) },
     build: {
       // Sem mapas de código no build publicado.
       sourcemap: false,

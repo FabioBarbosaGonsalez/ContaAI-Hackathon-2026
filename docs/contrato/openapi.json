@@ -574,7 +574,7 @@
           "notas"
         ],
         "summary": "Listar Alertas",
-        "description": "Alertas de margem gerados pelas notas de compra, do mais recente para o mais antigo.",
+        "description": "Alertas de margem gerados pelas notas de compra, do mais recente para o mais antigo. Sem `cnpj`, os de\ntodas as empresas que quem chama alcança.",
         "operationId": "listar_alertas_alertas_get",
         "parameters": [
           {
@@ -704,7 +704,7 @@
           "notas"
         ],
         "summary": "Aplicar Alerta",
-        "description": "Aplica o preço sugerido do alerta como preço de venda do item. Só com o clique do usuário (P3).",
+        "description": "Aplica o preço sugerido do alerta como preço de venda do item. Só com o clique do usuário (P3). Um alerta de\nempresa fora do alcance de quem chama responde como alerta inexistente.",
         "operationId": "aplicar_alerta_alertas__alerta_id__aplicar_post",
         "parameters": [
           {
@@ -1486,7 +1486,7 @@
           "notas"
         ],
         "summary": "Contador Painel",
-        "description": "Painel do contador (D1): empresas da carteira com os alertas abertos, a mais urgente primeiro.",
+        "description": "Painel do contador (D1): as empresas que quem chama alcança, com os alertas abertos, a mais urgente\nprimeiro.",
         "operationId": "contador_painel_contador_painel_get",
         "parameters": [
           {
@@ -1737,6 +1737,739 @@
           },
           "400": {
             "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contas": {
+      "post": {
+        "tags": [
+          "contas"
+        ],
+        "summary": "Cadastrar",
+        "description": "Cria a conta (pendente) e a organização dela, e devolve o segredo do segundo fator. A conta só vale\ndepois de POST /contas/ativar com o primeiro código do aplicativo, dentro do prazo.",
+        "operationId": "cadastrar_contas_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CadastroRequisicao"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CadastroResposta"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Rota que só funciona no modo real (CONTAAI_MODO=real).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por minuto atingido (header Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Este e-mail já tem uma conta (sem confirmação de e-mail, o cadastro não esconde isso).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Senha recusada (curta, longa ou comum) ou entrada fora do contrato.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaValidacao"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "411": {
+            "description": "Corpo sem Content-Length (corpo em pedaços não é aceito).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo maior que o limite.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contas/ativar": {
+      "post": {
+        "tags": [
+          "contas"
+        ],
+        "summary": "Ativar",
+        "description": "Confirma o primeiro código: a conta passa a valer, a sessão começa e saem os 10 códigos de recuperação.",
+        "operationId": "ativar_contas_ativar_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CodigoRequisicao"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtivacaoResposta"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Rota que só funciona no modo real (CONTAAI_MODO=real).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "E-mail, senha ou código incorretos, ou passe vencido. A frase não diz qual.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Espera depois de falhas seguidas na conta, conta bloqueada (100 falhas) ou limite por IP (header Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaValidacao"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "411": {
+            "description": "Corpo sem Content-Length (corpo em pedaços não é aceito).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo maior que o limite.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessoes": {
+      "post": {
+        "tags": [
+          "contas"
+        ],
+        "summary": "Entrar",
+        "description": "Primeira etapa: e-mail e senha. Certos, o passe vai no cookie e falta o código (POST /sessoes/codigo).",
+        "operationId": "entrar_sessoes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntrarRequisicao"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntrarResposta"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Rota que só funciona no modo real (CONTAAI_MODO=real).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "E-mail, senha ou código incorretos, ou passe vencido. A frase não diz qual.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por minuto atingido (header Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaValidacao"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "411": {
+            "description": "Corpo sem Content-Length (corpo em pedaços não é aceito).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo maior que o limite.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "contas"
+        ],
+        "summary": "Sair De Todos",
+        "description": "Sai em todos os aparelhos: apaga todas as sessões da conta.",
+        "operationId": "sair_de_todos_sessoes_delete",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "501": {
+            "description": "Rota que só funciona no modo real (CONTAAI_MODO=real).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou sessão encerrada ou expirada (o cookie é apagado na resposta).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaValidacao"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessoes/codigo": {
+      "post": {
+        "tags": [
+          "contas"
+        ],
+        "summary": "Segunda Etapa",
+        "description": "Segunda etapa: o código do aplicativo ou um código de recuperação. Certo, a sessão começa (token novo a\ncada entrada). O código de recuperação usado deixa de valer e outro entra no lugar.",
+        "operationId": "segunda_etapa_sessoes_codigo_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SegundaEtapaRequisicao"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SegundaEtapaResposta"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Rota que só funciona no modo real (CONTAAI_MODO=real).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "E-mail, senha ou código incorretos, ou passe vencido. A frase não diz qual.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Espera depois de falhas seguidas na conta, conta bloqueada (100 falhas) ou limite por IP (header Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaValidacao"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "411": {
+            "description": "Corpo sem Content-Length (corpo em pedaços não é aceito).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo maior que o limite.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/conta": {
+      "get": {
+        "tags": [
+          "contas"
+        ],
+        "summary": "Conta",
+        "description": "Quem entrou: e-mail, organização e papel, empresas, códigos de recuperação restantes e avisos.",
+        "operationId": "conta_conta_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContaResposta"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Rota que só funciona no modo real (CONTAAI_MODO=real).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou sessão encerrada ou expirada (o cookie é apagado na resposta).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaValidacao"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessoes/atual": {
+      "delete": {
+        "tags": [
+          "contas"
+        ],
+        "summary": "Sair",
+        "description": "Sai neste aparelho: a sessão é apagada no servidor, e não só o cookie.",
+        "operationId": "sair_sessoes_atual_delete",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "501": {
+            "description": "Rota que só funciona no modo real (CONTAAI_MODO=real).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou sessão encerrada ou expirada (o cookie é apagado na resposta).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaValidacao"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/conta/excluir": {
+      "post": {
+        "tags": [
+          "contas"
+        ],
+        "summary": "Excluir",
+        "description": "Apaga a conta (LGPD, art. 18 VI), com a senha de novo. Se a pessoa é a única integrante da organização, a\norganização e os dados dela vão junto, inclusive o banco de estado.",
+        "operationId": "excluir_conta_excluir_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExcluirContaRequisicao"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "501": {
+            "description": "Rota que só funciona no modo real (CONTAAI_MODO=real).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou sessão encerrada ou expirada (o cookie é apagado na resposta).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Espera depois de falhas seguidas, ou conta bloqueada (header Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A única dona de uma organização com outros membros precisa passar a posse antes.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaValidacao"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "411": {
+            "description": "Corpo sem Content-Length (corpo em pedaços não é aceito).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo maior que o limite.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2416,7 +3149,7 @@
           "operação"
         ],
         "summary": "Demo Restaurar",
-        "description": "Volta o estado às sementes de data/demo (empresas fictícias e notas iniciais), desfazendo tudo o que foi\nimportado ou aplicado. Atômico: se um motor falhar no meio, o estado fica como estava.\n\nCom X-ContaAI-Espaco, restaura só aquele espaço de avaliação, pela cópia do banco-modelo (sem token e sem\nchamar os motores, se o modelo já estiver montado). Sem o header, restaura a demonstração compartilhada e\nexige o token da demo quando ele está configurado.",
+        "description": "Volta o estado às sementes de data/demo (empresas fictícias e notas iniciais), desfazendo tudo o que foi\nimportado ou aplicado. Atômico: se um motor falhar no meio, o estado fica como estava.\n\nCom X-ContaAI-Espaco, restaura só aquele espaço de avaliação, pela cópia do banco-modelo (sem token e sem\nchamar os motores, se o modelo já estiver montado). Sem o header, restaura a demonstração compartilhada e\nexige o token da demo quando ele está configurado. Com a sessão de uma conta (e sem o header), recusa: os\ndados de uma organização nunca são trocados pelas sementes (ADR 0015).",
         "operationId": "demo_restaurar_demo_restaurar_post",
         "parameters": [
           {
@@ -3248,6 +3981,33 @@
         "title": "AplicarPrecoResposta",
         "description": "O preço virou o preço de venda do item (lançamento de preço com origem na tela). Alertas abertos do\nitem continuam abertos: eles fecham só pelo POST /alertas/{id}/aplicar."
       },
+      "AtivacaoResposta": {
+        "properties": {
+          "conta": {
+            "$ref": "#/components/schemas/ContaResposta"
+          },
+          "codigosRecuperacao": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Codigosrecuperacao",
+            "description": "Mostrados uma vez só. Cada um vale uma vez."
+          },
+          "aviso": {
+            "type": "string",
+            "title": "Aviso"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "conta",
+          "codigosRecuperacao",
+          "aviso"
+        ],
+        "title": "AtivacaoResposta"
+      },
       "Body_nfe_importar_nfe_importar_post": {
         "properties": {
           "arquivo": {
@@ -3302,6 +4062,72 @@
           "aviso"
         ],
         "title": "BuscaNcmResposta"
+      },
+      "CadastroRequisicao": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 254,
+            "pattern": "^[^@\\s]{1,64}@[^@\\s]+\\.[^@\\s]+$",
+            "title": "Email",
+            "description": "E-mail de quem entra."
+          },
+          "senha": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Senha",
+            "description": "De 8 a 128 caracteres, sem regra de composição. Senhas comuns, o e-mail e o nome do produto são recusados."
+          },
+          "organizacao": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Organizacao",
+            "description": "Nome da organização (escritório ou empresa)."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "email",
+          "senha",
+          "organizacao"
+        ],
+        "title": "CadastroRequisicao"
+      },
+      "CadastroResposta": {
+        "properties": {
+          "otpauth": {
+            "type": "string",
+            "title": "Otpauth",
+            "description": "Endereço otpauth:// para o QR code do aplicativo autenticador."
+          },
+          "segredo": {
+            "type": "string",
+            "title": "Segredo",
+            "description": "O mesmo segredo, em base32, para digitar à mão no aplicativo."
+          },
+          "expiraEm": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expiraem"
+          },
+          "aviso": {
+            "type": "string",
+            "title": "Aviso"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "otpauth",
+          "segredo",
+          "expiraEm",
+          "aviso"
+        ],
+        "title": "CadastroResposta",
+        "description": "O segredo do segundo fator. A conta só vale depois de POST /contas/ativar com o primeiro código, dentro de\n`expiraEm` (o passe vai no cookie)."
       },
       "CandidatoNcm": {
         "properties": {
@@ -3824,6 +4650,76 @@
         "title": "ClienteB2BEstado",
         "description": "Um cliente empresa e a compra mensal dele: a venda que a decisão de regime compara (E3, ADR 0011)."
       },
+      "CodigoRequisicao": {
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "pattern": "^\\d{6}$",
+            "title": "Codigo",
+            "description": "Os 6 dígitos do aplicativo autenticador."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "codigo"
+        ],
+        "title": "CodigoRequisicao"
+      },
+      "ContaResposta": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "criadaEm": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Criadaem"
+          },
+          "organizacao": {
+            "$ref": "#/components/schemas/OrganizacaoDaConta"
+          },
+          "empresas": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Empresas",
+            "description": "CNPJs que a organização acessa (a C3 cadastra a empresa própria)."
+          },
+          "codigosRecuperacaoRestantes": {
+            "type": "integer",
+            "title": "Codigosrecuperacaorestantes"
+          },
+          "eventos": {
+            "items": {
+              "$ref": "#/components/schemas/EventoSeguranca"
+            },
+            "type": "array",
+            "title": "Eventos",
+            "description": "Os mais recentes primeiro (ex.: código de recuperação usado)."
+          },
+          "sessaoExpiraEm": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Sessaoexpiraem",
+            "description": "Limite total da sessão (8 h). Sem uso por 30 min, ela acaba antes."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "email",
+          "criadaEm",
+          "organizacao",
+          "empresas",
+          "codigosRecuperacaoRestantes",
+          "eventos",
+          "sessaoExpiraEm"
+        ],
+        "title": "ContaResposta"
+      },
       "ContextoChat": {
         "properties": {
           "data": {
@@ -4114,6 +5010,52 @@
         ],
         "title": "EmpresaResumo"
       },
+      "EntrarRequisicao": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 254,
+            "pattern": "^[^@\\s]{1,64}@[^@\\s]+\\.[^@\\s]+$",
+            "title": "Email",
+            "description": "E-mail de quem entra."
+          },
+          "senha": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Senha"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "email",
+          "senha"
+        ],
+        "title": "EntrarRequisicao"
+      },
+      "EntrarResposta": {
+        "properties": {
+          "etapa": {
+            "type": "string",
+            "const": "codigo",
+            "title": "Etapa",
+            "default": "codigo"
+          },
+          "expiraEm": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expiraem"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expiraEm"
+        ],
+        "title": "EntrarResposta",
+        "description": "Senha certa: falta o código (POST /sessoes/codigo, com o passe que foi no cookie)."
+      },
       "ErroDescricao": {
         "properties": {
           "codigo": {
@@ -4230,6 +5172,43 @@
         ],
         "title": "EstadoItem",
         "description": "União dos estados dos dois motores (RR tem CALCULO_SIMULADO; SN tem NAO_CALCULADO)."
+      },
+      "EventoSeguranca": {
+        "properties": {
+          "tipo": {
+            "type": "string",
+            "const": "codigo-recuperacao-usado",
+            "title": "Tipo"
+          },
+          "em": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Em"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "tipo",
+          "em"
+        ],
+        "title": "EventoSeguranca"
+      },
+      "ExcluirContaRequisicao": {
+        "properties": {
+          "senha": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Senha"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "senha"
+        ],
+        "title": "ExcluirContaRequisicao"
       },
       "ExplicarRequisicao": {
         "properties": {
@@ -5619,6 +6598,34 @@
         ],
         "title": "Operacao"
       },
+      "OrganizacaoDaConta": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "papel": {
+            "type": "string",
+            "enum": [
+              "dono",
+              "membro"
+            ],
+            "title": "Papel"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "nome",
+          "papel"
+        ],
+        "title": "OrganizacaoDaConta"
+      },
       "OrigemAlerta": {
         "properties": {
           "tipo": {
@@ -6572,6 +7579,75 @@
           "motores"
         ],
         "title": "SaudeResposta"
+      },
+      "SegundaEtapaRequisicao": {
+        "properties": {
+          "codigo": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{6}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codigo",
+            "description": "Código do aplicativo."
+          },
+          "codigoRecuperacao": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[A-Za-z2-7]{4}-?[A-Za-z2-7]{4}-?[A-Za-z2-7]{5}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codigorecuperacao",
+            "description": "Um dos códigos de recuperação (uso único)."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "SegundaEtapaRequisicao"
+      },
+      "SegundaEtapaResposta": {
+        "properties": {
+          "conta": {
+            "$ref": "#/components/schemas/ContaResposta"
+          },
+          "novoCodigoRecuperacao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Novocodigorecuperacao",
+            "description": "Com um código de recuperação: o código que entra no lugar dele (mostrado uma vez)."
+          },
+          "aviso": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aviso"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "conta"
+        ],
+        "title": "SegundaEtapaResposta"
       },
       "TipoProblema": {
         "properties": {
