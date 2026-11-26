@@ -132,6 +132,7 @@ No Linux e no macOS, o [Makefile](Makefile) tem atalhos para os mesmos comandos:
 ## Documentos
 
 - [Como contribuir](CONTRIBUTING.md): fluxo de branches, PRs e revisão
+- [Plano v2.1](docs/plano-v2.1.md): as próximas etapas (3b, contas, empresa própria, 3c e entrega), na ordem, com as decisões do usuário
 - [ADR 0001](docs/adr/0001-lado-tradicional-do-simples.md): lado "Simples tradicional" da decisão de regime
 - [ADR 0002](docs/adr/0002-motores-em-containers.md): motores em containers, segurança e custos
 - [ADR 0003](docs/adr/0003-contrato-da-api.md): contrato da API, fórmulas de preço, margem e regimes, e achados da investigação
