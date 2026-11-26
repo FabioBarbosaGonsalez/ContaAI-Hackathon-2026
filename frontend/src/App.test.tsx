@@ -39,13 +39,14 @@ const barra = () => within(screen.getByRole('banner'));
 
 describe('navegação', () => {
   it('tem os cinco destinos, com a página atual marcada', async () => {
-    await montar(() => json(SAUDE_MOCK), '/catalogo');
+    // Notas ainda não chama a API (entra no PR 3b); as telas com dados têm testes em src/telas.
+    await montar(() => json(SAUDE_MOCK), '/notas');
     const nav = within(screen.getByRole('navigation', { name: 'Principal' }));
     expect(nav.getAllByRole('link').map((l) => l.textContent)).toEqual(ROTAS.map((r) => r.nome));
-    expect(nav.getByRole('link', { name: 'Catálogo' }).getAttribute('aria-current')).toBe('page');
+    expect(nav.getByRole('link', { name: 'Notas' }).getAttribute('aria-current')).toBe('page');
     expect(nav.getByRole('link', { name: 'Painel' }).getAttribute('aria-current')).toBeNull();
-    expect(screen.getByRole('heading', { level: 1, name: 'Catálogo' })).toBeDefined();
-    expect(document.title).toBe('Catálogo · ContaAI');
+    expect(screen.getByRole('heading', { level: 1, name: 'Notas' })).toBeDefined();
+    expect(document.title).toBe('Notas · ContaAI');
   });
 
   it('clique comum troca a página sem recarregar, põe o foco no título e o voltar funciona', async () => {

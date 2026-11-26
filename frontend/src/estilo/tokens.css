@@ -92,6 +92,15 @@
   --altura-controle: 36px;
   --altura-linha: 44px;
 
+  /*
+   * Barra do topo em preto com o texto em branco (pedido do usuário em 2026-11-26, para a tela alternar preto e
+   * branco). É uma troca consciente da folha, que põe a barra no fundo da página: registrada no ADR 0013.
+   * Contraste: branco 21:1 e o cinza dos destinos 10,6:1 sobre o preto.
+   */
+  --barra-fundo: #000000;
+  --barra-texto: #ffffff;
+  --barra-texto-suave: #b4b4b4;
+
   /* Shell sem barra lateral: barra de 46-48px sobre coluna centrada de 1088-1208px */
   --altura-barra: 48px;
   --largura-coluna: 1152px;

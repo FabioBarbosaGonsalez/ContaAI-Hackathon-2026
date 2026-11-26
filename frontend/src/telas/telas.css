@@ -1,0 +1,864 @@
+/*
+ * Telas do ContaAI (PR 3a): Painel, Catálogo e a explicação lateral.
+ *
+ * Estilo achromatic-ledger (direction.json): o cromo sem cor; números em tinta; a única cor de dado é a
+ * margem que fica abaixo do alvo (--negativo). Separação por borda de 1px, sem sombra em nada parado.
+ *
+ * Grade do Painel: 12 colunas na coluna de 1152px com o vão de 12px:
+ *   12 × 85 + 11 × 12 = 1020 + 132 = 1152.
+ *   Linha 1: alerta (6) + margens (6) = (6 × 85 + 5 × 12) + 12 + (6 × 85 + 5 × 12) = 570 + 12 + 570 = 1152.
+ *   Linha 2: nota (6) + cadastro (6) = 570 + 12 + 570 = 1152.
+ *   Linha 3: premissas (12), em três colunas.
+ */
+
+/* Utilitários de texto */
+
+.texto-suave {
+  color: var(--texto-suave);
+}
+
+.negativo {
+  color: var(--negativo);
+}
+
+/* Botão principal: quase preto, um por tela (app-screens §4.3). */
+
+.botao-principal {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--altura-controle);
+  padding: 0 16px;
+  border: 0;
+  border-radius: var(--raio-controle);
+  background: var(--acao);
+  color: var(--acao-texto);
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+}
+
+.botao-principal:hover {
+  background: #333333;
+}
+
+.botao-principal:disabled,
+.botao-secundario:disabled {
+  cursor: not-allowed;
+  background: var(--acao-secundaria);
+  color: #555555; /* 5,6:1 sobre #e5e5e5: desligado, mas legível (app-screens §8.1) */
+}
+
+.botao-texto:disabled {
+  cursor: not-allowed;
+  color: var(--texto-suave);
+}
+
+/* Grade e blocos */
+
+.grade {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--espaco);
+  align-items: stretch;
+}
+
+.bloco {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco);
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-cartao);
+  background: var(--superficie);
+}
+
+.bloco + .bloco {
+  margin-top: 0;
+}
+
+.bloco__cabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px var(--espaco);
+}
+
+.bloco__cabecalho a {
+  color: var(--texto);
+  font-weight: var(--peso-medio);
+}
+
+.bloco__meta {
+  color: var(--texto-suave);
+  font-size: var(--tamanho-pequeno);
+  line-height: var(--altura-pequeno);
+}
+
+h3 {
+  margin: 0;
+  font-size: var(--tamanho-corpo);
+  line-height: var(--altura-corpo);
+  font-weight: var(--peso-medio);
+}
+
+.painel__alerta {
+  grid-column: span 6;
+}
+
+.painel__metade {
+  grid-column: span 6;
+}
+
+.painel__margens {
+  grid-column: span 6;
+}
+
+.painel__premissas {
+  grid-column: 1 / -1;
+}
+
+/* As premissas do Painel em três colunas: a linha inteira, sem vão sob as colunas mais curtas. */
+.painel__premissas .premissas--compacta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: var(--respiro);
+}
+
+.painel__premissas .premissas--compacta .premissas__linha + .premissas__linha {
+  border-top: 0;
+}
+
+.painel__premissas .premissas--compacta .premissas__linha {
+  border-bottom: 1px solid var(--regua);
+}
+
+/* O achado: a frase que responde à pergunta da tela, a primeira coisa lida no bloco. */
+
+.achado {
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: var(--peso-medio);
+  max-width: 62ch;
+}
+
+.achado--linha {
+  font-size: var(--tamanho-secao);
+  line-height: var(--altura-secao);
+}
+
+/* Faixa de valores do alerta: um contêiner dividido por linhas de 1px (app-screens §5). */
+
+.faixa {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-cartao);
+}
+
+.faixa__celula {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+}
+
+.faixa__celula + .faixa__celula {
+  border-left: 1px solid var(--borda);
+}
+
+.faixa dt {
+  color: var(--texto-suave);
+}
+
+.faixa dd {
+  margin: 0;
+}
+
+.faixa__lider {
+  font-size: var(--tamanho-kpi);
+  line-height: var(--altura-kpi);
+}
+
+.faixa__valor {
+  font-size: 22px;
+  line-height: var(--altura-kpi);
+}
+
+.faixa__nota {
+  color: var(--texto-suave);
+}
+
+.acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espaco) var(--respiro);
+}
+
+.gravar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gravar__motivo {
+  color: var(--texto-suave);
+  font-size: var(--tamanho-pequeno);
+  line-height: var(--altura-pequeno);
+}
+
+.origem {
+  font-size: var(--tamanho-pequeno);
+  line-height: var(--altura-pequeno);
+}
+
+.outros {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: var(--espaco);
+  border-top: 1px solid var(--regua);
+}
+
+/* Listas curtas */
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lista__linha {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: var(--respiro);
+  align-items: center;
+  min-height: 36px;
+}
+
+.lista__linha + .lista__linha {
+  border-top: 1px solid var(--regua);
+}
+
+.pendencia {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco);
+}
+
+.pendencia__texto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pendencia__motivo {
+  color: var(--negativo);
+  font-size: var(--tamanho-pequeno);
+  line-height: var(--altura-pequeno);
+}
+
+.vazio {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border: 1px dashed var(--controle);
+  border-radius: var(--raio-cartao);
+}
+
+.vazio a {
+  color: var(--texto);
+}
+
+/* Tabelas: réguas e alinhamento, sem listras nem faixa no cabeçalho (app-screens §7). */
+
+.tabela__moldura {
+  overflow-x: auto;
+}
+
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabela th,
+.tabela td {
+  padding: 10px 8px;
+  text-align: left;
+  vertical-align: middle;
+  font-weight: var(--peso-normal);
+}
+
+.tabela th:first-child,
+.tabela td:first-child {
+  padding-left: 0;
+}
+
+.tabela th:last-child,
+.tabela td:last-child {
+  padding-right: 0;
+}
+
+.tabela thead th {
+  color: var(--texto-suave);
+  font-size: var(--tamanho-pequeno);
+  line-height: var(--altura-pequeno);
+  border-bottom: 1px solid var(--borda);
+}
+
+.tabela tbody tr + tr th,
+.tabela tbody tr + tr td {
+  border-top: 1px solid var(--regua);
+}
+
+.tabela tfoot th,
+.tabela tfoot td {
+  border-top: 1px solid var(--borda);
+}
+
+.tabela .num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Cabeçalho de coluna numérica: alinhado à direita com os valores, mas na fonte do texto. */
+.tabela thead th.num {
+  font-family: var(--fonte);
+}
+
+.tabela__item {
+  min-width: 0;
+}
+
+.tabela__nome {
+  display: block;
+}
+
+.tabela__sub {
+  display: block;
+  margin-top: 2px;
+  color: var(--texto-suave);
+  font-size: var(--tamanho-pequeno);
+  line-height: var(--altura-pequeno);
+}
+
+.tabela__grafico {
+  width: 34%;
+  min-width: 96px;
+}
+
+.tabela__estado {
+  max-width: 200px;
+}
+
+.tabela__corrigir {
+  margin-top: 6px;
+}
+
+.tabela__acoes {
+  white-space: nowrap;
+  text-align: right;
+}
+
+.tabela__acoes > * + * {
+  margin-left: 16px;
+}
+
+.tabela--catalogo .tabela__item {
+  width: 30%;
+}
+
+/* A margem contra o alvo: o trilho cinza, a barra em tinta suave, o alvo em tinta. */
+
+.margem-alvo {
+  display: block;
+  width: 100%;
+  max-width: 240px;
+  height: 12px;
+}
+
+.margem-alvo__trilho {
+  fill: var(--regua);
+}
+
+.margem-alvo__barra {
+  fill: var(--grafico-comparacao);
+}
+
+.margem-alvo__barra--quebra {
+  fill: var(--negativo);
+}
+
+.margem-alvo__alvo {
+  fill: var(--grafico-tinta);
+}
+
+/* Premissas */
+
+.premissas {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.premissas__linha {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  gap: 4px var(--respiro);
+  padding-block: 10px;
+}
+
+.premissas__linha + .premissas__linha {
+  border-top: 1px solid var(--regua);
+}
+
+.premissas dt {
+  color: var(--texto-suave);
+}
+
+.premissas dd {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+}
+
+.premissas__fonte {
+  color: var(--texto-suave);
+  font-size: var(--tamanho-pequeno);
+  line-height: var(--altura-pequeno);
+}
+
+.premissas--compacta .premissas__linha {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
+  padding-block: 8px;
+}
+
+.premissas__detalhe summary {
+  width: max-content;
+  color: var(--texto-suave);
+  font-size: var(--tamanho-pequeno);
+  line-height: var(--altura-pequeno);
+  cursor: pointer;
+}
+
+/* Carregando e falha */
+
+.carregando {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.carregando__barra {
+  display: block;
+  height: 20px;
+  border-radius: 4px;
+  background: var(--elevado);
+}
+
+.carregando__barra:nth-child(2n) {
+  width: 72%;
+}
+
+.falha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px var(--espaco);
+  padding: 12px 16px;
+  border-radius: var(--raio-cartao);
+  background: var(--selo-negativo-fundo);
+  color: var(--selo-negativo-tinta);
+}
+
+.falha .botao-texto {
+  color: var(--selo-negativo-tinta);
+}
+
+/* Catálogo */
+
+.catalogo__topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco) var(--respiro);
+  margin-bottom: var(--espaco);
+}
+
+.catalogo__premissas {
+  margin-top: var(--espaco);
+}
+
+.catalogo__motivo {
+  margin-top: 4px;
+}
+
+.tabela__linha--pendente .tabela__nome {
+  font-weight: var(--peso-medio);
+}
+
+/* Controle segmentado: tão largo quanto as opções (app-screens §4.4). */
+
+.segmentado {
+  display: inline-flex;
+  flex: none;
+  padding: 3px;
+  border-radius: var(--raio-controle);
+  background: var(--acao-secundaria);
+}
+
+.segmentado__opcao {
+  min-height: 30px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #555555; /* 5,6:1 sobre o trilho #e5e5e5 */
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+}
+
+.segmentado__opcao[aria-pressed='true'] {
+  background: var(--superficie);
+  color: var(--texto);
+}
+
+/* Diálogos: o que flutua leva sombra; o resto da tela fica parado. */
+
+.dialogo,
+.lateral {
+  border: 1px solid var(--borda);
+  background: var(--superficie);
+  color: var(--texto);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16); /* taste-skill-ignore: só o que flutua (diálogo e lateral) */
+}
+
+.dialogo::backdrop,
+.lateral::backdrop {
+  background: rgba(10, 10, 10, 0.32);
+}
+
+.dialogo {
+  width: min(560px, 100% - 32px);
+  padding: var(--respiro);
+  border-radius: var(--raio-cartao);
+}
+
+.dialogo[open] {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco);
+}
+
+.dialogo__corpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco);
+}
+
+.dialogo__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--espaco);
+}
+
+.dialogo__falha {
+  color: var(--negativo);
+}
+
+.candidatas {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.candidata {
+  display: flex;
+  gap: var(--espaco);
+  align-items: flex-start;
+  padding: 12px 0;
+  cursor: pointer;
+}
+
+.candidata + .candidata {
+  border-top: 1px solid var(--regua);
+}
+
+.candidata input {
+  margin-top: 3px;
+  accent-color: var(--acao);
+}
+
+.candidata__texto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.candidata__linha {
+  display: flex;
+  gap: 8px;
+}
+
+.candidata__meta {
+  color: var(--texto-suave);
+  font-size: var(--tamanho-pequeno);
+  line-height: var(--altura-pequeno);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.campo label {
+  font-weight: var(--peso-medio);
+}
+
+.campo input {
+  width: 200px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--borda-campo);
+  border-radius: var(--raio-controle);
+  background: var(--superficie);
+}
+
+.campo__ajuda {
+  color: var(--texto-suave);
+  font-size: var(--tamanho-pequeno);
+  line-height: var(--altura-pequeno);
+}
+
+/* Explicação lateral: folha de 440px presa à direita. */
+
+.lateral {
+  width: min(440px, 100%);
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0 0 0 auto;
+  padding: var(--respiro);
+  border-width: 0 0 0 1px;
+  overflow-y: auto;
+}
+
+.lateral[open] {
+  display: flex;
+  flex-direction: column;
+  gap: var(--respiro);
+}
+
+.lateral__topo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--espaco);
+}
+
+.lateral__estado {
+  margin-top: calc(-1 * var(--espaco));
+  color: var(--texto-suave);
+}
+
+.lateral__secao {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lateral__lei {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lateral__texto-lei {
+  color: var(--texto-suave);
+}
+
+.lateral__aviso {
+  padding-top: var(--espaco);
+  border-top: 1px solid var(--regua);
+}
+
+.memoria {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+}
+
+.memoria dt {
+  font-weight: var(--peso-medio);
+}
+
+.memoria dd {
+  margin: 0;
+  color: var(--texto-suave);
+}
+
+/* Tablet: o lado e as premissas descem para baixo do bloco principal. */
+
+@media (max-width: 1023px) {
+  .painel__premissas .premissas--compacta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .painel__alerta,
+  .painel__margens {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Celular: a tabela vira lista de duas linhas; as ações ficam no fim de cada item (app-screens §12). */
+
+@media (max-width: 640px) {
+  .painel__metade {
+    grid-column: 1 / -1;
+  }
+
+  .painel__premissas .premissas--compacta {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .bloco {
+    padding: 16px;
+  }
+
+  .achado {
+    font-size: var(--tamanho-secao);
+    line-height: var(--altura-secao);
+  }
+
+  .faixa {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .faixa__celula + .faixa__celula {
+    border-left: 0;
+    border-top: 1px solid var(--borda);
+  }
+
+  .faixa__celula {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    padding: 12px 16px;
+  }
+
+  .faixa__celula dt {
+    grid-row: span 2;
+  }
+
+  .faixa__celula dd {
+    text-align: right;
+  }
+
+  .tabela--margens .tabela__grafico {
+    display: none;
+  }
+
+  .tabela--catalogo thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .tabela--catalogo,
+  .tabela--catalogo tbody,
+  .tabela--catalogo tfoot,
+  .tabela--catalogo tr {
+    display: block;
+  }
+
+  .tabela--catalogo tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 4px var(--espaco);
+    padding-block: 12px;
+  }
+
+  .tabela--catalogo tbody tr + tr,
+  .tabela--catalogo tfoot tr {
+    border-top: 1px solid var(--regua);
+  }
+
+  .tabela--catalogo th,
+  .tabela--catalogo td,
+  .tabela--catalogo tbody tr + tr th,
+  .tabela--catalogo tbody tr + tr td,
+  .tabela--catalogo tfoot th,
+  .tabela--catalogo tfoot td {
+    padding: 0;
+    border: 0;
+  }
+
+  .tabela--catalogo .tabela__item,
+  .tabela--catalogo .tabela__estado,
+  .tabela--catalogo .tabela__acoes {
+    grid-column: 1 / -1;
+    width: auto;
+    max-width: none;
+  }
+
+  .tabela--catalogo td:empty {
+    display: none;
+  }
+
+  .tabela--catalogo td[data-rotulo]::before {
+    content: attr(data-rotulo);
+    display: block;
+    color: var(--texto-suave);
+    font-family: var(--fonte);
+    font-size: var(--tamanho-pequeno);
+    line-height: var(--altura-pequeno);
+  }
+
+  .tabela--catalogo .num {
+    text-align: left;
+  }
+
+  .tabela--catalogo .tabela__estado::before {
+    display: none;
+  }
+
+  .tabela__acoes {
+    text-align: left;
+  }
+
+  .tabela__acoes .botao-texto,
+  .tabela__acoes .botao-secundario {
+    min-height: 44px;
+  }
+
+  .premissas__linha {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .lateral {
+    width: 100%;
+    border-width: 0;
+  }
+
+  .dialogo__acoes > * {
+    flex: 1;
+    justify-content: center;
+  }
+}
