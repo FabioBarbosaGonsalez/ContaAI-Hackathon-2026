@@ -173,7 +173,7 @@ O `eval` foi testado por um módulo da própria página, e não pelo console do 
   - o proxy repete os cabeçalhos de `cabecalhosDeSeguranca` e serve `index.html` para as rotas da tela;
   - a API fica em `/api`;
   - entra HSTS.
-- **PR 3 da E5:** as telas, com o portão da skill (P11, zero FAIL nas três larguras) e as regras de exibição de texto em cada uma.
+- **PR 3 da E5:** as telas, com o portão da skill (P11, zero FAIL nas três larguras) e as regras de exibição de texto em cada uma. Dividido em 3a, 3b e 3c; o 3a está no [ADR 0013](0013-telas-painel-e-catalogo.md).
 - **ESLint 10:** quando o `eslint-plugin-jsx-a11y` aceitar a 10.
 - **Tradução das mensagens de validação no backend:** PR separado (decisão 2). **Resolvido:** revisão da E5 no [ADR 0009](0009-camada-http-e-erros.md).
 - **O aviso de `POST /espacos`** segue escrito para quem integra a API. A tela não o mostra.

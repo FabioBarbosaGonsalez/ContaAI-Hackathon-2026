@@ -1,11 +1,13 @@
 // Shell sem barra lateral (direction.json, shell "no-sidebar"):
-// - barra de 48px no fundo da página sobre uma coluna centrada;
+// - barra preta de 48px, com o texto em branco (pedido do usuário em 2026-11-26), sobre uma coluna centrada;
 // - a marca na borda esquerda da coluna;
 // - os destinos em texto e, à direita, onde a pessoa está (modo e espaço).
 // No celular, a barra fica com a marca e um botão de menu, e os destinos vão para uma folha de tela cheia.
 
 import { useRef } from 'react';
 import './shell.css';
+import { BarreiraDeErro } from './BarreiraDeErro.tsx';
+import { Marca } from './Marca.tsx';
 import { Link, useCaminho } from './navegacao.tsx';
 import { NaoEncontrada, PAGINAS } from './paginas.tsx';
 import { Rodape } from './Rodape.tsx';
@@ -48,7 +50,7 @@ export function Shell() {
       <header className="barra">
         <div className="coluna barra__linha">
           <Link para="/" className="marca">
-            ContaAI
+            <Marca />
           </Link>
           <nav className="barra__destinos" aria-label="Principal">
             <Destinos atual={rota?.caminho ?? null} />
@@ -64,7 +66,9 @@ export function Shell() {
 
       <dialog ref={refMenu} className="folha" aria-label="Menu">
         <div className="folha__topo">
-          <span className="marca">ContaAI</span>
+          <span className="marca">
+            <Marca />
+          </span>
           <button type="button" className="botao-secundario" onClick={fecharMenu}>
             Fechar
           </button>
@@ -76,7 +80,9 @@ export function Shell() {
       </dialog>
 
       <main id="conteudo" className="coluna conteudo" tabIndex={-1}>
-        <PaginaAtual />
+        <BarreiraDeErro key={caminho}>
+          <PaginaAtual />
+        </BarreiraDeErro>
       </main>
 
       <Rodape />

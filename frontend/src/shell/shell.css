@@ -1,6 +1,6 @@
 /*
  * Shell sem barra lateral (direction.json, "no-sidebar"):
- * - barra de 48px no fundo da página, sem borda, sobre uma coluna centrada de 1152px;
+ * - barra preta de 48px, com o texto em branco, sobre uma coluna centrada de 1152px (ADR 0013);
  * - a marca na borda esquerda da coluna, e o grupo da direita termina na borda direita.
  * Abaixo de 900px, os destinos e o estado da sessão vão para a folha do menu (§12 do capítulo da skill).
  */
@@ -30,7 +30,13 @@
 /* Barra */
 
 .barra {
-  background: var(--fundo);
+  background: var(--barra-fundo);
+  color: var(--barra-texto);
+}
+
+/* O foco em tinta sumiria no preto: na barra, ele é branco. */
+.barra :focus-visible {
+  outline-color: var(--barra-texto);
 }
 
 .barra__linha {
@@ -41,6 +47,9 @@
 }
 
 .marca {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   color: var(--texto);
   font-size: var(--tamanho-secao);
   line-height: var(--altura-secao);
@@ -68,6 +77,49 @@
 
 .destinos__link[aria-current='page'] {
   color: var(--texto);
+}
+
+/* O símbolo: quadrado preto; na barra preta, com um contorno branco fino. */
+.marca__simbolo {
+  flex: none;
+}
+
+.marca__quadrado {
+  fill: var(--acao);
+  stroke: none;
+}
+
+.barra .marca {
+  color: var(--barra-texto);
+}
+
+.barra .marca__quadrado {
+  stroke: var(--barra-texto);
+  stroke-width: 1.5;
+}
+
+/* Na barra: destinos em cinza claro, o atual em branco com um traço embaixo. */
+.barra .destinos__link {
+  color: var(--barra-texto-suave);
+}
+
+.barra .destinos__link:hover,
+.barra .destinos__link[aria-current='page'] {
+  color: var(--barra-texto);
+}
+
+.barra .destinos__link[aria-current='page'] {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
+}
+
+.barra .status__linha {
+  color: var(--barra-texto-suave);
+}
+
+.barra .botao-texto {
+  color: var(--barra-texto);
 }
 
 .barra__status {

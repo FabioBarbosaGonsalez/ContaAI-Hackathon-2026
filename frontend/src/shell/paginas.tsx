@@ -1,5 +1,7 @@
-// As páginas da fundação. O conteúdo de cada tela entra no PR 3 da E5 (telas com o portão da skill).
+// As páginas da tela. Painel e Catálogo entraram no PR 3a; Regime e Notas entram no 3b, e Contador no 3c.
 
+import { Catalogo } from '../telas/Catalogo.tsx';
+import { Painel } from '../telas/Painel.tsx';
 import { Link } from './navegacao.tsx';
 import { Pagina } from './Pagina.tsx';
 import type { Caminho } from './rotas.ts';
@@ -9,16 +11,8 @@ function EmConstrucao() {
 }
 
 export const PAGINAS: Record<Caminho, () => React.JSX.Element> = {
-  '/': () => (
-    <Pagina titulo="Painel">
-      <EmConstrucao />
-    </Pagina>
-  ),
-  '/catalogo': () => (
-    <Pagina titulo="Catálogo">
-      <EmConstrucao />
-    </Pagina>
-  ),
+  '/': Painel,
+  '/catalogo': Catalogo,
   '/regime': () => (
     <Pagina titulo="Regime">
       <EmConstrucao />
