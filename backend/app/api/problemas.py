@@ -23,6 +23,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.agente.provedor import ProvedorFalhou
+from app.api.mensagens import traduzir
 from app.contrato import (
     CampoInvalido,
     OrigemCampo,
@@ -173,23 +174,37 @@ ORIGENS: dict[Any, OrigemCampo] = {o: o for o in get_args(OrigemCampo)}
 
 
 def campos_invalidos(erros: Sequence[Any]) -> list[CampoInvalido]:
-    """Só local e mensagem: o valor enviado (`input`) e o contexto interno (`ctx`) não voltam."""
+    """Só local e mensagem em português (app/api/mensagens.py): o valor enviado (`input`) não volta, e o
+    `ctx` só entra como limite do contrato (tamanho, casas decimais, valores aceitos)."""
     campos = []
     for e in erros:
         loc = list(e.get("loc", ()))
         origem = ORIGENS.get(loc[0]) if loc else None
         resto = loc[1:] if origem else loc  # sem origem conhecida, o local inteiro fica no ponteiro
-        campos.append(CampoInvalido(origem=origem or "body", campo=_ponteiro(resto), detalhe=str(e.get("msg", ""))))
+        if e.get("type") == "json_invalid":
+            resto = []  # o FastAPI põe a posição do caractere no local; não é um campo
+        campos.append(CampoInvalido(origem=origem or "body", campo=_ponteiro(resto), detalhe=traduzir(e)))
     return campos
+
+
+# Nome da origem no texto do `detail` (em `campos`, a origem fica com o nome do contrato).
+NOMES_ORIGEM: dict[OrigemCampo, str] = {
+    "body": "corpo",
+    "query": "parâmetro",
+    "path": "caminho",
+    "header": "cabeçalho",
+    "cookie": "cookie",
+}
 
 
 def _resumo(campos: list[CampoInvalido]) -> str:
     primeiro = campos[0] if campos else None
     if primeiro is None:
         return "A requisição não segue o contrato."
-    onde = primeiro.origem if primeiro.campo == "#" else f"{primeiro.origem} {primeiro.campo[2:]}"
-    extra = f" (e mais {len(campos) - 1} problema(s) em `campos`)" if len(campos) > 1 else ""
-    return f"{onde}: {primeiro.detalhe}{extra}"
+    origem = NOMES_ORIGEM.get(primeiro.origem, primeiro.origem)
+    onde = "" if primeiro.campo == "#" else f"{primeiro.campo[2:]} ({origem}): "  # "#": a frase já diz o quê
+    extra = f" E mais {len(campos) - 1} problema(s)." if len(campos) > 1 else ""
+    return f"{onde}{primeiro.detalhe}{extra}"
 
 
 # ---------------------------------------------------------------------------
