@@ -70,7 +70,9 @@ const api = loadEnv('production', RAIZ, 'VITE_').VITE_CONTAAI_API;
 
 const html = readFileSync(join(DIST, 'index.html'), 'utf8');
 const esperada = politicaDeSeguranca({ api, cabecalho: false }).replaceAll("'", '&#39;');
-const metas = [...html.matchAll(/<meta http-equiv="Content-Security-Policy" content="([^"]*)"/g)];
+// HTML não diferencia maiúsculas (<SCRIPT> vale como <script>): toda busca de tag e atributo usa a flag i
+// (alerta js/bad-tag-filter do CodeQL).
+const metas = [...html.matchAll(/<meta\s+http-equiv\s*=\s*["']?Content-Security-Policy["']?\s+content\s*=\s*"([^"]*)"/gi)];
 if (metas.length !== 1) {
   problemas.push(`dist/index.html: esperava 1 <meta> de CSP, achou ${String(metas.length)} (item 3)`);
 } else {
@@ -78,7 +80,7 @@ if (metas.length !== 1) {
     problemas.push('dist/index.html: a CSP do <meta> difere de csp.ts (item 3)');
   }
   const posicaoCsp = metas[0].index;
-  const primeiroRecurso = html.search(/<script|<link rel="stylesheet"|<style/);
+  const primeiroRecurso = html.search(/<script\b|<link\b[^>]*\brel\s*=\s*["']?stylesheet|<style\b/i);
   if (primeiroRecurso !== -1 && primeiroRecurso < posicaoCsp) {
     problemas.push('dist/index.html: há script ou estilo antes do <meta> da CSP, que só vale depois dele (item 3)');
   }
@@ -97,15 +99,15 @@ for (const arquivo of saida) {
   const texto = readFileSync(arquivo, 'utf8');
 
   if (ext === '.html') {
-    for (const tag of texto.matchAll(/<script\b[^>]*>/g)) {
-      if (!/\ssrc="\/[^"]*"/.test(tag[0])) {
+    for (const tag of texto.matchAll(/<script\b[^>]*>/gi)) {
+      if (!/\ssrc\s*=\s*["']\/(?!\/)[^"']*["']/i.test(tag[0])) {
         problemas.push(`${nome}: <script> sem src próprio: ${tag[0]} (item 3)`);
       }
     }
-    if (/<style\b/.test(texto)) problemas.push(`${nome}: <style> embutido (CSP style-src 'self')`);
-    if (/\sstyle="/.test(texto)) problemas.push(`${nome}: atributo style (CSP style-src 'self')`);
-    if (/\son[a-z]+="/i.test(texto)) problemas.push(`${nome}: atributo de evento embutido (onclick etc.)`);
-    for (const ref of texto.matchAll(/\s(?:src|href)="([^"]*)"/g)) {
+    if (/<style\b/i.test(texto)) problemas.push(`${nome}: <style> embutido (CSP style-src 'self')`);
+    if (/\sstyle\s*=/i.test(texto)) problemas.push(`${nome}: atributo style (CSP style-src 'self')`);
+    if (/\son[a-z]+\s*=/i.test(texto)) problemas.push(`${nome}: atributo de evento embutido (onclick etc.)`);
+    for (const ref of texto.matchAll(/\s(?:src|href)\s*=\s*["']([^"']*)["']/gi)) {
       if (!ref[1].startsWith('/') || ref[1].startsWith('//')) {
         problemas.push(`${nome}: recurso fora do próprio endereço: ${ref[1]} (item 6)`);
       }
