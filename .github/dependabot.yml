@@ -1,4 +1,4 @@
-# Atualizações de dependências. Adicionar o bloco de npm quando frontend/ existir.
+# Atualizações de dependências.
 version: 2
 updates:
   - package-ecosystem: github-actions
@@ -12,6 +12,16 @@ updates:
     directory: /backend
     schedule:
       interval: weekly
+    labels: [dependencias]
+
+  # Frontend (frontend/package.json + package-lock.json). O cooldown espera 7 dias depois de cada
+  # versão nova, como o min-release-age do frontend/.npmrc; não vale para as atualizações de segurança.
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
     labels: [dependencias]
 
   # Imagens base dos motores (eclipse-temurin). A versão dos motores da Receita é fixada

@@ -89,9 +89,9 @@ Todos os dados são sintéticos (P10): empresas, CNPJs e notas fictícios. Não 
 - **DNS rebinding:** só os hosts de `CONTAAI_HOSTS_PERMITIDOS` são aceitos (padrão: `127.0.0.1` e `localhost`). Os outros recebem 400.
 - **CORS:** expõe só `Retry-After` e `X-ContaAI-Mock`, que a tela precisa ler.
 
-### Regras para a interface (E5)
+### Regras para a interface (E5, [ADR 0012](adr/0012-fundacao-do-frontend.md))
 
-A tela é a próxima camada exposta a XSS. A fundação do frontend (PR 2 da E5) traz estas regras com teste:
+A tela é a próxima camada exposta a XSS. A fundação do frontend (PR 2 da E5) traz estas regras, cada uma com lint, teste ou checagem no CI:
 
 1. **Todo texto vindo da API é exibido como texto.** Isso vale para:
    - a descrição da nota (`xProd`, escrita pelo fornecedor);
@@ -101,31 +101,53 @@ A tela é a próxima camada exposta a XSS. A fundação do frontend (PR 2 da E5)
    - o `detail` dos erros;
    - os nomes das empresas.
 
-   O React escapa texto por padrão. São proibidos `dangerouslySetInnerHTML`, `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `document.write` e `eval`/`new Function`, com regra de lint (`react/no-danger`) e busca no código no CI.
-2. **Nenhum texto da API vira `href`, `src`, `style` ou nome de atributo.** Os links da tela são rotas fixas do próprio app. Um `javascript:` vindo de dado nunca chega a um link.
-3. **Sem script embutido na página gerada.** Um teste procura `<script>` sem `src` no `dist/`, e a CSP da tela é:
+   O React escapa texto por padrão. São proibidos `dangerouslySetInnerHTML`, `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `document.write`, `srcDoc` e `eval`/`new Function`:
+   - pelo lint (`react/no-danger` e `no-restricted-syntax` em `frontend/eslint.config.js`);
+   - pela busca no código do `npm run seguranca` no CI (`frontend/scripts/checar-seguranca.mjs`).
+
+   Um corpo de erro fora do formato da RFC 9457 (HTML de um proxy, texto) nunca chega à tela, e o teste confere que um `detail` com `<img onerror>` aparece como texto.
+2. **Nenhum texto da API vira `href`, `src`, `style` ou nome de atributo.**
+   - Os links da tela são rotas fixas do próprio app: o `Link` só aceita o tipo `Caminho`, e o lint barra `href`/`src` montado de um valor em qualquer outro lugar.
+   - O atributo `style` é proibido.
+   - Os ids que vão no caminho da API só podem ter letras, dígitos e hífen. Um `..` trocaria a rota pedida.
+3. **Sem script embutido na página gerada.** O `npm run seguranca` confere no `dist/` que não há `<script>` sem `src` próprio, `<style>`, atributo `style`, `on*=` ou mapa de código. A CSP da tela (`frontend/csp.ts`) é:
 
    ```
    default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self';
-   base-uri 'none'; form-action 'none'; frame-ancestors 'none'; require-trusted-types-for 'script'
+   base-uri 'none'; form-action 'none'; require-trusted-types-for 'script'; trusted-types 'none'; frame-ancestors 'none'
    ```
 
-   - No desenvolvimento, `connect-src` inclui o endereço da API.
-   - Trusted Types e `style-src 'self'` com os estilos do React ficam a conferir no navegador, no PR da fundação.
-4. **Segredos fora do código da tela.** Toda variável de ambiente do Vite (`VITE_*`) vai para o navegador e é pública. O token do chat só aparece num campo, quando a API responde 401, e fica só na memória da aba.
-5. **O id do espaço fica no navegador, nunca no endereço da página.** Os dados são fictícios e o espaço vence em 120 min.
+   - **No build, ela vai num `<meta>`** logo depois do `charset`, antes de todo script e estilo. No `<meta>`, o navegador ignora `frame-ancestors`, que fica para o cabeçalho.
+   - **O `vite preview`** a manda como cabeçalho, com `nosniff`, `Referrer-Policy` e `X-Frame-Options`. O proxy da E6 deve repetir esses cabeçalhos (`cabecalhosDeSeguranca`).
+   - **`connect-src`** recebe a origem da API só se o build apontar para outra origem (`VITE_CONTAAI_API`).
+   - **O servidor de desenvolvimento do Vite fica sem CSP**, porque injeta script (React Refresh) e estilo embutidos.
+   - **Conferido no Chrome em 2026-11-25:**
+     - Trusted Types e `style-src 'self'` funcionam com o React (nenhuma violação na carga);
+     - `innerHTML`, `eval`, `<script>`, `<style>` injetados, `fetch` e imagem a terceiros e o iframe de outra origem foram bloqueados.
+
+     A tabela completa está no ADR 0012.
+4. **Segredos fora do código da tela.**
+   - Toda variável de ambiente do Vite (`VITE_*`) vai para o navegador e é pública. Só `src/api/config.ts` lê o ambiente, e só o endereço da API; o lint barra o resto.
+   - O token do chat só aparece num campo, quando a API responde 401, e fica só na memória da aba. Não vai ao armazenamento do navegador, a cookie nem ao endereço (testado).
+5. **O id do espaço fica no navegador (`localStorage`), nunca no endereço da página.**
+   - Só é aceito no padrão de 32 hexadecimais.
+   - Vai só às rotas que declaram o header no contrato.
+   - O espaço vence em 120 min, contados pela duração que o servidor informa.
+   - Os dados são fictícios.
 6. **Nenhuma requisição a terceiros:**
-   - fontes Geist hospedadas junto do app (OFL-1.1);
-   - sem CDN, analytics ou rastreamento (LGPD).
-7. **Upload:**
-   - `accept=".xml"`;
-   - o tamanho é conferido antes de enviar;
+   - fontes Geist hospedadas junto do app (OFL-1.1); no Chrome, só os arquivos do alfabeto latino são baixados;
+   - sem CDN, analytics ou rastreamento (LGPD);
+   - o `npm run seguranca` recusa endereço absoluto no build, salvo os nomes de espaço XML e os links de erro do React, que são texto.
+7. **Upload (`frontend/src/api/upload.ts`):**
+   - o campo oferece só XML (`.xml`, `application/xml`, `text/xml`);
+   - o tipo e o tamanho (1.000.000 bytes) são conferidos antes de enviar, e o teste do backend confere que são os mesmos dele;
    - o backend continua sendo quem decide (411, 413 e 415).
 8. **Dependências:**
    - `npm ci` com o lockfile;
-   - `npm audit` no CI;
-   - bloco npm no Dependabot;
-   - CodeQL de JavaScript (o job já existe).
+   - `frontend/.npmrc`: só versões publicadas há mais de 7 dias, versões exatas e sem scripts de instalação;
+   - `npm audit` e `npm audit signatures` no CI;
+   - bloco npm no Dependabot, com espera de 7 dias;
+   - CodeQL de JavaScript.
 
 ### Vazamento de informação ([ADR 0009](adr/0009-camada-http-e-erros.md))
 
@@ -159,7 +181,10 @@ A tela é a próxima camada exposta a XSS. A fundação do frontend (PR 2 da E5)
 | Varredura dinâmica da API pelo OpenAPI | Local, antes de cada etapa (ADR 0011) | OWASP ZAP (Apache-2.0), imagem oficial `ghcr.io/zaproxy/zaproxy` |
 | Tipos | CI, `mypy` com o plugin do Pydantic | mypy (MIT) |
 | Cobertura mínima de 90% no `app/` | CI | coverage.py (Apache-2.0) |
-| Atualizações | Dependabot semanal (Actions, uv, imagens dos motores) e alertas de segurança | GitHub |
+| Dependências do frontend travadas, sem scripts de instalação e com 7 dias de publicação | CI, `npm ci`; `frontend/.npmrc` | npm (Artistic-2.0) |
+| Vulnerabilidades e assinaturas das dependências do frontend | CI, job "Frontend": `npm audit --audit-level=low` e `npm audit signatures` | npm, banco do registro público, sem conta |
+| Regras de segurança da tela (XSS, CSP, endereços, segredos) | CI, job "Frontend": ESLint e `npm run seguranca` | ESLint (MIT) e roteiro próprio |
+| Atualizações | Dependabot semanal (Actions, uv, npm com espera de 7 dias, imagens dos motores) e alertas de segurança | GitHub |
 | Relato privado de vulnerabilidades | GitHub, ligado nas configurações (ver [SECURITY.md](../SECURITY.md)) | GitHub (recurso de repositório público) |
 
 **Relato privado (ligado em 2026-11-25).** Segundo a documentação do GitHub ("Configuring private vulnerability reporting for a repository" e "Managing privately reported security vulnerabilities"):
@@ -183,6 +208,8 @@ Não usamos a `gitleaks-action`: desde a v2 ela deixou de ser MIT e exige chave 
   - limite de corpo no proxy;
   - `CONTAAI_DOCS_PUBLICA=false`;
   - o domínio público em `CONTAAI_HOSTS_PERMITIDOS` e em `CONTAAI_CORS_ORIGENS`;
-  - HSTS e a API em `/api` no proxy.
+  - HSTS e a API em `/api` no proxy;
+  - o proxy repetir os cabeçalhos da tela (`cabecalhosDeSeguranca` em `frontend/csp.ts`), com a CSP e `frame-ancestors`.
+- **ESLint 9 em fim de vida** (desde 2026-08-06, sem correção de segurança). Fica por decisão do usuário até o `eslint-plugin-jsx-a11y` aceitar a 10; só roda no desenvolvimento e no CI ([ADR 0012](adr/0012-fundacao-do-frontend.md)).
 - **Erro 500 sem os cabeçalhos de segurança e de CORS**, porque o Starlette o monta por fora dos middlewares. O corpo não traz nada interno ([ADR 0009](adr/0009-camada-http-e-erros.md)).
 - **Custo da IA real** ainda não verificado. Precisa ser conferido na página oficial do provedor antes de ligar a chave ([ADR 0006](adr/0006-agente.md)).

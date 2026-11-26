@@ -1,0 +1,99 @@
+/*
+ * Tokens da tela do ContaAI.
+ *
+ * Os valores vêm do estilo `achromatic-ledger` sorteado pela skill design-taste-frontend
+ * (.taste-skill/app/direction.json, seed 1986745741). O nome em inglês da folha vai em cada comentário.
+ * O CSS é escrito no projeto: o assets/app.css da skill não declara licença e não é copiado (ADR 0011, L9).
+ *
+ * A regra do estilo:
+ * - o cromo (barra, botões, bordas) não tem cor nenhuma;
+ * - dinheiro e contagens vão em tinta;
+ * - o único matiz de gráfico marca o dado principal da tela;
+ * - o outro matiz é um sinal pequeno onde um número mudou. Menos de 1% dos pixels com cor.
+ *
+ * Contraste conferido em tokens.test.ts (WCAG 2.2): texto 4,5:1; gráfico, foco e borda de campo 3:1.
+ */
+
+:root {
+  color-scheme: light;
+
+  /* Superfícies */
+  --fundo: #f2f4f7; /* ground: o cinza-azulado de livro-caixa que a folha sugere no lugar de #f8f8f8 */
+  --superficie: #ffffff; /* surface: cartões e painéis */
+  --elevado: #eeeeee; /* raised: linha em foco, fundo de seleção */
+  --borda: #e6e6e6; /* border: borda de cartão */
+  --regua: #f0f0f0; /* rule: divisória entre linhas */
+  --controle: #d4d4d4; /* control: borda de botão secundário e de separador de controle */
+  /*
+   * Borda de campo de texto: o campo é identificado só pela borda, e a WCAG 2.2 (1.4.11) pede 3:1 contra a
+   * superfície. O #d4d4d4 da folha dá cerca de 1,5:1; aqui vai o cinza de comparação do gráfico.
+   */
+  --borda-campo: #8a8a8a;
+
+  /* Texto */
+  --texto: #0a0a0a; /* text */
+  --texto-suave: #6b6b6b; /* muted: o cinza mais claro que ainda dá 4,5:1 no branco e no fundo */
+
+  /* Ação: o botão principal é quase preto; o secundário, uma pílula cinza (signature da folha) */
+  --acao: #141414; /* accent */
+  --acao-texto: #ffffff;
+  --acao-secundaria: #e5e5e5;
+
+  /* Sinais: só onde um número mudou */
+  --positivo: #2e7d32; /* positive */
+  --negativo: #c4242a; /* negative: também a margem abaixo do alvo */
+  --atencao: #92400e; /* warning */
+
+  /* Gráfico: tinta, comparação e o matiz do dado principal (o crédito que o cliente leva, a margem em foco) */
+  --grafico-tinta: #141414;
+  --grafico-comparacao: #8a8a8a;
+  --grafico-destaque: #1d5fbf;
+
+  /* Selos de estado (pills): fundo claro e tinta escura do mesmo matiz */
+  --selo-positivo-fundo: #dcfae5;
+  --selo-positivo-tinta: #04250e;
+  --selo-negativo-fundo: #ffedea;
+  --selo-negativo-tinta: #831c1e;
+  --selo-atencao-fundo: #fffbeb;
+  --selo-atencao-tinta: #92400e;
+  --selo-neutro-fundo: #eeeeee;
+  --selo-neutro-tinta: #3d3d3d;
+
+  /* Foco do teclado: em tinta, sem matiz, com 3:1 no fundo e na superfície */
+  --foco: #141414;
+  --foco-largura: 2px;
+  --foco-afastamento: 2px;
+
+  /* Tipografia: Geist no texto, Geist Mono em todo número (decisão do estilo, inventário §3) */
+  --fonte: 'Geist Variable', Inter, system-ui, sans-serif;
+  --fonte-numero: 'Geist Mono Variable', ui-monospace, monospace;
+
+  --tamanho-titulo: 24px; /* title */
+  --tamanho-secao: 16px; /* section */
+  --tamanho-kpi: 30px; /* kpi */
+  --tamanho-corpo: 14px; /* body */
+  --tamanho-pequeno: 12px; /* small */
+
+  --altura-titulo: 32px;
+  --altura-secao: 24px;
+  --altura-kpi: 36px;
+  --altura-corpo: 20px;
+  --altura-pequeno: 16px;
+
+  --peso-normal: 400;
+  --peso-medio: 500;
+  --peso-dinheiro: 700; /* 700 só em valores em dinheiro; os outros números ficam em 400-500 */
+
+  /* Forma e espaço (densidade esparsa, base de 4px) */
+  --raio-cartao: 8px;
+  --raio-controle: 6px;
+  --espaco: 12px; /* gap */
+  --respiro: 24px; /* pad */
+  --altura-controle: 36px;
+  --altura-linha: 44px;
+
+  /* Shell sem barra lateral: barra de 46-48px sobre coluna centrada de 1088-1208px */
+  --altura-barra: 48px;
+  --largura-coluna: 1152px;
+  --margem-celular: 16px;
+}

@@ -14,8 +14,10 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app import mocks
+from app.api.rotas.notas import TIPOS_XML
 from app.config import Configuracao, configuracao
 from app.contrato import (
+    AVISO_LEGAL,
     AlertasResposta,
     BuscaNcmResposta,
     CarrinhoResposta,
@@ -262,6 +264,27 @@ def test_openapi_exportado_esta_atualizado() -> None:
     assert arquivo.read_text(encoding="utf-8") == modulo.gerar(), (
         "O contrato mudou: rode 'uv run python scripts/exportar_openapi.py' e revise a diferença."
     )
+
+
+def test_aviso_legal_da_tela_e_o_do_backend() -> None:
+    """P9: o rodapé da tela mostra o mesmo aviso legal da API (frontend/src/shell/aviso.ts)."""
+    arquivo = RAIZ / "frontend" / "src" / "shell" / "aviso.ts"
+    achado = re.search(r"AVISO_LEGAL\s*=\s*'([^']+)'", arquivo.read_text(encoding="utf-8"))
+    assert achado is not None, "AVISO_LEGAL não encontrado em frontend/src/shell/aviso.ts"
+    assert achado.group(1) == AVISO_LEGAL, "O aviso legal da tela divergiu de AVISO_LEGAL em app/contrato.py."
+
+
+def test_limite_da_nota_na_tela_e_o_do_backend() -> None:
+    """A tela confere o tamanho do XML antes de enviar (frontend/src/api/upload.ts) com o mesmo limite padrão."""
+    arquivo = RAIZ / "frontend" / "src" / "api" / "upload.ts"
+    achado = re.search(r"TAMANHO_MAX_NOTA_BYTES\s*=\s*([\d_]+);", arquivo.read_text(encoding="utf-8"))
+    assert achado is not None, "TAMANHO_MAX_NOTA_BYTES não encontrado em frontend/src/api/upload.ts"
+    padrao = Configuracao.model_fields["tamanho_max_nfe_bytes"].default
+    assert int(achado.group(1).replace("_", "")) == padrao
+
+    tipos = re.search(r"TIPOS_ACEITOS = new Set\(\[([^\]]*)\]\)", arquivo.read_text(encoding="utf-8"))
+    assert tipos is not None, "TIPOS_ACEITOS não encontrado em frontend/src/api/upload.ts"
+    assert set(re.findall(r"'([^']*)'", tipos.group(1))) == TIPOS_XML
 
 
 @pytest.mark.golden

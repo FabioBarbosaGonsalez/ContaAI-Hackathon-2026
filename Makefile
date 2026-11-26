@@ -1,6 +1,6 @@
 # Atalhos do ContaAI. No Windows sem make, rode os comandos da direita direto no terminal.
 
-.PHONY: motores parar api real sementes golden llm gravar-golden notas mocks indice openapi test lint tipos cobertura auditoria
+.PHONY: motores parar api real sementes golden llm gravar-golden notas mocks indice openapi test lint tipos cobertura auditoria tela tela-instalar tela-checar tela-contrato
 
 motores:        ## sobe os dois motores oficiais (primeira vez demora: Maven + banco)
 	docker compose up -d --build motor-rr motor-sn
@@ -52,3 +52,15 @@ cobertura:      ## testes do CI com cobertura; falha abaixo de 90% no app/
 
 auditoria:      ## vulnerabilidades conhecidas nas dependências travadas (pip-audit, banco do PyPI)
 	cd backend && uv export --locked --all-extras --no-emit-project --format requirements-txt -o .req-auditoria.txt 		&& uvx pip-audit==2.10.1 -r .req-auditoria.txt --require-hashes --disable-pip --strict; 		status=$$?; rm -f .req-auditoria.txt; exit $$status
+
+tela-instalar:  ## instala as dependências travadas do frontend (npm ci, sem scripts de instalação)
+	cd frontend && npm ci
+
+tela:           ## tela em desenvolvimento em http://127.0.0.1:3000 (a origem liberada no CORS)
+	cd frontend && npm run dev
+
+tela-checar:    ## o mesmo que o job de frontend do CI: auditoria, lint, tipos, testes, build e segurança
+	cd frontend && npm audit --audit-level=low && npm audit signatures && npm run contrato:checar && npm run lint && npm run typecheck && npm test && npx vite build && npm run seguranca
+
+tela-contrato:  ## regera os tipos da tela a partir de docs/contrato/openapi.json (depois do make openapi)
+	cd frontend && npm run contrato

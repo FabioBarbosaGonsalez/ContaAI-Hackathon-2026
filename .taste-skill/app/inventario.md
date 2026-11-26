@@ -158,4 +158,8 @@ Valores do cenário de demonstração (simulação de março de 2027, premissas 
   - a tela roda na porta 3000, a origem que o CORS já libera;
   - o endereço da API é configurável, e na E6 a API fica em `/api`, para `/catalogo` e `/contador` não colidirem;
   - a linha do tempo 2026 × 2027 (D2) e a exportação (D3) ficam fora da E5.
+- **Fundação feita ([ADR 0012](../../docs/adr/0012-fundacao-do-frontend.md)):**
+  - tokens deste estilo em `frontend/src/estilo/tokens.css`, com o fundo `#f2f4f7` (a troca que a folha sugere para um livro-caixa) e `--borda-campo` `#8a8a8a` (3:1 na borda de campo, WCAG 1.4.11);
+  - o shell sem barra lateral, com o rodapé do aviso legal e das versões dos motores;
+  - as páginas ainda sem conteúdo, à espera do PR 3.
 - **Arquivos da skill:** `assets/app.css` e `assets/charts.js` não declaram licença e não são copiados para o repositório (público, MIT). O CSS e os SVG (a barra de margem contra o alvo e a régua) são escritos no projeto, seguindo as regras do capítulo. A skill entra como referência e como portão, rodando da pasta dela.
