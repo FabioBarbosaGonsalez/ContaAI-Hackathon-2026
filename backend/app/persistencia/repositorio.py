@@ -60,6 +60,16 @@ class NotaRegistro:
 
 
 @dataclass(frozen=True)
+class NotaListada:
+    """Uma nota com o recibo gravado e a contagem atual dos alertas que ela gerou."""
+
+    importada_em: datetime
+    recibo_json: str
+    alertas_gerados: int
+    alertas_abertos: int
+
+
+@dataclass(frozen=True)
 class AlertaRegistro:
     alerta: Alerta
     nota_id: int
@@ -267,6 +277,21 @@ class Sessao:
             (cnpj,),
         ).fetchone()
         return None if linha is None else datetime.fromisoformat(linha["data_emissao"])
+
+    def notas(self, cnpj: str, limite: int) -> list[NotaListada]:
+        """Da emissão mais recente para a mais antiga (pelo instante, com o fuso da nota). Uma nota ainda sem
+        recibo fica de fora: o recibo entra na mesma transação da nota, então ninguém de fora a vê assim."""
+        linhas = self._c.execute(
+            "SELECT n.importada_em, n.recibo_json, COUNT(a.id) AS gerados, COUNT(a.id) - COUNT(a.aplicado_em)"
+            " AS abertos FROM notas n LEFT JOIN alertas a ON a.nota_id = n.id"
+            " WHERE n.cnpj = ? AND n.recibo_json <> '{}'"
+            " GROUP BY n.id ORDER BY julianday(n.data_emissao) DESC, n.id DESC LIMIT ?",
+            (cnpj, limite),
+        ).fetchall()
+        return [
+            NotaListada(datetime.fromisoformat(r["importada_em"]), r["recibo_json"], r["gerados"], r["abertos"])
+            for r in linhas
+        ]
 
     def gravar_recibo(self, nota_id: int, recibo_json: str) -> None:
         """O recibo é gravado na mesma transação da nota, depois de montado (ele cita os alertas criados)."""

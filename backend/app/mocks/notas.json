@@ -1,0 +1,58 @@
+{
+  "empresa": {
+    "cnpj": "36817420000113",
+    "razaoSocial": "Distribuidora Serra Azul ME (fictícia)",
+    "regimeAtual": "simples_tradicional",
+    "uf": "RS",
+    "municipio": 4314902,
+    "municipioNome": "Porto Alegre",
+    "dataCenario": "2027-03-16"
+  },
+  "notas": [
+    {
+      "nota": {
+        "serie": "1",
+        "numero": "1002",
+        "dataEmissao": "2027-03-16T09:00:00-03:00",
+        "emitente": {
+          "cnpj": "71604258000156",
+          "nome": "Atacado Exemplo Ltda (fictício)"
+        },
+        "destinatario": {
+          "cnpj": "36817420000113",
+          "nome": "Distribuidora Serra Azul ME (fictícia)"
+        },
+        "homologacao": true,
+        "temGrupoIbsCbs": true
+      },
+      "importadaEm": "2027-03-16T12:00:00Z",
+      "itensCasados": 3,
+      "itensSemPar": 0,
+      "alertasGerados": 1,
+      "alertasAbertos": 1
+    },
+    {
+      "nota": {
+        "serie": "1",
+        "numero": "1001",
+        "dataEmissao": "2027-03-02T09:00:00-03:00",
+        "emitente": {
+          "cnpj": "71604258000156",
+          "nome": "Atacado Exemplo Ltda (fictício)"
+        },
+        "destinatario": {
+          "cnpj": "36817420000113",
+          "nome": "Distribuidora Serra Azul ME (fictícia)"
+        },
+        "homologacao": true,
+        "temGrupoIbsCbs": false
+      },
+      "importadaEm": "2027-03-16T12:00:00Z",
+      "itensCasados": 5,
+      "itensSemPar": 0,
+      "alertasGerados": 0,
+      "alertasAbertos": 0
+    }
+  ],
+  "aviso": "Dados fictícios de demonstração (P10): empresas, CNPJs, preços e custos não são reais."
+}

@@ -97,6 +97,7 @@ Valores do cenário de demonstração (simulação de março de 2027, premissas 
   - itens sem par, como pergunta, com o motivo que a API devolve (código sem cadastro, NCM ou unidade diferente);
   - a mesma nota de novo: "já importada", com o recibo da primeira vez (`jaImportada`);
   - alertas gerados.
+- **Dados:** `POST /nfe/importar` (o recibo) e, desde o PR 3b, `GET /notas?cnpj=` (as notas já importadas, da emissão mais recente para a mais antiga, com as contagens de itens e de alertas abertos).
 
 ### Explicação (painel lateral)
 - **Pergunta:** por que este item paga isso?

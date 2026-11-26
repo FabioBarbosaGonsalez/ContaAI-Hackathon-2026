@@ -23,6 +23,9 @@ from app.contrato import (
     ItemCatalogoEstado,
     ItemCompraMensal,
     LancamentoCustoSaida,
+    NfeImportarResposta,
+    NotaImportada,
+    NotasResposta,
     Operacao,
     PainelContadorResposta,
     Regime,
@@ -125,6 +128,27 @@ def catalogo(repo: Repositorio, cnpj: str) -> CatalogoResposta:
         itens=itens,
         aviso=AVISO_DEMO,
     )
+
+
+def notas(repo: Repositorio, cnpj: str, limite: int) -> NotasResposta:
+    """As notas de compra da empresa, lidas do recibo de cada importação (o mesmo do POST /nfe/importar)."""
+    with repo.leitura() as s:
+        reg = _empresa(s, cnpj)
+        listadas = s.notas(cnpj, limite)
+    saida = []
+    for n in listadas:
+        recibo = NfeImportarResposta.model_validate_json(n.recibo_json)
+        saida.append(
+            NotaImportada(
+                nota=recibo.nota,
+                importadaEm=n.importada_em,
+                itensCasados=len(recibo.itensCasados),
+                itensSemPar=len(recibo.itensSemPar),
+                alertasGerados=n.alertas_gerados,
+                alertasAbertos=n.alertas_abertos,
+            )
+        )
+    return NotasResposta(empresa=resumo_empresa(reg), notas=saida, aviso=AVISO_DEMO)
 
 
 @dataclass(frozen=True)

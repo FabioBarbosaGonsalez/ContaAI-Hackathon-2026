@@ -202,6 +202,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/notas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar Notas
+         * @description NF-e de compra já importadas pela empresa, da emissão mais recente para a mais antiga, com os itens
+         *     casados e sem par e os alertas que cada uma gerou. Não chama os motores.
+         */
+        get: operations["listar_notas_notas_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/contador/painel": {
         parameters: {
             query?: never;
@@ -1520,6 +1541,31 @@ export interface components {
             /** Alertas */
             alertas: components["schemas"]["Alerta"][];
         };
+        /**
+         * NotaImportada
+         * @description Uma NF-e de compra já importada. O resumo e as contagens de itens vêm do recibo gravado na importação;
+         *     as de alertas, do estado atual (um alerta aplicado depois deixa de contar como aberto).
+         */
+        NotaImportada: {
+            nota: components["schemas"]["NotaResumo"];
+            /**
+             * Importadaem
+             * Format: date-time
+             * @description Quando a nota entrou no sistema (UTC).
+             */
+            importadaEm: string;
+            /** Itenscasados */
+            itensCasados: number;
+            /** Itenssempar */
+            itensSemPar: number;
+            /** Alertasgerados */
+            alertasGerados: number;
+            /**
+             * Alertasabertos
+             * @description Alertas desta nota ainda sem o preço sugerido aplicado.
+             */
+            alertasAbertos: number;
+        };
         /** NotaResumo */
         NotaResumo: {
             /** Serie */
@@ -1542,6 +1588,20 @@ export interface components {
             homologacao: boolean;
             /** Temgrupoibscbs */
             temGrupoIbsCbs: boolean;
+        };
+        /**
+         * NotasResposta
+         * @description Notas de compra da empresa, da emissão mais recente para a mais antiga.
+         */
+        NotasResposta: {
+            empresa: components["schemas"]["EmpresaResumo"];
+            /** Notas */
+            notas: components["schemas"]["NotaImportada"][];
+            /**
+             * Aviso
+             * @description Dados fictícios de demonstração (P10).
+             */
+            aviso: string;
         };
         /** Operacao */
         Operacao: {
@@ -3000,6 +3060,79 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CatalogoResposta"];
+                };
+            };
+            /** @description Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Token da demo ausente ou errado (header X-ContaAI-Token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Empresa ou alerta não encontrado, ou espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaValidacao"];
+                };
+            };
+            /** @description Limite de requisições por minuto atingido (header Retry-After). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+        };
+    };
+    listar_notas_notas_get: {
+        parameters: {
+            query: {
+                /** @description CNPJ da empresa (14 dígitos). */
+                cnpj: string;
+                /** @description Quantas notas, no máximo. */
+                limite?: number;
+            };
+            header?: {
+                /** @description Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada. */
+                "X-ContaAI-Espaco"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotasResposta"];
                 };
             };
             /** @description Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding). */

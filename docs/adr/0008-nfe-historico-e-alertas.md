@@ -124,6 +124,7 @@ Na conversa de mapeamento eu tinha citado 2.4.1: corrigido para 2.6.0, por causa
 | `POST /alertas/{id}/aplicar` | Lança o preço sugerido como preço de venda; 409 se já aplicado ou sem preço | sim | sim |
 | `GET /catalogo?cnpj=` | Itens com o preço e o custo atuais e o histórico (até 10). Não chama os motores: a margem sai do `POST /carrinho/calcular` com estes valores | não | não |
 | `GET /contador/painel` | Empresas com os alertas abertos, a mais urgente primeiro (D1) | não | não |
+| `GET /notas?cnpj=&limite=` | Notas importadas, da emissão mais recente para a mais antiga (desde a E5, ver a revisão no fim) | não | não |
 | `POST /demo/restaurar` | Volta o estado às sementes | sim | sim |
 
 - No modo mock, importar, alertas, catálogo e painel servem os mocks. Aplicar e restaurar respondem 501, porque o mock nunca finge uma gravação.
@@ -240,3 +241,19 @@ A migração `0001_inicial.sql` foi editada no pacote A (datas, `CHECK` e índic
     - IP real só de um proxy nosso;
     - CSP do frontend na E5.
   - **PR `chore` separado:** auditoria de vulnerabilidades das dependências e varredura de segredos no CI. Licença, gratuidade e manutenção de cada ferramenta serão conferidas antes de adotar.
+
+## Revisão na E5: `GET /notas` (antes do PR 3b)
+
+**Contexto.** A tela de Notas do PR 3b mostra as notas que a empresa já importou. A API só tinha o `POST /nfe/importar`, que devolve o recibo de uma nota no momento da importação. Por decisão do usuário (2026-11-26), a listagem entra num PR de backend separado, antes das telas.
+
+**Decisão.**
+- `GET /notas?cnpj=&limite=` devolve a empresa, as notas e o aviso de dados fictícios. `limite` vai de 1 a 200 (padrão 50).
+- **A ordem é a da emissão** (`julianday`, que converte o fuso da nota), não a da importação. Uma nota antiga importada depois fica no lugar dela, como no custo atual.
+- **Nenhum número novo.** O resumo da nota e as contagens de itens casados e sem par saem do recibo gravado na importação (`recibo_json`), o mesmo que o `POST /nfe/importar` devolveu. Os alertas gerados e os abertos são contados na tabela `alertas`, então um preço aplicado depois tira o alerta dos abertos.
+- Sem migração: as colunas já existiam. Uma nota sem recibo ainda não terminou de ser gravada e fica de fora (o recibo entra na mesma transação, então ninguém de fora a vê assim).
+- Aceita o header `X-ContaAI-Espaco`. Não muda o estado nem chama os motores, então não pede o token. No modo mock serve `app/mocks/notas.json`, gerado pela produção com as sementes e a nota 2.
+
+**Conferência.**
+- `tests/test_listar_notas.py` (8 testes): ordem pela emissão (importadas na ordem 1001, 1003, 1002, listadas 1003, 1002, 1001), contagens iguais às do recibo, alerta aplicado sai dos abertos, nota repetida não duplica, isolamento por empresa e por espaço, 404 e 422, e o mock coerente com o `alertas.json`.
+- Três mutações foram pegas: ordem por id, abertos igual a gerados e consulta sem o filtro do CNPJ.
+- Os outros 11 mocks saíram idênticos ao gerar de novo, e o `pytest -m golden` passou com os motores reais.
