@@ -1,6 +1,7 @@
 // Ganchos do React para a sessão (useSyncExternalStore: o estado mora fora dos componentes).
 
 import { useSyncExternalStore } from 'react';
+import type { EstadoConta } from './conta.ts';
 import { useSessao } from './contexto.tsx';
 import type { EstadoEspaco } from './espaco.ts';
 import type { EstadoModo } from './modo.ts';
@@ -13,6 +14,11 @@ export function useEspaco(): EstadoEspaco {
 export function useModo(): EstadoModo {
   const { modo } = useSessao();
   return useSyncExternalStore(modo.assinar, modo.obter);
+}
+
+export function useConta(): EstadoConta {
+  const { conta } = useSessao();
+  return useSyncExternalStore(conta.assinar, conta.obter);
 }
 
 /** Só diz se há token; o valor nunca passa pelos componentes. */

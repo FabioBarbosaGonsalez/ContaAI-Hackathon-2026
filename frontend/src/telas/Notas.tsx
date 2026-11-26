@@ -301,7 +301,7 @@ function Recibo({ recibo, catalogo, abertos, aoAplicado }: PropsRecibo) {
             ))}
           </ul>
           <p className="texto-suave origem">
-            Os alertas abertos também ficam no <Link para="/">Painel</Link>.
+            Os alertas abertos também ficam no <Link para="/painel">Painel</Link>.
           </p>
         </div>
       )}

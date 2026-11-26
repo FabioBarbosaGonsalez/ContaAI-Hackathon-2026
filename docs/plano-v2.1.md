@@ -33,6 +33,7 @@ Por isso entram três etapas de contas (C1 a C3) entre o 3b e o 3c. O 3c depende
 | 3b: Notas e Regime (e o Painel sem alerta) | PR #20, ADR 0014 |
 | C1: contas no backend | PR #21, ADR 0015 |
 | B0: aceite dos termos (antes das telas da C2) | revisão no ADR 0015 |
+| C2a: página inicial, rotas, a conta na tela, termos e privacidade | ADR 0016 |
 
 ## A ordem
 
@@ -40,7 +41,7 @@ Por isso entram três etapas de contas (C1 a C3) entre o 3b e o 3c. O 3c depende
 |---|---|---|---|
 | 1 | **3b** (feito) | Telas de Notas e de Regime | `GET /notas` (feito) |
 | 2 | **C1** (feito) | Contas no backend | 3b |
-| 3 | **C2** (B0 feito) | Telas de entrada | C1 |
+| 3 | **C2** (B0 e C2a feitos) | Telas de entrada | C1 |
 | 4 | **C3** | Dados da própria empresa | C1 e C2 |
 | 5 | **3c** | Contador, seletor de empresa e chat | C1 a C3 |
 | 6 | **E6** | Hospedagem, HTTPS, testes de ponta a ponta, vídeo e pitch | todas |
@@ -136,7 +137,7 @@ Cada etapa sai em um PR, ou em mais de um quando o backend vem antes da tela.
 
 **A conferir durante o código:**
 - **O prefixo `__Host-` no `http://localhost`:** a MDN diz que esse cookie precisa ser criado "por uma página segura (HTTPS)". A exceção do localhost está escrita só para o `Secure`. Conferir no Chrome no S3, antes de fixar o nome do cookie.
-- **O e-mail sem confirmação** (decisão 2): qualquer pessoa pode criar uma conta com o e-mail de outra. Registrar o risco no ADR e nos termos (C2).
+- **O e-mail sem confirmação** (decisão 2): qualquer pessoa pode criar uma conta com o e-mail de outra. Registrar o risco no ADR e nos termos (C2; feito nos termos na C2a).
 
 **Implementação futura (fora da C1):**
 - **Passkey (WebAuthn), a opção resistente a phishing.** Para o nível AAL2 completo, o NIST pede oferecer "at least one phishing-resistant authentication option" (§2.2), e o TOTP não é resistente a phishing (§3.1.4). É gratuita, mas pede bastante trabalho no backend e na tela. Até lá, a C1 fica com senha e TOTP, e a lacuna é registrada no ADR 0015.
@@ -191,10 +192,10 @@ O que mudou em relação a este mapa:
    - **Sem e-mail, os direitos da LGPD são exercidos dentro do app:**
      - ver os próprios dados no menu da conta (T6);
      - excluir a conta (T6, art. 18 VI).
-   - **Risco a conferir antes da publicação (E6):** pelo que lembro, a LGPD pede as informações de contato do controlador (art. 9º) e a divulgação pública do contato do encarregado (art. 41 §1º). Isso não foi lido no texto da lei. Se confirmado, a política sem canal de contato fica incompleta, e o usuário decide de novo (por exemplo, um e-mail só do projeto, configurado no servidor e fora do git).
+   - **Risco confirmado, a decidir antes da publicação (E6):** lido no Planalto em 2026-11-26 (C2a), a LGPD pede, no art. 9º, a identificação e as informações de contato do controlador (incisos III e IV) e, no art. 41, § 1º, que a identidade e o contato do encarregado sejam divulgados publicamente. A política sem canal de contato fica incompleta, e o usuário decide de novo (por exemplo, um e-mail só do projeto, configurado no servidor e fora do git).
 5. **Aceite dos termos com registro:** uma caixa obrigatória no cadastro, com a versão aceita e a data gravadas.
    - A política de privacidade entra como link, para ler, e não como consentimento.
-   - **A conferir:** a base legal na LGPD (provavelmente o art. 7º V, execução de contrato), que ainda não foi lida.
+   - **Base legal (lida na C2a):** o art. 7º, V, a execução de contrato a pedido do titular. É a que a privacidade cita para os dados da conta.
 6. **As notas de exemplo** (pendência do 3b) entram na C2.
 
 **Achados do mapeamento:**
@@ -211,7 +212,7 @@ O que mudou em relação a este mapa:
 6. **O `ChaveRota` só aceita GET e POST,** mas sair usa DELETE (`/sessoes/atual` e `/sessoes`).
 7. **Hoje `/` é o Painel** (decisão 1).
 
-**Segmentos:** um PR de backend (B0) e, depois, um PR de tela.
+**Segmentos:** um PR de backend (B0) e, depois, três PRs de tela (decisão do usuário de 2026-11-26): **C2a** (T1, T2, T3, T7 e T8), **C2b** (T4, T5 e T6) e **C2c** (T9 e T10). Cada um sai com os próprios testes e o portão da skill.
 
 | # | Segmento | O que entra |
 |---|---|---|
@@ -228,11 +229,11 @@ O que mudou em relação a este mapa:
 | T10 | Verificação e documentação | Testes com fetch falso e TOTP calculado no teste. Portão `inspect.mjs --app` em 1440, 768 e 390 px. Chrome com o build: CSP, Trusted Types e o fluxo inteiro pelo DevTools Protocol. Teclado, leitor de tela e `autocomplete` (`username`, `new-password`, `current-password` e `one-time-code`). ADR 0016, este plano, o README e a varredura de inconsistências |
 
 **A conferir durante o código:**
-- o README e a data da `uqr` 0.1.3;
-- se baixar os códigos como `.txt` por `blob:` passa pela CSP atual, no Chrome;
-- se os gerenciadores de senha funcionam com `form-action 'none'` (o envio é por `fetch`);
-- se o `credentials: 'omit'` da demonstração passa pela conferência de CSRF (sem cookie, valem as regras de antes);
-- a LGPD, art. 7º, 9º e 41, e o guia de cookies da ANPD, ainda não lidos, para os termos e a privacidade.
+- o README e a data da `uqr` 0.1.3 (C2b);
+- se baixar os códigos como `.txt` por `blob:` passa pela CSP atual, no Chrome (C2b);
+- se os gerenciadores de senha funcionam com `form-action 'none'` (o envio é por `fetch`) (C2b);
+- ~~se o `credentials: 'omit'` da demonstração passa pela conferência de CSRF~~: **conferido na C2a**, no Chrome. O `POST /espacos` sem cookie, com a conta aberta, criou o espaço;
+- ~~a LGPD, art. 7º, 9º e 41, e o guia de cookies da ANPD~~: **lidos na C2a** (fontes no [ADR 0016](adr/0016-telas-de-entrada.md)).
 
 **Custo:** nenhum serviço pago e nenhuma chamada externa. A única dependência nova é a `uqr` (MIT).
 
@@ -244,6 +245,21 @@ O que mudou em relação a este mapa:
 - a migração 0002 grava a versão e a data, conferida também num `contas.db` de antes dela;
 - o `GET /conta` mostra o aceite;
 - 489 testes do backend e 252 da tela passam, com 97% de cobertura.
+
+**Feito: C2a (2026-11-26, [ADR 0016](adr/0016-telas-de-entrada.md)):**
+- **rotas:** `/` é a página inicial, e o Painel foi para `/painel`. `/termos` e `/privacidade` são públicas, com uma barra sem os destinos do app;
+- **a conta na tela** (`SessaoConta`): o `GET /conta` ao abrir, só no modo real. Nenhum dado é pedido antes de a tela saber se há conta (defeito achado pelo teste e corrigido);
+- **o cookie só vai aonde precisa:** às rotas da conta sempre, e às de dados só na conta. A demonstração vista com a conta sai com `credentials: 'omit'`. Um 401 com o cookie, fora das rotas de entrada, encerra a sessão na tela;
+- **a conta sem empresa** mostra o estado vazio no lugar das páginas, sem pedir o CNPJ da demonstração;
+- **a faixa da demonstração** diz que os dados são fictícios e, para quem tem conta, oferece "Voltar à minha conta";
+- **termos e privacidade:** rascunhos marcados "sem revisão jurídica", com as regras conferidas com o backend por teste;
+- **verificação:** 293 testes da tela; o portão da skill com 0 FAIL e 0 WARN em quatro páginas e três larguras; o fluxo da conta no Chrome pelo DevTools Protocol;
+- **ficou para a C2b:** Entrar, Criar conta e o menu da conta. A privacidade já cita o menu (ver os dados e excluir a conta), que só passa a existir na tela com a C2b;
+- **pendências achadas, para a E6 e o 3c:**
+  - o prazo de guarda do log do servidor;
+  - o provedor de hospedagem como operador;
+  - as cópias de segurança e a exclusão "na hora";
+  - o chat com IA real, que manda texto a terceiros e precisa entrar na privacidade antes (3c).
 
 ## C3: dados da própria empresa
 

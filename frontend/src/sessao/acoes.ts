@@ -1,8 +1,10 @@
-// Ações do espaço de avaliação que chamam a API.
+// Ações da sessão que chamam a API: o espaço de avaliação, o modo e a conta.
 
 import { chamar, type ClienteApi } from '../api/cliente.ts';
 import { ErroApi } from '../api/problema.ts';
+import type { SessaoConta } from './conta.ts';
 import { espacoDaResposta, type SessaoEspaco } from './espaco.ts';
+import type { SessaoModo } from './modo.ts';
 
 /**
  * Cria um espaço (POST /espacos) e o ativa. Devolve o aviso que a API manda mostrar.
@@ -32,4 +34,14 @@ export async function verificarEspaco(cliente: ClienteApi, sessao: SessaoEspaco)
     return;
   }
   await chamar(cliente.GET('/espacos/atual', { params: { header: { 'X-ContaAI-Espaco': id } } }));
+}
+
+/**
+ * Lê o modo da API (GET /saude) e, depois, a conta (GET /conta, só no modo real). A conta espera o modo: sem ele,
+ * a tela não sabe se as rotas de conta existem. Serve para abrir a página e para o "Tentar de novo".
+ */
+export async function carregarSessao(sessao: { api: ClienteApi; modo: SessaoModo; conta: SessaoConta }): Promise<void> {
+  sessao.conta.aguardar();
+  await sessao.modo.carregar(sessao.api);
+  await sessao.conta.carregar(sessao.api, sessao.modo);
 }
