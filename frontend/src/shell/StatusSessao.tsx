@@ -1,10 +1,11 @@
-// Onde a pessoa está: o modo da API e, no modo real, a demonstração compartilhada ou o próprio espaço.
+// Onde a pessoa está: o modo da API e, no modo real, a conta, a demonstração compartilhada ou o próprio espaço.
 
 import { useEffect, useId, useState } from 'react';
 import { ErroApi } from '../api/problema.ts';
-import { criarEspaco } from '../sessao/acoes.ts';
+import { carregarSessao, criarEspaco } from '../sessao/acoes.ts';
 import { useSessao } from '../sessao/contexto.tsx';
-import { useEspaco, useModo } from '../sessao/ganchos.ts';
+import { useConta, useEspaco, useModo } from '../sessao/ganchos.ts';
+import { BotaoDemonstracao } from './demonstracao.tsx';
 import { formatarPrazo } from './prazo.ts';
 
 /**
@@ -42,12 +43,15 @@ function mensagemDeErroAoCriar(erro: unknown): string {
 interface PropsStatus {
   /** Na folha do menu, a descrição do espaço aparece; na barra, fica só para leitor de tela. */
   descricaoVisivel?: boolean;
+  /** Na folha do menu: fecha a folha quando um link leva a outra página. */
+  aoNavegar?: () => void;
 }
 
-export function StatusSessao({ descricaoVisivel = false }: PropsStatus) {
+export function StatusSessao({ descricaoVisivel = false, aoNavegar }: PropsStatus) {
   const sessao = useSessao();
   const modo = useModo();
   const espaco = useEspaco();
+  const conta = useConta();
   const agora = useAgora();
   const idDescricao = useId();
   const [criando, setCriando] = useState(false);
@@ -76,13 +80,23 @@ export function StatusSessao({ descricaoVisivel = false }: PropsStatus) {
     conteudo = (
       <>
         <span className="status__texto">API fora do ar.</span>
-        <button type="button" className="botao-texto" onClick={() => void sessao.modo.carregar(sessao.api)}>
+        <button type="button" className="botao-texto" onClick={() => void carregarSessao(sessao)}>
           Tentar de novo
         </button>
       </>
     );
   } else if (modo.saude.modo === 'mock') {
     conteudo = <span className="status__texto">Dados de demonstração, só leitura</span>;
+  } else if (conta.tipo === 'carregando') {
+    conteudo = <span className="status__texto">Conferindo a sua conta…</span>;
+  } else if (conta.tipo === 'conectada' && !conta.naDemo) {
+    // O nome da organização vem da API e vai como texto (o React escapa); nunca vira link nem atributo.
+    conteudo = (
+      <>
+        <span className="status__texto status__organizacao">{conta.conta.organizacao.nome}</span>
+        <BotaoDemonstracao className="botao-texto" {...(aoNavegar ? { aoEscolher: aoNavegar } : {})} />
+      </>
+    );
   } else if (espaco.tipo === 'ativo') {
     conteudo = (
       <>
@@ -119,7 +133,7 @@ export function StatusSessao({ descricaoVisivel = false }: PropsStatus) {
       <div className="status__linha" role="status">
         {conteudo}
       </div>
-      {modo.tipo === 'pronto' && modo.saude.modo === 'real' && (
+      {modo.tipo === 'pronto' && modo.saude.modo === 'real' && !(conta.tipo === 'conectada' && !conta.naDemo) && (
         <p id={idDescricao} className={descricaoVisivel ? 'status__descricao' : 'so-leitor'}>
           {DESCRICAO_ESPACO}
         </p>

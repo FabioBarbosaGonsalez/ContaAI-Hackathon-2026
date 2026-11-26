@@ -1,6 +1,7 @@
 // Uma sessão completa para testes de componente, com respostas da API escolhidas pelo teste.
 
 import { criarCliente } from '../api/cliente.ts';
+import { SessaoConta, type Conta } from '../sessao/conta.ts';
 import type { Sessao } from '../sessao/contexto.tsx';
 import { SessaoEspaco } from '../sessao/espaco.ts';
 import { middlewareDaSessao } from '../sessao/middleware.ts';
@@ -25,10 +26,24 @@ export const SAUDE_MOCK = {
 
 export const SAUDE_REAL = { ...SAUDE_MOCK, modo: 'real' };
 
+/** Uma conta fictícia, como o GET /conta a devolve (o domínio .test é reservado e não existe, RFC 2606). */
+export const CONTA_DE_TESTE: Conta = {
+  email: 'pessoa@exemplo.test',
+  criadaEm: '2026-11-26T12:00:00Z',
+  organizacao: { id: 'b'.repeat(32), nome: 'Organização de teste', papel: 'dono' },
+  termos: { versao: '2026-11-26', aceitosEm: '2026-11-26T12:00:00Z' },
+  empresas: [],
+  codigosRecuperacaoRestantes: 10,
+  eventos: [],
+  sessaoExpiraEm: '2026-11-26T20:00:00Z',
+};
+
+
 export function sessaoDeTeste(responder: Responder): Sessao & { pedidos: Request[] } {
   const pedidos: Request[] = [];
   const espaco = new SessaoEspaco({ armazenamento: null });
   const token = new SessaoToken();
+  const conta = new SessaoConta();
   const api = criarCliente({
     baseUrl: 'http://api.teste',
     fetch: ((pedido: Request) => {
@@ -36,6 +51,6 @@ export function sessaoDeTeste(responder: Responder): Sessao & { pedidos: Request
       return Promise.resolve(responder(pedido));
     }) as typeof globalThis.fetch,
   });
-  api.use(middlewareDaSessao(espaco, token));
-  return { api, espaco, token, modo: new SessaoModo(), pedidos };
+  api.use(middlewareDaSessao(espaco, token, conta));
+  return { api, espaco, token, modo: new SessaoModo(), conta, pedidos };
 }

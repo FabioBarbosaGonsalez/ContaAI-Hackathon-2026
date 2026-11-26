@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { CABECALHO_ESPACO, CABECALHO_TOKEN, chamar, criarCliente } from '../api/cliente.ts';
 import { ErroApi } from '../api/problema.ts';
 import { criarEspaco, verificarEspaco } from './acoes.ts';
+import { CONTA_DE_TESTE as CONTA } from '../teste/sessaoDeTeste.ts';
+import { SessaoConta } from './conta.ts';
 import { SessaoEspaco } from './espaco.ts';
 import { PROBLEMA_ESPACO_INEXISTENTE, middlewareDaSessao } from './middleware.ts';
 import { SessaoToken } from './token.ts';
@@ -19,6 +21,7 @@ function montar(resposta: (pedido: Request) => Response = () => json({})) {
   const pedidos: Request[] = [];
   const espaco = new SessaoEspaco({ armazenamento: null });
   const token = new SessaoToken();
+  const conta = new SessaoConta();
   const cliente = criarCliente({
     baseUrl: 'http://api.teste',
     fetch: ((pedido: Request) => {
@@ -26,8 +29,8 @@ function montar(resposta: (pedido: Request) => Response = () => json({})) {
       return Promise.resolve(resposta(pedido));
     }) as typeof globalThis.fetch,
   });
-  cliente.use(middlewareDaSessao(espaco, token));
-  return { cliente, espaco, token, pedidos };
+  cliente.use(middlewareDaSessao(espaco, token, conta));
+  return { cliente, espaco, token, conta, pedidos };
 }
 
 async function semFalha(promessa: Promise<unknown>): Promise<void> {
@@ -100,7 +103,7 @@ describe('middlewareDaSessao', () => {
         return json({ type: PROBLEMA_ESPACO_INEXISTENTE, title: 'Espaço inexistente', status: 404 }, 404);
       }) as typeof globalThis.fetch,
     });
-    cliente.use(middlewareDaSessao(espaco, new SessaoToken()));
+    cliente.use(middlewareDaSessao(espaco, new SessaoToken(), new SessaoConta()));
 
     espaco.ativar({ id: ID, expiraEm: Date.now() + 60_000 });
     const pedido = chamar(cliente.GET('/contador/painel'));
@@ -173,5 +176,75 @@ describe('ações do espaço', () => {
     await verificarEspaco(cliente, espaco);
     expect(pedidos[0]?.headers.get(CABECALHO_ESPACO)).toBe(ID);
     expect(espaco.obter()).toEqual({ tipo: 'ativo', espaco: { id: ID, expiraEm } });
+  });
+});
+
+
+/** Põe a sessão da conta no estado conectado, como o GET /conta faria. */
+async function conectar(conta: SessaoConta): Promise<void> {
+  const cliente = criarCliente({ baseUrl: 'http://api.teste', fetch: () => Promise.resolve(json(CONTA)) });
+  const modo = { espacoDisponivel: () => true } as unknown as Parameters<SessaoConta['carregar']>[1];
+  await conta.carregar(cliente, modo);
+}
+
+describe('middlewareDaSessao e a conta (ADR 0016)', () => {
+  it('sem conta, os pedidos de dados saem sem o cookie, e as rotas da conta o levam', async () => {
+    const { cliente, pedidos } = montar();
+    await semFalha(chamar(cliente.GET('/catalogo', { params: { query: { cnpj: CNPJ } } })));
+    await semFalha(chamar(cliente.GET('/conta')));
+    await semFalha(chamar(cliente.POST('/sessoes', { body: { email: 'a@b.test', senha: 'x' } })));
+    expect(pedidos.map((p) => p.credentials)).toEqual(['omit', 'same-origin', 'same-origin']);
+  });
+
+  it('na conta, os pedidos de dados levam o cookie e nem o espaço nem o token', async () => {
+    const { cliente, espaco, token, conta, pedidos } = montar();
+    espaco.ativar({ id: ID, expiraEm: Date.now() + 60_000 });
+    token.definir('token-da-demo');
+    await conectar(conta);
+    await semFalha(chamar(cliente.GET('/catalogo', { params: { query: { cnpj: CNPJ } } })));
+    await semFalha(chamar(cliente.POST('/chat', { body: { mensagem: 'oi' } as never })));
+    expect(pedidos.map((p) => p.credentials)).toEqual(['same-origin', 'same-origin']);
+    expect(pedidos.map((p) => p.headers.get(CABECALHO_ESPACO))).toEqual([null, null]);
+    expect(pedidos.map((p) => p.headers.get(CABECALHO_TOKEN))).toEqual([null, null]);
+  });
+
+  it('com a conta vendo a demonstração, volta a ser como quem não tem conta', async () => {
+    const { cliente, espaco, conta, pedidos } = montar();
+    espaco.ativar({ id: ID, expiraEm: Date.now() + 60_000 });
+    await conectar(conta);
+    conta.verDemonstracao();
+    await semFalha(chamar(cliente.GET('/catalogo', { params: { query: { cnpj: CNPJ } } })));
+    expect(pedidos[0]?.credentials).toBe('omit');
+    expect(pedidos[0]?.headers.get(CABECALHO_ESPACO)).toBe(ID);
+    expect(conta.obter()).toMatchObject({ tipo: 'conectada', naDemo: true });
+  });
+
+  it('o corpo do POST passa inteiro pela cópia sem cookie', async () => {
+    const { cliente, pedidos } = montar();
+    await semFalha(chamar(cliente.POST('/carrinho/calcular', { body: { itens: [] } as never })));
+    expect(pedidos[0]?.credentials).toBe('omit');
+    expect(await pedidos[0]?.text()).toBe('{"itens":[]}');
+  });
+
+  it('401 com o cookie numa rota de dados encerra a sessão', async () => {
+    const { cliente, conta } = montar(() => json({ title: 'x', status: 401, detail: 'Entre com a sua conta.' }, 401));
+    await conectar(conta);
+    await semFalha(chamar(cliente.GET('/catalogo', { params: { query: { cnpj: CNPJ } } })));
+    expect(conta.obter().tipo).toBe('encerrada');
+  });
+
+  it('401 numa rota de entrada (senha ou código errado) não encerra a sessão', async () => {
+    const { cliente, conta } = montar(() => json({ title: 'x', status: 401, detail: 'E-mail, senha ou código incorretos.' }, 401));
+    await conectar(conta);
+    await semFalha(chamar(cliente.POST('/conta/excluir', { body: { senha: 'errada' } })));
+    expect(conta.obter().tipo).toBe('conectada');
+  });
+
+  it('401 de um pedido sem cookie (na demonstração) não mexe na conta', async () => {
+    const { cliente, conta } = montar(() => json({ title: 'x', status: 401, detail: 'Token' }, 401));
+    await conectar(conta);
+    conta.verDemonstracao();
+    await semFalha(chamar(cliente.GET('/catalogo', { params: { query: { cnpj: CNPJ } } })));
+    expect(conta.obter()).toMatchObject({ tipo: 'conectada', naDemo: true });
   });
 });

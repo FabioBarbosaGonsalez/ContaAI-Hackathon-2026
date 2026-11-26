@@ -1,11 +1,12 @@
 // Os dados de uma empresa na tela: catálogo, cálculo por regime e alertas, e se a tela pode gravar.
 //
 // A empresa da demonstração é a Distribuidora Serra Azul ME (fictícia, data/demo). O seletor de CNPJ do
-// painel do contador (D1) entra no PR 3c; até lá, toda tela abre esta empresa.
+// painel do contador (D1) entra no PR 3c; até lá, toda tela da demonstração abre esta empresa. Na conta, nenhuma
+// tela pede dados até a C3 cadastrar a empresa (ADR 0016).
 
 import { chamar, type ClienteApi, type Resposta } from '../api/cliente.ts';
 import { useSessao } from '../sessao/contexto.tsx';
-import { useEspaco, useModo, useTemToken } from '../sessao/ganchos.ts';
+import { useConta, useEspaco, useModo, useTemToken } from '../sessao/ganchos.ts';
 import {
   pedidoDeRegime,
   pedidoDoCatalogo,
@@ -23,11 +24,21 @@ import { useRecurso, type EstadoRecurso } from './recurso.ts';
 /** CNPJ fictício da distribuidora da demonstração (data/demo/distribuidora.json). */
 export const CNPJ_DEMONSTRACAO = '36817420000113';
 
-/** De onde vêm os dados: o espaço próprio ou a demonstração compartilhada. Entra na chave de todo dado. */
+/**
+ * De onde vêm os dados: o espaço próprio ou a demonstração compartilhada. Entra na chave de todo dado.
+ *
+ * Devolve null (nenhum pedido sai) enquanto a API não responde e, no modo real, enquanto a tela não sabe se há
+ * conta. Na conta também: ela ainda não tem empresa (o cadastro entra na C3), e a tela mostra o estado vazio
+ * no lugar das páginas, sem pedir o CNPJ da demonstração ao banco da organização (ADR 0016).
+ */
 export function useOrigemDosDados(): string | null {
   const modo = useModo();
   const espaco = useEspaco();
-  if (modo.tipo !== 'pronto') {
+  const conta = useConta();
+  if (modo.tipo !== 'pronto' || conta.tipo === 'carregando') {
+    return null;
+  }
+  if (conta.tipo === 'conectada' && !conta.naDemo) {
     return null;
   }
   return espaco.tipo === 'ativo' ? `espaco:${espaco.espaco.id}` : `compartilhada:${modo.saude.modo}`;
@@ -110,14 +121,18 @@ export type Gravacao = { pode: true } | { pode: false; motivo: string };
 
 /**
  * A tela grava (preço, classificação, alerta aplicado) só no modo real, no espaço próprio ou com o token
- * da demo (ADR 0010 e ADR 0011). Fora disso, o botão fica desligado e diz por quê (app-screens §8.1).
+ * da demo (ADR 0010 e ADR 0011). Na conta, ainda não há empresa onde gravar (ADR 0016). Fora disso, o botão fica desligado e diz por quê (app-screens §8.1).
  */
 export function useGravacao(): Gravacao {
   const modo = useModo();
   const espaco = useEspaco();
   const temToken = useTemToken();
-  if (modo.tipo !== 'pronto') {
+  const conta = useConta();
+  if (modo.tipo !== 'pronto' || conta.tipo === 'carregando') {
     return { pode: false, motivo: 'A API ainda não respondeu.' };
+  }
+  if (conta.tipo === 'conectada' && !conta.naDemo) {
+    return { pode: false, motivo: 'O cadastro da sua empresa ainda não está disponível.' };
   }
   if (modo.saude.modo === 'mock') {
     return { pode: false, motivo: 'Os dados de demonstração são só leitura: nada é gravado neste modo.' };

@@ -62,3 +62,23 @@ export function Link({ para, onClick, children, ...resto }: PropsLink) {
     </a>
   );
 }
+
+const ID_DE_ANCORA = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+type PropsAncora = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'href'> & { id: string };
+
+/**
+ * Link para uma seção da própria página (#id), como o índice dos termos. Só monta o fragmento: o navegador não
+ * troca de página. O id precisa ser fixo no código, em minúsculas com hífen; fora disso, a tela quebra em vez de
+ * montar o endereço.
+ */
+export function Ancora({ id, children, ...resto }: PropsAncora) {
+  if (!ID_DE_ANCORA.test(id)) {
+    throw new Error('Âncora com id fora do padrão');
+  }
+  return (
+    <a {...resto} href={`#${id}`}>
+      {children}
+    </a>
+  );
+}

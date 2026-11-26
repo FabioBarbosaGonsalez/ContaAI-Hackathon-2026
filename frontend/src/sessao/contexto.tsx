@@ -3,6 +3,7 @@
 
 import { createContext, useContext, type ReactNode } from 'react';
 import type { ClienteApi } from '../api/cliente.ts';
+import type { SessaoConta } from './conta.ts';
 import type { SessaoEspaco } from './espaco.ts';
 import type { SessaoModo } from './modo.ts';
 import type { SessaoToken } from './token.ts';
@@ -12,6 +13,7 @@ export interface Sessao {
   espaco: SessaoEspaco;
   token: SessaoToken;
   modo: SessaoModo;
+  conta: SessaoConta;
 }
 
 const ContextoSessao = createContext<Sessao | null>(null);

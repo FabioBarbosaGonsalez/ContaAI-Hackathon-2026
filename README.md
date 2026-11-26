@@ -83,7 +83,7 @@ Com a API em outro endereço: `CONTAAI_API_ALVO=http://127.0.0.1:8010 npm run de
 
 A barra mostra o modo da API. No modo real, "Criar meu espaço" cria um espaço de avaliação, e o id fica só no navegador. O rodapé traz o aviso legal e as versões dos motores.
 
-A fundação está pronta: cliente tipado do contrato, sessão, tokens do estilo, shell e segurança ([ADR 0012](docs/adr/0012-fundacao-do-frontend.md)). Painel, Catálogo e a explicação lateral estão prontos ([ADR 0013](docs/adr/0013-telas-painel-e-catalogo.md)), e Notas e Regime também ([ADR 0014](docs/adr/0014-telas-notas-e-regime.md)); Contador entra no 3c. Para importar uma nota pela tela, crie seu espaço e use um XML fictício de [data/demo/notas](data/demo/notas). Para ver o build com a CSP e os cabeçalhos de segurança: `npx vite build && npx vite preview`.
+A fundação está pronta: cliente tipado do contrato, sessão, tokens do estilo, shell e segurança ([ADR 0012](docs/adr/0012-fundacao-do-frontend.md)). Painel, Catálogo e a explicação lateral estão prontos ([ADR 0013](docs/adr/0013-telas-painel-e-catalogo.md)), e Notas e Regime também ([ADR 0014](docs/adr/0014-telas-notas-e-regime.md)); Contador entra no 3c. Desde a C2a ([ADR 0016](docs/adr/0016-telas-de-entrada.md)), `/` é a página inicial, com "Explorar a demonstração" sem cadastro; o Painel fica em `/painel`, e os termos de uso e a privacidade (rascunhos sem revisão jurídica) em `/termos` e `/privacidade`. Quem entrou com uma conta vê a própria organização, ainda sem empresa (o cadastro entra na C3), e pode ver a demonstração como todo mundo. Para importar uma nota pela tela, crie seu espaço e use um XML fictício de [data/demo/notas](data/demo/notas). Para ver o build com a CSP e os cabeçalhos de segurança: `npx vite build && npx vite preview`.
 
 **Agente.** O padrão é o provedor `roteiro`: responde às frases do roteiro da demo sem IA, sem chave e sem custo. Para ligar uma IA, escreva o adaptador em `backend/app/agente/provedores/` e configure no `backend/.env` (fora do git) `CONTAAI_LLM_PROVEDOR`, `CONTAAI_LLM_MODELO` e `CONTAAI_LLM_CHAVE` ([ADR 0006](docs/adr/0006-agente.md)). Na demo pública, defina `CONTAAI_TOKEN_DEMO`: o `/chat` e as rotas que mudam o estado passam a exigir o header `X-ContaAI-Token`. Há limite de requisições por IP (`CONTAAI_LIMITE_CHAT_POR_MINUTO`, `CONTAAI_LIMITE_GERAL_POR_MINUTO`, `CONTAAI_LIMITE_BUSCA_POR_MINUTO`).
 
@@ -150,6 +150,7 @@ No Linux e no macOS, o [Makefile](Makefile) tem atalhos para os mesmos comandos:
 - [ADR 0013](docs/adr/0013-telas-painel-e-catalogo.md): telas do Painel e do Catálogo e explicação lateral (PR 3a), com correção da classificação e troca de preço pela tela
 - [ADR 0014](docs/adr/0014-telas-notas-e-regime.md): telas de Notas (envio do XML, recibo e notas importadas) e de Regime (régua do crédito, caixa, empate e premissas), PR 3b
 - [ADR 0015](docs/adr/0015-contas.md): contas com segundo fator (TOTP), sessão em cookie, tentativas, CSRF, um banco de estado por organização e o CNPJ como permissão, C1
+- [ADR 0016](docs/adr/0016-telas-de-entrada.md): telas de entrada, a conta na tela, o cookie só onde precisa, a demonstração para quem tem conta, termos e privacidade, C2
 - [Segurança](docs/seguranca.md): o que o projeto protege, como, e o que está em aberto; para relatar uma vulnerabilidade, [SECURITY.md](SECURITY.md)
 - [Contrato OpenAPI](docs/contrato/openapi.json): o que frontend e agente consomem
 - [Dados de demonstração](data/demo/README.md): distribuidora, carteira do contador, cliente B2B, notas de compra fictícias e sementes do estado
@@ -171,7 +172,7 @@ Etapa 4 (recorrência) concluída no backend: leitor seguro da NF-e, casamento c
 
 Antes da Etapa 5: espaço de avaliação por visitante (ADR 0010) e o contrato para a tela, com as proteções do navegador e os testes de segurança (ADR 0011).
 
-Etapa 5 (interface) em andamento: a fundação do frontend está pronta (ADR 0012): projeto e CI, cliente tipado do contrato, espaço de avaliação e modo, tokens e fontes, shell e segurança da tela. PR 3a (Painel, Catálogo e explicação lateral) pronto ([ADR 0013](docs/adr/0013-telas-painel-e-catalogo.md)), e PR 3b (Notas e Regime) também ([ADR 0014](docs/adr/0014-telas-notas-e-regime.md)). Contas no backend (C1) prontas ([ADR 0015](docs/adr/0015-contas.md)). Próximo: as telas de entrada (C2), pelo [plano v2.1](docs/plano-v2.1.md).
+Etapa 5 (interface) em andamento: a fundação do frontend está pronta (ADR 0012): projeto e CI, cliente tipado do contrato, espaço de avaliação e modo, tokens e fontes, shell e segurança da tela. PR 3a (Painel, Catálogo e explicação lateral) pronto ([ADR 0013](docs/adr/0013-telas-painel-e-catalogo.md)), e PR 3b (Notas e Regime) também ([ADR 0014](docs/adr/0014-telas-notas-e-regime.md)). Contas no backend (C1) prontas ([ADR 0015](docs/adr/0015-contas.md)). Telas de entrada (C2) em andamento: a C2a (página inicial, rotas, a conta na tela, termos e privacidade) está pronta ([ADR 0016](docs/adr/0016-telas-de-entrada.md)). Próximo: criar conta, entrar e o menu da conta (C2b), pelo [plano v2.1](docs/plano-v2.1.md).
 
 ## Créditos e licenças
 

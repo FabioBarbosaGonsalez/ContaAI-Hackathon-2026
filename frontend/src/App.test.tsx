@@ -4,7 +4,7 @@ import { App } from './App.tsx';
 import { AVISO_LEGAL } from './shell/aviso.ts';
 import { reiniciarFocoDePagina } from './shell/Pagina.tsx';
 import { DESCRICAO_ESPACO } from './shell/StatusSessao.tsx';
-import { ROTAS } from './shell/rotas.ts';
+import { ROTAS, ROTAS_PUBLICAS } from './shell/rotas.ts';
 import { SAUDE_MOCK, SAUDE_REAL, json, sessaoDeTeste, type Responder } from './teste/sessaoDeTeste.ts';
 
 const ID = '0123456789abcdef0123456789abcdef';
@@ -27,7 +27,7 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-async function montar(responder: Responder, caminho = '/') {
+async function montar(responder: Responder, caminho = '/painel') {
   history.replaceState(null, '', caminho);
   const sessao = sessaoDeTeste(responder);
   render(<App sessao={sessao} />);
@@ -71,7 +71,7 @@ describe('navegação', () => {
     const evento = new MouseEvent('click', { bubbles: true, cancelable: true, ctrlKey: true });
     link.dispatchEvent(evento);
     expect(evento.defaultPrevented).toBe(false);
-    expect(location.pathname).toBe('/');
+    expect(location.pathname).toBe('/painel');
   });
 
   it('na primeira página o foco não é movido', async () => {
@@ -87,12 +87,12 @@ describe('navegação', () => {
   it('endereço desconhecido mostra a página não encontrada, com caminho de volta', async () => {
     await montar(() => json(SAUDE_MOCK), '/nao-existe');
     expect(screen.getByRole('heading', { level: 1, name: 'Página não encontrada' })).toBeDefined();
-    expect(within(screen.getByRole('main')).getByRole('link', { name: 'Voltar ao painel' }).getAttribute('href')).toBe('/');
+    expect(within(screen.getByRole('main')).getByRole('link', { name: 'Voltar ao início' }).getAttribute('href')).toBe('/');
   });
 
   it('todo link do shell aponta para um caminho fixo da tela', async () => {
     await montar(() => json(SAUDE_MOCK));
-    const caminhos = new Set<string>(ROTAS.map((r) => r.caminho));
+    const caminhos = new Set<string>([...ROTAS, ...ROTAS_PUBLICAS].map((r) => r.caminho));
     for (const link of screen.getAllByRole('link', { hidden: true })) {
       const href = link.getAttribute('href') ?? '';
       expect(caminhos.has(href) || href === '#conteudo').toBe(true);

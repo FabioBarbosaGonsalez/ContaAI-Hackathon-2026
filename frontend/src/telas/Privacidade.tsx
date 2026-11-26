@@ -1,0 +1,181 @@
+// Política de privacidade (C2, T8; ADR 0016). Rascunho sem revisão jurídica.
+//
+// Fontes lidas em 2026-11-26:
+// - LGPD (Lei nº 13.709/2018), no Planalto: art. 5º (definições), 7º (bases legais; o inciso V é a execução de
+//   contrato a pedido do titular), 9º (o que informar ao titular), 18 (direitos) e 41 (encarregado);
+// - ANPD, "Guia orientativo: cookies e proteção de dados pessoais" (out/2022): cookies necessários (p. 10), o
+//   consentimento não é a base adequada para os estritamente necessários (p. 20), e a política de cookies pode
+//   ser uma seção da política de privacidade, com finalidade, retenção e compartilhamento (p. 28-29).
+//
+// Cada dado guardado vem das migrações de backend/app/contas/migracoes; os prazos, de REGRAS_DA_CONTA e de COOKIES
+// (conferidos com o backend em legal.test.ts). O id do espaço, de sessao/espaco.ts.
+//
+// Risco registrado no plano v2.1 (C2, decisão 4): o art. 9º, III e IV, e o art. 41, § 1º, pedem o contato do
+// controlador e do encarregado. A página mostra só "Equipe ContaAI", por decisão do usuário; rever antes da E6.
+
+import { CHAVE_ARMAZENAMENTO_ESPACO } from '../sessao/espaco.ts';
+import { Link } from '../shell/navegacao.tsx';
+import { ATUALIZACAO_PRIVACIDADE, COOKIES, REGRAS_DA_CONTA as R, dataDaVersao } from './legal.ts';
+import { TextoLegal } from './TextoLegal.tsx';
+
+export function Privacidade() {
+  return (
+    <TextoLegal
+      titulo="Privacidade"
+      subtitulo={`Atualizada em ${dataDaVersao(ATUALIZACAO_PRIVACIDADE)}`}
+      outro={{ para: '/termos', nome: 'Termos de uso' }}
+      secoes={[
+        {
+          id: 'privacidade-quem',
+          titulo: 'Quem responde pelos dados',
+          conteudo: (
+            <>
+              <p>Equipe ContaAI.</p>
+            </>
+          ),
+        },
+        {
+          id: 'privacidade-demonstracao',
+          titulo: 'Na demonstração, sem conta',
+          conteudo: (
+            <>
+              <p>A demonstração não pede nenhum dado pessoal.</p>
+              <p>
+                Quando você cria um espaço próprio, o navegador guarda o identificador do espaço no armazenamento local
+                (<code>localStorage</code>, chave <code>{CHAVE_ARMAZENAMENTO_ESPACO}</code>). É um código sorteado, sem dado
+                pessoal, que abre o mesmo espaço em outra aba. Ele é apagado quando você sai do espaço ou quando o espaço
+                vence.
+              </p>
+            </>
+          ),
+        },
+        {
+          id: 'privacidade-conta',
+          titulo: 'Com conta: o que fica guardado',
+          conteudo: (
+            <>
+              <ul>
+                <li>o e-mail e o nome da organização;</li>
+                <li>a senha, só como resumo Argon2id: a senha em si não é guardada;</li>
+                <li>o segredo do segundo fator, para conferir os códigos do aplicativo;</li>
+                <li>os códigos de recuperação, só como resumo SHA-256;</li>
+                <li>as sessões abertas: só o resumo do token, o início, o último uso e o vencimento;</li>
+                <li>quantas tentativas erradas seguidas houve, e a espera ou o bloqueio;</li>
+                <li>avisos de segurança, como “código de recuperação usado”: só o tipo e a data, sem IP e sem navegador;</li>
+                <li>a versão dos termos que você aceitou e a data do aceite.</li>
+              </ul>
+              <p>
+                Esses dados servem só para criar a conta, deixar você entrar e proteger a conta. A base legal é a execução
+                do contrato que os <Link para="/termos">termos de uso</Link> formam, a seu pedido (LGPD, art. 7º, V).
+              </p>
+            </>
+          ),
+        },
+        {
+          id: 'privacidade-cookies',
+          titulo: 'Cookies',
+          conteudo: (
+            <>
+              <p>O ContaAI usa dois cookies, só depois que você começa a entrar ou a criar a conta:</p>
+              <div className="tabela__moldura">
+                <table className="tabela legal__tabela">
+                  <thead>
+                    <tr>
+                      <th scope="col">Cookie</th>
+                      <th scope="col">Para quê</th>
+                      <th scope="col">Quanto tempo</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>
+                        <code>{COOKIES.sessao}</code>
+                      </td>
+                      <td>Mantém você conectado.</td>
+                      <td>
+                        Até {R.sessaoOciosaMin} minutos sem uso, ou {R.sessaoTotalH} horas depois de entrar. Sair apaga.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <code>{COOKIES.passe}</code>
+                      </td>
+                      <td>Guarda a etapa entre a senha e o código, ou entre o cadastro e a confirmação do segundo fator.</td>
+                      <td>{R.passeMin} minutos.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p>
+                Os dois são <code>HttpOnly</code> (o código da página não os lê), <code>Secure</code> (só andam por
+                conexão segura) e <code>SameSite=Strict</code> (outro site não os envia). São estritamente necessários: sem
+                eles não dá para entrar. Por isso não há pedido de consentimento para eles, como orienta o guia de cookies
+                da ANPD (2022).
+              </p>
+              <p>O ContaAI não usa cookies de análise, de publicidade nem de terceiros.</p>
+            </>
+          ),
+        },
+        {
+          id: 'privacidade-registros',
+          titulo: 'Registros técnicos',
+          conteudo: (
+            <>
+              <p>
+                O banco de dados da conta não guarda o endereço IP. O limite de pedidos por IP fica só na memória do
+                servidor e some quando ele reinicia. O servidor da API pode registrar, em log técnico, o IP, a hora e o
+                endereço de cada pedido.
+              </p>
+            </>
+          ),
+        },
+        {
+          id: 'privacidade-compartilhamento',
+          titulo: 'Com quem os dados são compartilhados',
+          conteudo: (
+            <>
+              <p>
+                Com ninguém. As calculadoras oficiais rodam no próprio servidor do ContaAI e recebem só os dados dos itens,
+                sem dado pessoal.
+              </p>
+            </>
+          ),
+        },
+        {
+          id: 'privacidade-tempo',
+          titulo: 'Por quanto tempo',
+          conteudo: (
+            <>
+              <ul>
+                <li>A conta e os dados dela: até você excluir a conta.</li>
+                <li>
+                  Um cadastro sem o segundo fator confirmado: deixa de valer em {R.pendenteMin} minutos e depois é apagado.
+                </li>
+                <li>As sessões e as etapas de entrada: apagadas depois de vencer.</li>
+              </ul>
+            </>
+          ),
+        },
+        {
+          id: 'privacidade-direitos',
+          titulo: 'Os seus direitos',
+          conteudo: (
+            <>
+              <p>
+                A LGPD (art. 18) garante, entre outros, confirmar que os seus dados são tratados, ter acesso a eles e pedir
+                a eliminação. No ContaAI:
+              </p>
+              <ul>
+                <li>ver os seus dados: no menu da conta;</li>
+                <li>
+                  excluir a conta: no menu da conta, com a senha. A exclusão apaga a conta na hora e, se você for a única
+                  pessoa da organização, também a organização e os dados dela.
+                </li>
+              </ul>
+            </>
+          ),
+        },
+      ]}
+    />
+  );
+}

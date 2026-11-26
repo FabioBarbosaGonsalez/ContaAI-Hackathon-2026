@@ -3,10 +3,13 @@
 //
 // O cliente só manda cada header às rotas que o declaram:
 // - o id do espaço não vai a rotas que não precisam dele;
-// - o token não vai a nenhuma rota fora destas.
+// - o token não vai a nenhuma rota fora destas;
+// - o cookie da sessão da conta só vai às rotas da conta e, na conta, às rotas de dados (ADR 0015 e ADR 0016).
 
 /** Chave no formato "MÉTODO /caminho", com o caminho como está no contrato. */
-export type ChaveRota = `${'GET' | 'POST'} /${string}`;
+type Metodo = 'GET' | 'POST' | 'DELETE';
+
+export type ChaveRota = `${Metodo} /${string}`;
 
 /** Rotas com o header X-ContaAI-Espaco (ADR 0010). */
 export const ROTAS_COM_ESPACO: ReadonlySet<ChaveRota> = new Set<ChaveRota>([
@@ -34,6 +37,32 @@ export const ROTAS_COM_TOKEN: ReadonlySet<ChaveRota> = new Set<ChaveRota>([
   'POST /demo/restaurar',
 ]);
 
+/**
+ * As rotas da conta (tag `contas` do contrato, ADR 0015). Elas sempre levam o cookie da sessão: é por ele que a
+ * API sabe quem entrou. As outras rotas só o levam quando a tela mostra os dados da conta (ADR 0016).
+ */
+export const ROTAS_DA_CONTA: ReadonlySet<ChaveRota> = new Set<ChaveRota>([
+  'POST /contas',
+  'POST /contas/ativar',
+  'POST /sessoes',
+  'POST /sessoes/codigo',
+  'GET /conta',
+  'DELETE /sessoes/atual',
+  'DELETE /sessoes',
+  'POST /conta/excluir',
+]);
+
+/**
+ * Rotas da conta em que o 401 quer dizer "e-mail, senha ou código incorretos", e não "a sessão acabou". Quem
+ * chamou mostra a frase da API; a sessão da tela não muda.
+ */
+export const ROTAS_DE_ENTRADA: ReadonlySet<ChaveRota> = new Set<ChaveRota>([
+  'POST /contas/ativar',
+  'POST /sessoes',
+  'POST /sessoes/codigo',
+  'POST /conta/excluir',
+]);
+
 export function chaveDaRota(metodo: string, caminho: string): ChaveRota {
-  return `${metodo.toUpperCase() as 'GET' | 'POST'} ${caminho as `/${string}`}`;
+  return `${metodo.toUpperCase() as Metodo} ${caminho as `/${string}`}`;
 }

@@ -5,6 +5,18 @@
  * Abaixo de 900px, os destinos e o estado da sessão vão para a folha do menu (§12 do capítulo da skill).
  */
 
+/* A página ocupa a janela inteira: numa página curta, o rodapé fica no pé da janela, sem faixa vazia embaixo. */
+#raiz {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.conteudo {
+  flex: 1 0 auto;
+}
+
 .coluna {
   width: min(100% - 2 * var(--respiro), var(--largura-coluna));
   margin-inline: auto;
@@ -132,6 +144,35 @@
   margin-left: auto;
 }
 
+/* Barra das páginas públicas: só a marca e o caminho para a demonstração (ou para a conta). */
+.barra__publica {
+  margin-left: auto;
+}
+
+.barra__publica a {
+  color: var(--barra-texto);
+  font-weight: var(--peso-medio);
+}
+
+/* Faixa da demonstração: um passo de tom sob a barra, sem cor (o cromo não tem cor). */
+.aviso-demo {
+  background: var(--acao-secundaria);
+  color: var(--texto);
+}
+
+.aviso-demo__linha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px var(--espaco);
+  min-height: 36px;
+  padding-block: 8px;
+}
+
+.aviso-demo__linha a {
+  color: var(--texto);
+}
+
 /* Estado da sessão */
 
 .status {
@@ -166,6 +207,18 @@
 
 .status__descricao {
   color: var(--texto-suave);
+}
+
+/* O nome da organização vem do cadastro e pode ser longo: uma linha, cortada com reticências. */
+.status__organizacao {
+  max-width: 240px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.barra .status__organizacao {
+  color: var(--barra-texto);
 }
 
 /* Botões do cromo: sem cor; o botão principal de cada tela é o quase preto, que fica com as telas. */
@@ -243,6 +296,23 @@
   flex-wrap: wrap;
   justify-content: space-between;
   gap: var(--espaco) var(--respiro);
+}
+
+.rodape__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px var(--respiro);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rodape__links a {
+  color: var(--texto-suave);
+}
+
+.rodape__links a:hover {
+  color: var(--texto);
 }
 
 .rodape__motores {
@@ -331,6 +401,13 @@
 
   .botao-secundario,
   .botao-texto {
+    min-height: 44px;
+  }
+
+  .barra__publica a,
+  .aviso-demo__linha a {
+    display: inline-flex;
+    align-items: center;
     min-height: 44px;
   }
 

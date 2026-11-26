@@ -137,6 +137,7 @@ A tela é a próxima camada exposta a XSS. A fundação do frontend (PR 2 da E5)
    Um corpo de erro fora do formato da RFC 9457 (HTML de um proxy, texto) nunca chega à tela, e o teste confere que um `detail` com `<img onerror>` aparece como texto.
 2. **Nenhum texto da API vira `href`, `src`, `style` ou nome de atributo.**
    - Os links da tela são rotas fixas do próprio app: o `Link` só aceita o tipo `Caminho`, e o lint barra `href`/`src` montado de um valor em qualquer outro lugar.
+   - Desde a C2a ([ADR 0016](adr/0016-telas-de-entrada.md)), a `Ancora`, no mesmo arquivo do `Link` (`src/shell/navegacao.tsx`), monta o `#id` do índice dos termos e da privacidade. Ela só aceita um id em minúsculas, dígitos e hífen, e a tela quebra com outro valor (testado com um esquema de script e com `//outro.site`).
    - O atributo `style` é proibido.
    - Os ids que vão no caminho da API só podem ter letras, dígitos e hífen. Um `..` trocaria a rota pedida.
 3. **Sem script embutido na página gerada.** O `npm run seguranca` confere no `dist/` que não há `<script>` sem `src` próprio, `<style>`, atributo `style`, `on*=` ou mapa de código. A CSP da tela (`frontend/csp.ts`) é:
@@ -158,21 +159,26 @@ A tela é a próxima camada exposta a XSS. A fundação do frontend (PR 2 da E5)
 4. **Segredos fora do código da tela.**
    - Toda variável de ambiente do Vite (`VITE_*`) vai para o navegador e é pública. Só `src/api/config.ts` lê o ambiente, e só o endereço da API; o lint barra o resto.
    - O token do chat só aparece num campo, quando a API responde 401, e fica só na memória da aba. Não vai ao armazenamento do navegador, a cookie nem ao endereço (testado).
-5. **O id do espaço fica no navegador (`localStorage`), nunca no endereço da página.**
+5. **A conta (C2a, [ADR 0016](adr/0016-telas-de-entrada.md)):**
+   - a tela só sabe da conta pelo `GET /conta`; o cookie da sessão é `HttpOnly`, e nada da conta vai ao armazenamento do navegador nem ao endereço (testado);
+   - o cookie só vai às rotas da conta e, quando a tela mostra a conta, às rotas de dados. Fora disso, o pedido sai com `credentials: 'omit'`; na conta, o espaço e o token não vão;
+   - um 401 com o cookie, fora das rotas de entrada, encerra a sessão na tela;
+   - o nome da organização é mostrado como texto (testado com `<img onerror>`).
+6. **O id do espaço fica no navegador (`localStorage`), nunca no endereço da página.**
    - Só é aceito no padrão de 32 hexadecimais.
    - Vai só às rotas que declaram o header no contrato.
    - O espaço vence em 120 min, contados pela duração que o servidor informa.
    - Os dados são fictícios.
-6. **Nenhuma requisição a terceiros:**
+7. **Nenhuma requisição a terceiros:**
    - fontes Geist hospedadas junto do app (OFL-1.1); no Chrome, só os arquivos do alfabeto latino são baixados;
    - sem CDN, analytics ou rastreamento (LGPD);
    - o `npm run seguranca` recusa endereço absoluto no build, salvo os nomes de espaço XML e os links de erro do React, que são texto.
-7. **Upload (`frontend/src/api/upload.ts`):**
+8. **Upload (`frontend/src/api/upload.ts`):**
    - o campo oferece só XML (`.xml`, `application/xml`, `text/xml`);
    - o tipo e o tamanho (1.000.000 bytes) são conferidos antes de enviar, e o teste do backend confere que são os mesmos dele;
    - o backend continua sendo quem decide (411, 413 e 415).
    - Desde o 3b ([ADR 0014](adr/0014-telas-notas-e-regime.md)), a tela de Notas usa estas conferências. Ela mostra a recusa do backend (409, 413, 415 e 422) pelo `detail`, como texto. O arquivo fica só na memória da aba até o envio e não vai ao armazenamento do navegador. O recibo mostra o texto da nota (emitente e `xProd`) como texto.
-8. **Dependências:**
+9. **Dependências:**
    - `npm ci` com o lockfile;
    - `frontend/.npmrc`: só versões publicadas há mais de 7 dias, versões exatas e sem scripts de instalação;
    - `npm audit` e `npm audit signatures` no CI;

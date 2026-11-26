@@ -147,10 +147,17 @@ describe('chamar', () => {
     const { cliente } = clienteCom(
       (pedido) =>
         new Promise<Response>((_resolver, rejeitar) => {
-          pedido.signal.addEventListener('abort', () => {
+          const abortar = () => {
             const motivo: unknown = pedido.signal.reason;
             rejeitar(motivo instanceof Error ? motivo : new Error('abortado'));
-          });
+          };
+          // Com a máquina carregada, os 20 ms podem passar antes de o fetch ser chamado: o sinal já chega abortado
+          // e o evento não dispara de novo (o fetch do navegador trata esse caso; o falso precisa tratar também).
+          if (pedido.signal.aborted) {
+            abortar();
+            return;
+          }
+          pedido.signal.addEventListener('abort', abortar);
         }),
       20,
     );

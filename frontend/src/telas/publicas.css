@@ -1,0 +1,271 @@
+/*
+ * Páginas públicas (C2, ADR 0016): a página inicial, os termos de uso e a privacidade.
+ *
+ * Mesmo estilo das telas (achromatic-ledger): cromo sem cor, borda de 1px, sem sombra. Grade de 12 colunas na
+ * coluna de 1152px, com o vão de 12px (85px por coluna):
+ *   Início: texto (7) + o que a demonstração mostra (5) = (7 × 85 + 6 × 12) + 12 + (5 × 85 + 4 × 12)
+ *           = 667 + 12 + 473 = 1152.
+ *   Termos e privacidade: índice (3) + texto (9) = (3 × 85 + 2 × 12) + 12 + (9 × 85 + 8 × 12)
+ *           = 279 + 12 + 861 = 1152.
+ * Abaixo de 900px, as colunas empilham.
+ */
+
+/* Início */
+
+.inicio {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--espaco);
+  align-items: start;
+}
+
+.inicio__texto {
+  grid-column: span 7;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 600px;
+  font-size: var(--tamanho-secao);
+  line-height: var(--altura-secao);
+}
+
+.inicio__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco);
+  margin-top: 8px;
+}
+
+.inicio__acoes a {
+  text-decoration: none;
+}
+
+.inicio__texto .texto-suave {
+  font-size: var(--tamanho-corpo);
+  line-height: var(--altura-corpo);
+}
+
+.inicio__telas {
+  grid-column: span 5;
+}
+
+.inicio__lista {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.inicio__item {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: var(--espaco);
+  padding-block: 10px;
+}
+
+.inicio__item + .inicio__item {
+  border-top: 1px solid var(--regua);
+}
+
+.inicio__item dt {
+  font-weight: var(--peso-medio);
+}
+
+.inicio__item dd {
+  margin: 0;
+  color: var(--texto-suave);
+}
+
+.inicio__telas > p {
+  color: var(--texto-suave);
+}
+
+/* O h1 da página inicial: o maior título do app, ainda dentro dos 32px das telas (app-screens §13). */
+.conteudo:has(.inicio) .pagina__cabecalho h1 {
+  max-width: 600px;
+  font-size: var(--tamanho-kpi);
+  line-height: var(--altura-kpi);
+  letter-spacing: -0.02em;
+}
+
+/* Termos e privacidade */
+
+.legal {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--espaco);
+  align-items: start;
+}
+
+.legal__indice {
+  grid-column: span 3;
+  position: sticky;
+  top: var(--respiro);
+}
+
+.legal__indice-titulo {
+  margin-bottom: 8px;
+  color: var(--texto-suave);
+  font-size: var(--tamanho-pequeno);
+  line-height: var(--altura-pequeno);
+  font-weight: var(--peso-normal);
+}
+
+.legal__indice ul {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.legal__indice a {
+  display: block;
+  padding-block: 4px;
+  color: var(--texto-suave);
+  text-decoration: none;
+}
+
+.legal__indice a:hover {
+  color: var(--texto);
+}
+
+.legal__corpo {
+  grid-column: span 9;
+  display: flex;
+  flex-direction: column;
+  gap: var(--respiro);
+  min-width: 0;
+}
+
+.legal__texto {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  max-width: 720px;
+  font-size: var(--tamanho-secao);
+  line-height: var(--altura-secao);
+}
+
+.legal__secao {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  /* A âncora do índice não esconde o título sob a borda da janela. */
+  scroll-margin-top: var(--respiro);
+}
+
+.legal__secao h2 {
+  font-size: var(--tamanho-secao);
+  font-weight: var(--peso-medio);
+}
+
+.legal__secao h2:focus {
+  outline: none;
+}
+
+.legal__secao ul {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.legal__secao a,
+.legal__outro a {
+  color: var(--texto);
+}
+
+.legal__secao code {
+  font-family: var(--fonte-numero);
+  font-size: 0.875em;
+  overflow-wrap: anywhere;
+}
+
+.legal__tabela {
+  font-size: var(--tamanho-corpo);
+  line-height: var(--altura-corpo);
+}
+
+.legal__tabela td {
+  vertical-align: top;
+}
+
+.legal__outro {
+  max-width: 720px;
+  color: var(--texto-suave);
+}
+
+/* O aviso de rascunho: a nota âmbar de um dado que não vale como final (app-screens §11), uma vez por página. */
+.aviso-rascunho {
+  max-width: 720px;
+  padding: 10px 12px;
+  border: 1px solid #fde68a;
+  border-radius: var(--raio-controle);
+  background: var(--selo-atencao-fundo);
+  color: var(--selo-atencao-tinta);
+  font-size: var(--tamanho-pequeno);
+  line-height: var(--altura-pequeno);
+}
+
+/* A conta sem empresa: o estado vazio no lugar das páginas do app, na largura da coluna (como os blocos). */
+.sem-empresa {
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.sem-empresa p:first-child {
+  max-width: 720px;
+}
+
+/* .vazio a pinta todo link de tinta: o botão principal mantém o texto branco. */
+.sem-empresa a.botao-principal {
+  color: var(--acao-texto);
+  text-decoration: none;
+}
+
+@media (max-width: 899px) {
+  .inicio__texto,
+  .inicio__telas,
+  .legal__indice,
+  .legal__corpo {
+    grid-column: 1 / -1;
+  }
+
+  .inicio__texto {
+    max-width: none;
+  }
+
+  .legal__indice {
+    position: static;
+  }
+}
+
+@media (max-width: 640px) {
+  .conteudo:has(.inicio) .pagina__cabecalho h1 {
+    font-size: var(--tamanho-titulo);
+    line-height: var(--altura-titulo);
+  }
+
+  .sem-empresa p:last-child,
+  .sem-empresa a.botao-principal {
+    width: 100%;
+  }
+
+  .sem-empresa a.botao-principal {
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  .inicio__acoes > a {
+    justify-content: center;
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .inicio__item {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+}

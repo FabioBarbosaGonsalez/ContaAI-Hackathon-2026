@@ -78,7 +78,7 @@ const corpoDe = async (pedido: Request) => (await pedido.clone().json()) as Reco
 
 describe('Painel', () => {
   it('o alerta vem primeiro: a frase, o preço sugerido e a margem abaixo do alvo', async () => {
-    await montar('/', api(SAUDE_REAL));
+    await montar('/painel', api(SAUDE_REAL));
     const bloco = await screen.findByRole('region', { name: 'Margem abaixo do alvo' });
     await within(bloco).findByText(/A margem de cerveja de malte, lata 350 ml caiu de 24,12% para 11,19%/u);
     expect(within(bloco).getByText('depois da nota 1002, de 16/03/2027.', { exact: false })).toBeDefined();
@@ -89,7 +89,7 @@ describe('Painel', () => {
   });
 
   it('um fato, uma variável: a margem da cerveja na lista é a do alerta', async () => {
-    await montar('/', api(SAUDE_REAL));
+    await montar('/painel', api(SAUDE_REAL));
     const margens = await screen.findByRole('region', { name: 'Margem de cada item contra o alvo' });
     const linha = (await within(margens).findByText('Cerveja de malte, lata 350 ml')).closest('tr');
     expect(linha && within(linha).getByText('11,19%').className).toContain('negativo');
@@ -98,7 +98,7 @@ describe('Painel', () => {
   });
 
   it('sem espaço nem token, o Aplicar fica desligado e diz por quê', async () => {
-    await montar('/', api(SAUDE_REAL));
+    await montar('/painel', api(SAUDE_REAL));
     const botao = await screen.findByRole('button', { name: 'Aplicar R$ 3,97' });
     expect((botao as HTMLButtonElement).disabled).toBe(true);
     expect(botao.getAttribute('aria-describedby')).not.toBeNull();
@@ -106,7 +106,7 @@ describe('Painel', () => {
   });
 
   it('no modo mock, a tela diz que é só leitura', async () => {
-    await montar('/', api(SAUDE_MOCK));
+    await montar('/painel', api(SAUDE_MOCK));
     await screen.findByRole('button', { name: 'Aplicar R$ 3,97' });
     expect(screen.getByText(/só leitura: nada é gravado/u)).toBeDefined();
   });
@@ -115,7 +115,7 @@ describe('Painel', () => {
     const aplicados: string[] = [];
     let aberto = true;
     const sessao = await montar(
-      '/',
+      '/painel',
       api(SAUDE_REAL, (pedido) => {
         const url = new URL(pedido.url);
         if (pedido.method === 'POST' && url.pathname.endsWith('/aplicar')) {
@@ -139,7 +139,7 @@ describe('Painel', () => {
 
   it('sem alerta aberto, a resposta fica no topo das margens, na linha inteira, sem cartão vazio', async () => {
     await montar(
-      '/',
+      '/painel',
       api(SAUDE_REAL, (pedido) => (new URL(pedido.url).pathname === '/alertas' ? json({ alertas: [] }) : undefined)),
     );
     const margens = await screen.findByRole('region', { name: 'Margem de cada item contra o alvo' });
@@ -152,7 +152,7 @@ describe('Painel', () => {
   it('corrigir a classificação: as candidatas oficiais da NCM e a escolhida gravada', async () => {
     const gravados: Record<string, unknown>[] = [];
     await montar(
-      '/',
+      '/painel',
       api(SAUDE_REAL, (pedido) => {
         if (pedido.method === 'POST' && pedido.url.endsWith('/catalogo/carne-bovina-kg/classificacao')) {
           void corpoDe(pedido).then((c) => gravados.push(c));
@@ -256,7 +256,7 @@ describe('barreira de erro', () => {
   it('resposta fora do formato quebra só a página: a barra e o rodapé continuam', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
     await montar(
-      '/',
+      '/painel',
       api(SAUDE_REAL, (pedido) => (pedido.url.includes('/catalogo') ? json({ inesperado: true }) : undefined)),
     );
     await screen.findByRole('heading', { level: 1, name: 'Não foi possível mostrar esta tela' });
