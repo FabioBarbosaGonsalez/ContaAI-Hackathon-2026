@@ -30,12 +30,13 @@ Por isso entram três etapas de contas (C1 a C3) entre o 3b e o 3c. O 3c depende
 | Fundação do frontend | PR #11, ADR 0012 |
 | 3a: Painel, Catálogo e explicação lateral | PR #18, ADR 0013 |
 | `GET /notas` (antes do 3b) | PR #19, revisão no ADR 0008 |
+| 3b: Notas e Regime (e o Painel sem alerta) | este PR, ADR 0014 |
 
 ## A ordem
 
 | # | Etapa | Entrega | Depende de |
 |---|---|---|---|
-| 1 | **3b** | Telas de Notas e de Regime | `GET /notas` (feito) |
+| 1 | **3b** (feito) | Telas de Notas e de Regime | `GET /notas` (feito) |
 | 2 | **C1** | Contas no backend | 3b |
 | 3 | **C2** | Telas de entrada | C1 |
 | 4 | **C3** | Dados da própria empresa | C1 e C2 |
@@ -59,10 +60,17 @@ Cada etapa sai em um PR, ou em mais de um quando o backend vem antes da tela.
    - Tradicional × híbrido lado a lado: diferença de caixa, crédito do cliente (a **régua do crédito**, elemento-assinatura do estilo), preço de empate e premissas rotuladas.
    - Antes de 2027 a comparação não existe, e a tela diz por quê (VSN-015).
    - Números esperados na demo, já verificados nos motores: venda R$ 19.898,65, diferença de caixa −R$ 125,79 e empate R$ 18.489,49.
+   - **Corrigido no 3b:** esses números pedem a nota 2 importada. Na demonstração recém-aberta (só a nota 1), a diferença de caixa é −R$ 173,90, com o crédito das compras calculado pelo motor ([ADR 0014](adr/0014-telas-notas-e-regime.md)).
 3. **Portão:** `inspect.mjs --app` com 0 FAIL em 1440, 768 e 390 px; crítica em `.taste-skill/app/critica-3b.md`; Chrome com o build (CSP e Trusted Types); teclado e leitor de tela.
 4. **Documentação:** ADR 0014, README e a varredura de inconsistências no projeto inteiro.
 
 **Saída:** as cinco páginas da barra funcionam, exceto Contador; tela e API ficam abertas em localhost para o usuário conferir.
+
+**Feito (2026-11-26, [ADR 0014](adr/0014-telas-notas-e-regime.md)):**
+- portão da skill com 0 FAIL e 0 WARN nas quatro telas da barra; crítica em `.taste-skill/app/critica-3b.md`;
+- Chrome com o build: 0 violações de CSP e 0 erros de JS no fluxo de importar e aplicar;
+- o que mudou: o Painel sem alerta (achado da medição na demonstração compartilhada) e o crédito por unidade na comparação, que só vai quando veio da nota;
+- ficou para depois: cadastrar o par de um item sem par (C3), oferecer as notas de exemplo na tela (C2) e rever o recibo de uma nota antiga (rota nova, sem etapa).
 
 ## C1: contas no backend
 

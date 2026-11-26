@@ -1,5 +1,5 @@
 /*
- * Telas do ContaAI (PR 3a): Painel, Catálogo e a explicação lateral.
+ * Telas do ContaAI: Painel, Catálogo e a explicação lateral (PR 3a); Notas e Regime (PR 3b).
  *
  * Estilo achromatic-ledger (direction.json): o cromo sem cor; números em tinta; a única cor de dado é a
  * margem que fica abaixo do alvo (--negativo). Separação por borda de 1px, sem sombra em nada parado.
@@ -114,8 +114,19 @@ h3 {
   grid-column: span 6;
 }
 
-.painel__premissas {
+.painel__premissas,
+.painel__margens--inteira {
   grid-column: 1 / -1;
+}
+
+.margens__achado {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.margens__achado a {
+  color: var(--texto);
 }
 
 /* As premissas do Painel em três colunas: a linha inteira, sem vão sob as colunas mais curtas. */
@@ -347,6 +358,11 @@ h3 {
   color: var(--texto-suave);
   font-size: var(--tamanho-pequeno);
   line-height: var(--altura-pequeno);
+}
+
+/* Um subtexto em palavras dentro de uma célula numérica fica na fonte do texto (a mono é só para números). */
+.tabela .tabela__sub--texto {
+  font-family: var(--fonte);
 }
 
 .tabela__grafico {
@@ -712,6 +728,370 @@ h3 {
   color: var(--texto-suave);
 }
 
+/* Notas (PR 3b): três faixas na linha inteira, o recibo da última importação, o envio e as notas. Lado a
+ * lado, o envio e a lista terminavam em alturas diferentes (ragged-row) ou com vão (panel-void). */
+
+.notas__recibo,
+.notas__envio,
+.notas__lista {
+  grid-column: 1 / -1;
+}
+
+.envio {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--espaco) var(--respiro);
+}
+
+.envio .campo {
+  flex: 1 1 360px;
+}
+
+.regime__empate {
+  align-self: start;
+}
+
+.aviso-neutro {
+  padding: 12px 16px;
+  border-radius: var(--raio-cartao);
+  background: var(--selo-neutro-fundo);
+  color: var(--selo-neutro-tinta);
+}
+
+.recibo__dados {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--espaco) var(--respiro);
+  margin: 0;
+}
+
+.recibo__dados dt {
+  color: var(--texto-suave);
+}
+
+.recibo__dados dd {
+  margin: 0;
+}
+
+.recibo__secao a {
+  color: var(--texto);
+}
+
+.recibo__secao {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: var(--espaco);
+  border-top: 1px solid var(--regua);
+}
+
+.recibo__alerta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px var(--espaco);
+  padding-block: 10px;
+}
+
+.recibo__alerta + .recibo__alerta {
+  border-top: 1px solid var(--regua);
+}
+
+.recibo__alerta-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.recibo__alerta .gravar {
+  align-items: flex-end;
+}
+
+.campo__arquivo {
+  max-width: 100%;
+}
+
+.notas__envio .campo input.campo__arquivo {
+  width: 100%;
+  min-height: 0;
+  padding: 8px 0;
+  border: 0;
+}
+
+/* Regime (PR 3b): a régua (7) e o caixa (5); a venda por item (8) e o empate (4); premissas e
+ * simplificações na linha inteira. (7 × 85 + 6 × 12) + 12 + (5 × 85 + 4 × 12) = 667 + 12 + 473 = 1152. */
+
+.regime__regua {
+  grid-column: span 7;
+}
+
+.regime__caixa {
+  grid-column: span 5;
+}
+
+.regime__itens {
+  grid-column: span 8;
+}
+
+.regime__empate {
+  grid-column: span 4;
+}
+
+.regime__premissas,
+.regime__simplificacoes {
+  grid-column: 1 / -1;
+}
+
+.regime__premissas .premissas--compacta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: var(--respiro);
+}
+
+.regime__premissas .premissas--compacta .premissas__linha + .premissas__linha {
+  border-top: 0;
+}
+
+.regime__premissas .premissas--compacta .premissas__linha {
+  border-bottom: 1px solid var(--regua);
+}
+
+.campo--linha {
+  flex-direction: row;
+  align-items: center;
+  margin-bottom: var(--espaco);
+}
+
+.campo--linha select {
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--borda-campo);
+  border-radius: var(--raio-controle);
+  background: var(--superficie);
+  color: var(--texto);
+}
+
+/* A régua do crédito (inventário §3): duas barras na mesma escala, o custo líquido do cliente em tinta e o
+ * crédito que ele leva no matiz do gráfico, o dado principal desta tela. */
+
+.regua {
+  display: flex;
+  flex-direction: column;
+  gap: var(--respiro);
+}
+
+.regua__lado {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.regua__topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px var(--espaco);
+}
+
+.regua__nome {
+  font-weight: var(--peso-medio);
+}
+
+.regua__barra {
+  display: block;
+  width: 100%;
+  height: 28px;
+}
+
+.regua__trilho {
+  fill: var(--regua);
+}
+
+.regua__custo {
+  fill: var(--grafico-tinta);
+}
+
+.regua__credito {
+  fill: var(--grafico-destaque);
+}
+
+.regua__valores {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px var(--respiro);
+  margin: 0;
+}
+
+.regua__valores > div {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.regua__valores dt {
+  color: var(--texto-suave);
+}
+
+.regua__valores dd {
+  margin: 0;
+}
+
+.regua__marca {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  border-radius: 2px;
+  background: var(--grafico-destaque);
+}
+
+.regua__valor-credito {
+  color: var(--grafico-destaque);
+  font-weight: var(--peso-dinheiro);
+}
+
+.regua__nota {
+  font-size: var(--tamanho-pequeno);
+  line-height: var(--altura-pequeno);
+}
+
+/* O caixa da empresa: as contas de cada regime e a diferença, que é o número maior do bloco. */
+
+.caixa {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--espaco);
+  margin: 0;
+}
+
+.caixa__grafico {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: var(--espaco);
+  border-bottom: 1px solid var(--regua);
+}
+
+.caixa__grafico > dt {
+  color: var(--texto-suave);
+}
+
+.caixa__grafico > dd {
+  margin: 0;
+}
+
+.tributo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tributo__linha {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr) auto;
+  gap: var(--espaco);
+  align-items: center;
+}
+
+.tributo__barra {
+  display: block;
+  width: 100%;
+  height: 12px;
+}
+
+.tributo__valor {
+  fill: var(--grafico-tinta);
+}
+
+.tributo__numero {
+  min-width: 96px;
+  text-align: right;
+}
+
+.caixa__regime {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: var(--espaco);
+  border-bottom: 1px solid var(--regua);
+}
+
+.caixa__regime > dt {
+  font-weight: var(--peso-medio);
+}
+
+.caixa__regime > dd,
+.caixa__diferenca > dd {
+  margin: 0;
+}
+
+.caixa__contas {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.caixa__contas > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--espaco);
+  padding-block: 4px;
+}
+
+.caixa__contas dt {
+  color: var(--texto-suave);
+}
+
+.caixa__contas dd {
+  margin: 0;
+}
+
+.caixa__total {
+  border-top: 1px solid var(--borda);
+}
+
+.caixa__total dt {
+  color: var(--texto);
+}
+
+/* O total do bloco fica no pé do cartão, que estica até a altura da régua ao lado. */
+.caixa__diferenca {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: auto;
+}
+
+.caixa__diferenca > dt {
+  color: var(--texto-suave);
+}
+
+.caixa__diferenca > dd {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.caixa__explica {
+  font-size: var(--tamanho-pequeno);
+  line-height: var(--altura-pequeno);
+}
+
+.simplificacoes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px var(--respiro);
+  margin: 0;
+  padding-left: 18px;
+  color: var(--texto-suave);
+}
+
 /* Tablet: o lado e as premissas descem para baixo do bloco principal. */
 
 @media (max-width: 1023px) {
@@ -720,8 +1100,16 @@ h3 {
   }
 
   .painel__alerta,
-  .painel__margens {
+  .painel__margens,
+  .regime__regua,
+  .regime__caixa,
+  .regime__itens,
+  .regime__empate {
     grid-column: 1 / -1;
+  }
+
+  .regime__premissas .premissas--compacta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -732,8 +1120,15 @@ h3 {
     grid-column: 1 / -1;
   }
 
-  .painel__premissas .premissas--compacta {
+  .painel__premissas .premissas--compacta,
+  .regime__premissas .premissas--compacta,
+  .recibo__dados,
+  .simplificacoes {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .recibo__alerta .gravar {
+    align-items: stretch;
   }
 
   .bloco {
@@ -773,7 +1168,7 @@ h3 {
     display: none;
   }
 
-  .tabela--catalogo thead {
+  :is(.tabela--catalogo, .tabela--lista) thead {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -781,48 +1176,48 @@ h3 {
     clip-path: inset(50%);
   }
 
-  .tabela--catalogo,
-  .tabela--catalogo tbody,
-  .tabela--catalogo tfoot,
-  .tabela--catalogo tr {
+  :is(.tabela--catalogo, .tabela--lista),
+  :is(.tabela--catalogo, .tabela--lista) tbody,
+  :is(.tabela--catalogo, .tabela--lista) tfoot,
+  :is(.tabela--catalogo, .tabela--lista) tr {
     display: block;
   }
 
-  .tabela--catalogo tr {
+  :is(.tabela--catalogo, .tabela--lista) tr {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 4px var(--espaco);
     padding-block: 12px;
   }
 
-  .tabela--catalogo tbody tr + tr,
-  .tabela--catalogo tfoot tr {
+  :is(.tabela--catalogo, .tabela--lista) tbody tr + tr,
+  :is(.tabela--catalogo, .tabela--lista) tfoot tr {
     border-top: 1px solid var(--regua);
   }
 
-  .tabela--catalogo th,
-  .tabela--catalogo td,
-  .tabela--catalogo tbody tr + tr th,
-  .tabela--catalogo tbody tr + tr td,
-  .tabela--catalogo tfoot th,
-  .tabela--catalogo tfoot td {
+  :is(.tabela--catalogo, .tabela--lista) th,
+  :is(.tabela--catalogo, .tabela--lista) td,
+  :is(.tabela--catalogo, .tabela--lista) tbody tr + tr th,
+  :is(.tabela--catalogo, .tabela--lista) tbody tr + tr td,
+  :is(.tabela--catalogo, .tabela--lista) tfoot th,
+  :is(.tabela--catalogo, .tabela--lista) tfoot td {
     padding: 0;
     border: 0;
   }
 
-  .tabela--catalogo .tabela__item,
-  .tabela--catalogo .tabela__estado,
-  .tabela--catalogo .tabela__acoes {
+  :is(.tabela--catalogo, .tabela--lista) .tabela__item,
+  :is(.tabela--catalogo, .tabela--lista) .tabela__estado,
+  :is(.tabela--catalogo, .tabela--lista) .tabela__acoes {
     grid-column: 1 / -1;
     width: auto;
     max-width: none;
   }
 
-  .tabela--catalogo td:empty {
+  :is(.tabela--catalogo, .tabela--lista) td:empty {
     display: none;
   }
 
-  .tabela--catalogo td[data-rotulo]::before {
+  :is(.tabela--catalogo, .tabela--lista) td[data-rotulo]::before {
     content: attr(data-rotulo);
     display: block;
     color: var(--texto-suave);
@@ -831,11 +1226,11 @@ h3 {
     line-height: var(--altura-pequeno);
   }
 
-  .tabela--catalogo .num {
+  :is(.tabela--catalogo, .tabela--lista) .num {
     text-align: left;
   }
 
-  .tabela--catalogo .tabela__estado::before {
+  :is(.tabela--catalogo, .tabela--lista) .tabela__estado::before {
     display: none;
   }
 
@@ -860,5 +1255,30 @@ h3 {
   .dialogo__acoes > * {
     flex: 1;
     justify-content: center;
+  }
+
+  .tabela--lista tr {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tabela--lista td[data-rotulo] {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    column-gap: var(--espaco);
+  }
+
+  .tabela--lista td[data-rotulo].num {
+    text-align: right;
+  }
+
+  .tabela--lista td[data-rotulo]::before {
+    margin-right: auto;
+  }
+
+  .tabela--lista td[data-rotulo] .tabela__sub {
+    flex-basis: 100%;
+    text-align: right;
   }
 }

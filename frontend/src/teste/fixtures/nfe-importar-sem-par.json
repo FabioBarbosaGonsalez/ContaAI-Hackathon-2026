@@ -1,0 +1,70 @@
+{
+  "simulado": true,
+  "avisoSimulacao": "Simulação de 2027: crédito das compras com alíquotas assumidas",
+  "premissas": [
+    {
+      "nome": "Alíquotas nominais de 2027 (crédito das compras)",
+      "valor": "CBS 8.8% · IBS estadual 0.05% · IBS municipal 0.05%",
+      "fonte": "Cenário de demonstração (data/demo): entradas do exemplo oficial da calculadora RR. Não são alíquotas oficiais (P6)."
+    },
+    {
+      "nome": "Crédito da compra sem grupo IBSCBS na nota",
+      "valor": "calculado no motor RR sobre o custo, na data da nota: Chocolate não recheado, barra 90 g",
+      "fonte": "Hipótese de fornecedor no regime regular (plano, E3), com as alíquotas do cenário da empresa."
+    },
+    {
+      "nome": "Nota de homologação",
+      "valor": "tpAmb 2: sem valor fiscal",
+      "fonte": "Campo ide/tpAmb da própria nota. As notas da demonstração são fictícias (data/demo)."
+    }
+  ],
+  "jaImportada": false,
+  "nota": {
+    "serie": "1",
+    "numero": "1003",
+    "dataEmissao": "2027-03-18T09:00:00-03:00",
+    "emitente": {
+      "cnpj": "71604258000156",
+      "nome": "Atacado Exemplo Ltda (fictício)"
+    },
+    "destinatario": {
+      "cnpj": "36817420000113",
+      "nome": "Distribuidora Serra Azul ME (fictícia)"
+    },
+    "homologacao": true,
+    "temGrupoIbsCbs": false
+  },
+  "itensCasados": [
+    {
+      "nItem": 1,
+      "itemId": "chocolate-barra",
+      "codigoFornecedor": "AE-CHO-90",
+      "ncm": "18063210",
+      "descricaoNota": "Chocolate não recheado, barra 90 g",
+      "quantidade": "400",
+      "custoAnterior": "4.10",
+      "custoNovo": "4.10",
+      "variacaoPct": "0.00",
+      "atualizaCusto": true,
+      "creditoCompraUnitario": "0.3649",
+      "fonteCredito": "motor"
+    }
+  ],
+  "itensSemPar": [
+    {
+      "nItem": 2,
+      "codigoFornecedor": "AE-REF-2L",
+      "ncm": "22021000",
+      "descricaoNota": "Refrigerante de cola, garrafa 2 L",
+      "motivo": "Código do produto deste fornecedor sem cadastro no catálogo."
+    },
+    {
+      "nItem": 3,
+      "codigoFornecedor": "AE-BIS-140",
+      "ncm": "19059090",
+      "descricaoNota": "Biscoito doce, pacote 140 g",
+      "motivo": "NCM da nota diferente da do cadastro (19053100): confira a classificação."
+    }
+  ],
+  "alertas": []
+}

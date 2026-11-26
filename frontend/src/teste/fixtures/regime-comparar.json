@@ -1,0 +1,135 @@
+{
+  "simulado": true,
+  "avisoSimulacao": "Simulação de 2027 com CBS 8,8% assumida e alíquotas efetivas do Simples assumidas (CBS 1,1612%, IBS 0,0129%)",
+  "premissas": [
+    {
+      "nome": "Alíquotas nominais de 2027",
+      "valor": "CBS 8,8% · IBS estadual 0,05% · IBS municipal 0,05%",
+      "fonte": "Cenário de demonstração (data/demo): entradas do exemplo oficial da calculadora RR. Informadas pelo usuário (P6). Não são alíquotas oficiais."
+    },
+    {
+      "nome": "Alíquota do Imposto Seletivo",
+      "valor": "10%",
+      "fonte": "Informada pelo usuário (P7). O motor RR exige a alíquota do IS para NCM sujeita ao IS enquanto ela não está definida em lei (erro REG-035). Sem efeito nos itens sem nova incidência do IS (CST 200 do IS, ex.: revenda 200007)."
+    },
+    {
+      "nome": "Alíquotas efetivas do Simples (anexo I, atividade 01)",
+      "valor": "CBS 1,1612% · IBS 0,0129%",
+      "fonte": "Cenário de demonstração (data/demo): valores de exemplo do esquema do motor SN. Informadas pelo usuário: saem da apuração do Simples do contribuinte (P8, ADR 0001)."
+    },
+    {
+      "nome": "Crédito das compras no Simples tradicional",
+      "valor": "não aproveitado: entra no custo",
+      "fonte": "LC 214/2025, art. 47, §9º, I: o optante do Simples não se credita de IBS e CBS."
+    },
+    {
+      "nome": "Crédito das compras no Simples híbrido",
+      "valor": "a CBS + IBS da compra vira crédito integral; compra com alíquota zero não gera crédito",
+      "fonte": "LC 214/2025, art. 47, caput (o contribuinte do regime regular apropria créditos do IBS e da CBS das aquisições, quando extintos os débitos) e art. 49 (alíquota zero não permite crédito). Leitura da equipe: com a opção do art. 41, §3º, não vale a vedação do art. 47, §9º, I, que se aplica 'quando não for exercida a opção pelo regime regular'."
+    },
+    {
+      "nome": "Opção pelo Simples híbrido",
+      "valor": "semestral: em setembro, para janeiro a junho, e em março, para julho a dezembro; irretratável no semestre",
+      "fonte": "LC 123/2006, art. 13, §10, na redação da LC 227/2026, e Portal do Simples Nacional (ADR 0003)."
+    },
+    {
+      "nome": "Imposto Seletivo fora do crédito do cliente",
+      "valor": "o IS entra no preço do híbrido, mas não no débito nem no crédito",
+      "fonte": "LC 214/2025, art. 410: o IS incide uma única vez, 'sendo vedado qualquer tipo de aproveitamento de crédito do imposto com operações anteriores ou geração de créditos para operações posteriores'. Na revenda (CST 200 do IS, ex.: 200007) o motor RR devolve IS zero."
+    },
+    {
+      "nome": "ICMS",
+      "valor": "fora das contas",
+      "fonte": "Simplificação do produto. Em 2027 o ICMS ainda existe e é deduzido da base do IBS/CBS (docs/exemplos.md da calculadora RR)."
+    }
+  ],
+  "criterio": "mesmo_preco_total_ao_cliente",
+  "cliente": {
+    "nome": "Mercado Bom Preço Ltda (fictício)",
+    "regime": "regime_regular"
+  },
+  "data": "2027-03-16",
+  "valorVenda": "19898.65",
+  "tradicional": {
+    "precoCliente": "19898.65",
+    "tributo": "233.63",
+    "creditoCliente": "233.63",
+    "custoLiquidoCliente": "19665.02"
+  },
+  "hibrido": {
+    "precoCliente": "19898.68",
+    "valorProdutos": "18272.42",
+    "debito": "1626.26",
+    "impostoSeletivo": "0.00",
+    "creditoCompras": "1266.84",
+    "tributoLiquido": "359.42",
+    "creditoCliente": "1626.26",
+    "custoLiquidoCliente": "18272.42"
+  },
+  "diferencaCaixa": "-125.79",
+  "diferencaPrecoCliente": "0.03",
+  "itens": [
+    {
+      "id": "biscoito-pacote",
+      "descricao": "Biscoito doce, pacote 140 g",
+      "quantidade": "2485",
+      "valorVenda": "11157.65",
+      "tributoTradicional": "131.00",
+      "valorProdutosHibrido": "10245.78",
+      "debitoHibrido": "911.87",
+      "impostoSeletivoHibrido": "0.00",
+      "precoClienteHibrido": "11157.65",
+      "creditoCompras": "685.61",
+      "fonteCredito": "nfe"
+    },
+    {
+      "id": "cerveja-lata",
+      "descricao": "Cerveja de malte, lata 350 ml",
+      "quantidade": "1200",
+      "valorVenda": "4548.00",
+      "tributoTradicional": "53.40",
+      "valorProdutosHibrido": "4176.32",
+      "debitoHibrido": "371.70",
+      "impostoSeletivoHibrido": "0.00",
+      "precoClienteHibrido": "4548.02",
+      "creditoCompras": "325.80",
+      "fonteCredito": "nfe"
+    },
+    {
+      "id": "chocolate-barra",
+      "descricao": "Chocolate não recheado, barra 90 g",
+      "quantidade": "700",
+      "valorVenda": "4193.00",
+      "tributoTradicional": "49.23",
+      "valorProdutosHibrido": "3850.32",
+      "debitoHibrido": "342.69",
+      "impostoSeletivoHibrido": "0.00",
+      "precoClienteHibrido": "4193.01",
+      "creditoCompras": "255.43",
+      "fonteCredito": "nfe"
+    }
+  ],
+  "empateTradicional": {
+    "hipotese": "Concorrente do regime regular que vende os mesmos itens pelo mesmo preço total: o custo líquido do cliente nele é o do lado híbrido. O preço de empate de cada linha sai do ajuste afim no motor SN, arredondado ao centavo para baixo; o custo líquido resultante pode diferir em centavos de custoLiquidoAlvo.",
+    "precoCliente": "18489.49",
+    "descontoNecessario": "1409.16",
+    "tributo": "217.09",
+    "creditoCliente": "217.09",
+    "custoLiquidoCliente": "18272.40",
+    "custoLiquidoAlvo": "18272.42"
+  },
+  "fonteTradicional": "motor",
+  "simplificacoes": [
+    "O restante do DAS (IRPJ, CSLL, CPP etc.) é tratado como igual nos dois regimes; só a parcela de CBS/IBS muda (plano, 11.2).",
+    "Mesmo preço total ao cliente nos dois regimes: no híbrido, a base de cada linha é o valor que somado à CBS/IBS (e ao IS) dá esse preço. Pode sobrar diferença de centavos pelo arredondamento (diferencaPrecoCliente).",
+    "diferencaCaixa compara os tributos a preço igual: tributo no DAS − (débito − crédito das compras).",
+    "Crédito das compras das unidades vendidas: o crédito por unidade informado (grupo IBSCBS da NF-e) ou, sem ele, o motor RR sobre o custo. Supõe os débitos da compra pagos pelo fornecedor (LC 214/2025, art. 47, caput).",
+    "No Simples tradicional o crédito das compras não é aproveitado (LC 214/2025, art. 47, §9º, I).",
+    "ICMS fora das contas."
+  ],
+  "versoes": {
+    "motorRegimeRegular": "1.7.2",
+    "motorSimplesNacional": "1.0.2",
+    "banco": "V0073"
+  }
+}

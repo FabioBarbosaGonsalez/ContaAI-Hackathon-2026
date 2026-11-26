@@ -1,0 +1,80 @@
+{
+  "empresa": {
+    "cnpj": "36817420000113",
+    "razaoSocial": "Distribuidora Serra Azul ME (fictícia)",
+    "regimeAtual": "simples_tradicional",
+    "uf": "RS",
+    "municipio": 4314902,
+    "municipioNome": "Porto Alegre",
+    "dataCenario": "2027-03-16"
+  },
+  "notas": [
+    {
+      "nota": {
+        "serie": "1",
+        "numero": "1003",
+        "dataEmissao": "2027-03-18T09:00:00-03:00",
+        "emitente": {
+          "cnpj": "71604258000156",
+          "nome": "Atacado Exemplo Ltda (fictício)"
+        },
+        "destinatario": {
+          "cnpj": "36817420000113",
+          "nome": "Distribuidora Serra Azul ME (fictícia)"
+        },
+        "homologacao": true,
+        "temGrupoIbsCbs": false
+      },
+      "importadaEm": "2026-11-26T16:35:36.191221Z",
+      "itensCasados": 1,
+      "itensSemPar": 2,
+      "alertasGerados": 0,
+      "alertasAbertos": 0
+    },
+    {
+      "nota": {
+        "serie": "1",
+        "numero": "1002",
+        "dataEmissao": "2027-03-16T09:00:00-03:00",
+        "emitente": {
+          "cnpj": "71604258000156",
+          "nome": "Atacado Exemplo Ltda (fictício)"
+        },
+        "destinatario": {
+          "cnpj": "36817420000113",
+          "nome": "Distribuidora Serra Azul ME (fictícia)"
+        },
+        "homologacao": true,
+        "temGrupoIbsCbs": true
+      },
+      "importadaEm": "2026-11-26T16:35:36.074135Z",
+      "itensCasados": 3,
+      "itensSemPar": 0,
+      "alertasGerados": 1,
+      "alertasAbertos": 1
+    },
+    {
+      "nota": {
+        "serie": "1",
+        "numero": "1001",
+        "dataEmissao": "2027-03-02T09:00:00-03:00",
+        "emitente": {
+          "cnpj": "71604258000156",
+          "nome": "Atacado Exemplo Ltda (fictício)"
+        },
+        "destinatario": {
+          "cnpj": "36817420000113",
+          "nome": "Distribuidora Serra Azul ME (fictícia)"
+        },
+        "homologacao": true,
+        "temGrupoIbsCbs": false
+      },
+      "importadaEm": "2026-11-26T16:33:50.659674Z",
+      "itensCasados": 5,
+      "itensSemPar": 0,
+      "alertasGerados": 0,
+      "alertasAbertos": 0
+    }
+  ],
+  "aviso": "Dados fictícios de demonstração (P10): empresas, CNPJs, preços e custos não são reais."
+}

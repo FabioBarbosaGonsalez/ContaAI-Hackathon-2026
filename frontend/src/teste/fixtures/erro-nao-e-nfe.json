@@ -1,0 +1,6 @@
+{
+  "type": "/problemas/nota-invalida",
+  "title": "Arquivo não é uma NF-e lida pelo ContaAI",
+  "status": 422,
+  "detail": "O arquivo não é uma NF-e (raiz NFe no namespace do portal fiscal)."
+}

@@ -25,6 +25,32 @@ export function reais(valor: Valor): string {
   return n === null ? TRACO : REAIS.format(n).replace(/\s/u, ' ');
 }
 
+const REAIS_POR_UNIDADE = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 4,
+});
+
+/**
+ * Valor por unidade com até 4 casas, como a API manda: "0.2715" → "R$ 0,2715". O crédito da compra por
+ * unidade sai de vCBS + vIBS ÷ qCom (ADR 0003) e não é arredondado de novo na tela.
+ */
+export function reaisPorUnidade(valor: Valor): string {
+  const n = numero(valor);
+  return n === null ? TRACO : REAIS_POR_UNIDADE.format(n).replace(/\s/u, ' ');
+}
+
+/** Valor com sinal (−R$ 125,79 e +R$ 10,00), com o sinal de menos tipográfico. Zero fica sem sinal. */
+export function reaisComSinal(valor: Valor): string {
+  const n = numero(valor);
+  if (n === null) {
+    return TRACO;
+  }
+  const sinal = n > 0 ? '+' : n < 0 ? '−' : '';
+  return `${sinal}${reais(Math.abs(n))}`;
+}
+
 /** "11.19" → "11,19%". */
 export function porcentagem(valor: Valor): string {
   const n = numero(valor);

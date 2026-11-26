@@ -51,6 +51,7 @@ Também estão aqui as duas gravações da tela que o ADR 0011 preparou: o preç
 ## Consequências
 
 - Painel e Catálogo funcionam nos modos mock e real. Regime e Notas seguem como páginas provisórias até o 3b, e Contador até o 3c.
+- **Revisão no 3b ([ADR 0014](0014-telas-notas-e-regime.md)):** Regime e Notas entraram. Sem alerta aberto, o Painel passou a dizer "Nenhum item com a margem abaixo do alvo." no topo do bloco das margens, na linha inteira: na demonstração compartilhada, o cartão do alerta ficava com 231 px vazios.
 - O contrato do backend não mudou.
 
 ### Em aberto
