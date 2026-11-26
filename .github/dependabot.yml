@@ -23,6 +23,20 @@ updates:
     cooldown:
       default-days: 7
     labels: [dependencias]
+    # Versões maiores barradas de propósito (ADR 0012). As menores e as correções continuam.
+    ignore:
+      # ESLint 10: o eslint-plugin-react e o eslint-plugin-jsx-a11y só aceitam até a 9.
+      # Retirar quando o jsx-a11y aceitar a 10 (o @eslint/js acompanha o eslint).
+      - dependency-name: eslint
+        update-types: [version-update:semver-major]
+      - dependency-name: "@eslint/js"
+        update-types: [version-update:semver-major]
+      # TypeScript 7: incompatível com o typescript-eslint e o openapi-typescript.
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
+      # Os tipos do Node seguem o Node do projeto (engines ^24.15.0 e CI).
+      - dependency-name: "@types/node"
+        update-types: [version-update:semver-major]
 
   # Imagens base dos motores (eclipse-temurin). A versão dos motores da Receita é fixada
   # por tag + SHA nos Dockerfiles e só muda em PR próprio com make golden verde (P5).
