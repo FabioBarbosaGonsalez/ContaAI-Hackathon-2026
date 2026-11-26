@@ -97,3 +97,25 @@ Um teste confere que o 429 sai com o cabeçalho CORS.
   - `detail` continua sendo um texto em todos os erros, então quem já lia `detail` segue lendo.
 - **O 500 continua sem os cabeçalhos de segurança e de CORS.** Ele é montado pelo `ServerErrorMiddleware` do Starlette, que fica por fora de todos. O corpo não traz nada interno, e o caso só acontece em erro não previsto.
 - Os testes do CI passaram de 265 para 287 (`tests/test_problemas.py` e asserções de tipo nos testes de recusa). Os 50 golden passam contra os motores reais.
+
+## Revisão na E5: mensagens de validação em português
+
+**Contexto.** O `detail` do 422 e o `detalhe` de cada campo saíam com a mensagem do Pydantic, em inglês ("String should have at least 2 characters", "String should match pattern '^\d{8}$'"). A tela mostra os dois como texto (ADR 0012), e a pessoa que preenche não deveria ver nem inglês nem expressão regular.
+
+**Decisão.**
+
+- A frase nasce em `app/api/mensagens.py`, pelo `type` do erro e pelo `ctx` dele, nunca pelo texto em inglês. O `type` é a parte estável do erro do Pydantic (lista oficial em docs.pydantic.dev, "Validation Errors"); o texto muda entre versões.
+- **A tabela cobre só os 30 tipos que as rotas geram.** O levantamento foi feito com uma sonda que manda entradas inválidas, geradas do próprio OpenAPI, a todas as rotas, nos modos mock e real (os dois deram os mesmos 30 tipos). A sonda virou teste (`tests/test_mensagens.py`).
+  - A tabela é igual ao conjunto que a sonda vê, mais os casos gerados direto com o Pydantic. Tipo sem caso reprova o teste, e tipo que a sonda vê sem tradução também.
+  - Tipo fora da tabela vira "Valor inválido." e fica no log (só o tipo, sem o valor enviado).
+- **Cada padrão do contrato tem a sua frase** ("Use exatamente 8 dígitos, sem pontos nem traços."). Padrão novo sem frase reprova `test_todo_padrao_do_contrato_tem_frase`.
+- **Regras do contrato** (`model_validator`) já falam português: sai só o texto da regra, sem o prefixo "Value error,". A única `value_error` que não nasce no ContaAI é a do FastAPI para um arquivo enviado como texto, que vira "Envie um arquivo.".
+- **Números dos limites no jeito brasileiro:** "menor ou igual a 1.000.000.000".
+- **O `detail`** diz o campo e a origem em português: "itens/0/ncm (corpo): Use exatamente 8 dígitos…", com "E mais N problema(s)." quando há outros. Em `campos`, a origem segue com o nome do contrato (`body`, `query`, `path`, `header`).
+- **Achado corrigido junto:** no JSON quebrado, o FastAPI põe a posição do caractere no local do erro, e o ponteiro saía como `#/1`, como se fosse um campo. Agora é `#`.
+
+**Consequências.**
+
+- Nenhuma mudança de forma no contrato: `detail` e `detalhe` continuam texto, e o `openapi.json` não mudou. Muda só o idioma do texto.
+- Nada do que a pessoa enviou volta na mensagem; a sonda confere isso em todas as respostas.
+- Testes do CI: de 391 para 431. A sonda roda em cerca de 10 s, porque cada esquema de campo é sondado uma vez, mesmo quando aparece em várias rotas.
