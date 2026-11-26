@@ -11,10 +11,12 @@ Para relatar uma vulnerabilidade, veja o [SECURITY.md](../SECURITY.md).
 | Motores oficiais da Receita (RR e SN) | Não têm autenticação (`anyRequest().permitAll()` no código oficial). Quem alcança o motor usa a CPU dele à vontade |
 | Crédito do provedor de IA | Cada mensagem do chat custa dinheiro quando uma IA real é ligada |
 | Estado da demonstração (SQLite) | Notas, custos, alertas e preços aplicados das empresas fictícias, compartilhados por quem usa a demo |
+| Contas (`contas.db`, [ADR 0015](adr/0015-contas.md)) | E-mail, hash da senha, segredo do segundo fator e sessões de quem tem conta: o primeiro dado pessoal do projeto |
+| Estado de cada organização (`organizacoes/<id>.db`) | Notas, catálogo e preços de uma empresa real, a partir da C3. Não pode chegar a outra organização |
 | Chave do provedor de IA e token da demo | Segredos do servidor |
 | Confiança no número mostrado | O produto mostra tributo e margem: um número inventado ou adulterado é o pior defeito possível |
 
-Todos os dados são sintéticos (P10): empresas, CNPJs e notas fictícios. Não há dado pessoal nem fiscal real no repositório nem nos testes.
+Os dados do repositório e dos testes são sintéticos (P10): empresas, CNPJs, notas e e-mails fictícios. Desde a C1, o servidor guarda o e-mail de quem cria uma conta, num banco fora do git (`*.db` no `.gitignore`).
 
 ## Ameaças e proteções
 
@@ -75,6 +77,31 @@ Todos os dados são sintéticos (P10): empresas, CNPJs e notas fictícios. Não 
   - o espaço vence num tempo fixo e é apagado na limpeza.
 - **Estado:** a nota só entra se o destinatário for uma empresa cadastrada. Reimportar a mesma nota é idempotente (SHA-256). Os lançamentos de custo só aceitam acréscimo (gatilhos bloqueiam UPDATE). A restauração é atômica.
 
+### Contas e sessão ([ADR 0015](adr/0015-contas.md))
+
+- **Senha:** de 8 a 128 caracteres, sem regra de composição (NIST SP 800-63B-4, §3.1.1.2). O mínimo de 8 vale porque o segundo fator é obrigatório.
+  - Recusa as 46.483 senhas comuns da lista do NCSC (SecLists, MIT), o e-mail e o nome do produto.
+  - Hash Argon2id (argon2-cffi, MIT) com 19 MiB, 2 passes e paralelismo 1 (OWASP).
+- **Segundo fator obrigatório:** TOTP (RFC 6238) com a biblioteca padrão, sem SMS.
+  - Segredo de 160 bits, 6 dígitos, passo de 30 s, um passo de tolerância e cada código aceito uma vez.
+  - 10 códigos de recuperação de 65 bits, guardados só como hash, de uso único e com aviso quando um é usado.
+- **Sessão:**
+  - cookie `__Host-contaai_sessao`, `HttpOnly`, `Secure`, `SameSite=Strict`, sem `Domain`;
+  - token de 256 bits, só o hash no banco, token novo a cada entrada;
+  - 30 min sem uso e 8 h no total;
+  - sair apaga a sessão no servidor.
+- **Tentativas:** contador de falhas seguidas por conta, que soma senha, código e código de recuperação.
+  - Espera crescente da 5ª falha em diante (30 s até 1 h).
+  - Bloqueio em 100 falhas (NIST §3.2.2), com desbloqueio só pelo administrador no servidor.
+  - Um e-mail sem conta tem o mesmo contador e o mesmo trabalho: a entrada não revela se a conta existe.
+  - O cadastro revela, porque sem confirmação de e-mail não há como esconder (achado do ADR 0015).
+- **Autorização por empresa:**
+  - cada organização tem o próprio banco de estado;
+  - toda rota só enxerga os CNPJs de quem chama, e um CNPJ alheio responde o mesmo 404 de um que não existe;
+  - os três vazamentos do mapeamento (alertas sem `cnpj`, painel do contador e aplicar alerta) foram fechados;
+  - restaurar a demonstração com a sessão de uma conta é recusado.
+- **Excluir a conta** pede a senha de novo e apaga a pessoa e, se ela era a única integrante, a organização e o arquivo de estado (LGPD, art. 18 VI).
+
 ### Navegador: XSS, CSRF e DNS rebinding ([ADR 0011](adr/0011-contrato-da-tela-e-seguranca.md))
 
 - **A API nunca responde HTML.**
@@ -82,8 +109,10 @@ Todos os dados são sintéticos (P10): empresas, CNPJs e notas fictícios. Não 
   - O texto do usuário volta como string JSON, nunca como página: o backend não o escapa nem o remove, porque é dado.
   - O teste percorre todas as rotas do contrato com payload de XSS, nos modos mock e real.
 - **`/docs` é a única página HTML** e é desligável (`CONTAAI_DOCS_PUBLICA=false`). O Swagger carrega scripts de uma CDN. Na mesma origem da tela, eles alcançariam o que a tela guarda no navegador. No deploy, fica desligado.
-- **CSRF:**
-  - POST com `Origin` fora de `CONTAAI_CORS_ORIGENS` recebe 403, inclusive com `Origin: null`;
+- **CSRF** (nos métodos POST, PUT, PATCH e DELETE):
+  - `Origin` fora de `CONTAAI_CORS_ORIGENS` recebe 403, inclusive com `Origin: null`;
+  - `Sec-Fetch-Site: cross-site` recebe 403, e uma requisição com o cookie da sessão e sem `Origin` também ([ADR 0015](adr/0015-contas.md));
+  - o cookie da sessão é `SameSite=Strict`, e o CORS não aceita credenciais: o cookie só anda na mesma origem (proxy `/api`);
   - corpo `text/plain` ou de formulário não é lido como JSON;
   - as rotas que mudam o estado também exigem um header próprio (token ou espaço), que força o preflight do CORS.
 - **DNS rebinding:** só os hosts de `CONTAAI_HOSTS_PERMITIDOS` são aceitos (padrão: `127.0.0.1` e `localhost`). Os outros recebem 400.
@@ -200,7 +229,9 @@ Não usamos a `gitleaks-action`: desde a v2 ela deixou de ser MIT e exige chave 
 
 ## Em aberto
 
-- **Sem usuário nem autorização por CNPJ.** O CNPJ é filtro, não permissão. Há um token só para toda a demo. Login fica para depois do hackathon ([ADR 0008](adr/0008-nfe-historico-e-alertas.md)).
+- **Sem opção resistente a phishing.** O TOTP não é resistente a phishing, e o AAL2 completo do NIST pede oferecer uma (passkey). Fica como implementação futura ([ADR 0015](adr/0015-contas.md)).
+- **O segredo do TOTP fica em texto no `contas.db`,** protegido pelo acesso ao arquivo. Cifrar fica para o deploy (E6).
+- **Termos do NCSC** sobre a lista de senhas comuns não verificados (a licença MIT do SecLists foi lida).
 - **Esgotar os espaços de avaliação:** criar um espaço não pede o token, para a banca testar sem combinar nada. Quem fizer muitos pedidos de IPs diferentes pode ocupar o teto (50, configurável) até eles vencerem. A demonstração compartilhada segue funcionando, e o 503 diz em quanto tempo abre vaga ([ADR 0010](adr/0010-espacos-de-avaliacao.md)).
 - **Atrás de proxy, o limite por IP vira global.** Ler `X-Forwarded-For` só de um proxy nosso fica para o deploy (E6).
 - **Deploy (E6):**

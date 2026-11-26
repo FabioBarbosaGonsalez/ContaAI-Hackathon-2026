@@ -1,4 +1,5 @@
-"""Middlewares: tamanho do corpo, limite por IP, Host, Origin e cabeçalhos de segurança (ADRs 0006, 0008 e 0011).
+"""Middlewares: tamanho do corpo, limite por IP, Host, Origin e cabeçalhos de segurança (ADRs 0006, 0008, 0011 e
+0015).
 
 As respostas de recusa (400, 403, 411, 413, 429) saem no formato da RFC 9457, como as das rotas (ADR 0009).
 """
@@ -19,6 +20,8 @@ Proximo = Callable[[Request], Awaitable[Response]]
 FOLGA_MULTIPART = 16 * 1024
 ROTA_NFE = "/nfe/importar"
 
+# Cadastro, entrada e código (C1, ADR 0015): limite por IP próprio, além do contador de falhas de cada conta.
+ROTAS_ENTRADA = ("/contas", "/sessoes", "/conta/excluir")
 # Rotas que chamam os motores (ou o provedor de IA) ou mudam o estado, e por isso têm limite por IP.
 ROTAS_LIMITADAS = (
     "/carrinho/calcular",
@@ -33,13 +36,19 @@ ROTAS_LIMITADAS = (
     "/demo/restaurar",
     "/espacos",
     "/catalogo/",  # POST /catalogo/{id}/preco e /classificacao (o GET /catalogo não chama os motores)
+    *ROTAS_ENTRADA,
 )
+# Métodos que mudam o estado: passam pela defesa contra CSRF.
+METODOS_INSEGUROS = ("POST", "PUT", "PATCH", "DELETE")
+# Cookie da sessão (app.api.dependencias.COOKIE_SESSAO; repetido aqui para o middleware não importar as rotas).
+COOKIE_SESSAO = "__Host-contaai_sessao"
 # Um limitador por processo. Os testes trocam estes objetos (monkeypatch neste módulo).
 LIMITE_CHAT = LimitadorPorIp(configuracao().limite_chat_por_minuto)
 LIMITE_GERAL = LimitadorPorIp(configuracao().limite_geral_por_minuto)
 LIMITE_BUSCA = LimitadorPorIp(configuracao().limite_busca_por_minuto)
 # Criar um espaço grava um arquivo no disco: limite próprio, além do teto de espaços (ADR 0010).
 LIMITE_ESPACOS = LimitadorPorIp(configuracao().limite_espacos_por_minuto)
+LIMITE_ENTRADA = LimitadorPorIp(configuracao().limite_entrada_por_minuto)
 
 ROTAS_DOCUMENTACAO = ("/docs", "/redoc", "/openapi.json")
 
@@ -91,15 +100,24 @@ async def verificar_host(request: Request, call_next: Proximo) -> Response:
 
 
 async def verificar_origem(request: Request, call_next: Proximo) -> Response:
-    """POST vindo de um navegador em outra origem é recusado (ADR 0011, defesa contra CSRF).
+    """Defesa contra CSRF nos métodos que mudam o estado (ADR 0011, reforçada no ADR 0015).
 
-    O navegador sempre manda Origin num POST de outra origem, até num formulário simples (que não passa pelo
-    preflight do CORS). Sem Origin (curl, scripts, testes), segue. As rotas que mudam o estado já exigem um
-    header próprio (token ou espaço); esta checagem cobre também as que não exigem, como POST /espacos.
+    1. Sec-Fetch-Site: cross-site (o navegador diz que a requisição saiu de outro site): recusada. O OWASP
+       (Cross-Site Request Forgery Prevention) recomenda os cabeçalhos Fetch Metadata além do SameSite.
+    2. Origin fora da lista: recusada. O navegador sempre manda Origin num POST de outra origem, até num
+       formulário simples (que não passa pelo preflight do CORS).
+    3. Com o cookie da sessão e sem Origin: recusada. Um navegador manda Origin nesses métodos; sem ele, a
+       requisição não veio da tela. Sem cookie e sem Origin (curl, scripts, testes), segue: o estado da demo já
+       exige um header próprio (token ou espaço).
     """
-    origem = request.headers.get("origin")
-    if request.method == "POST" and origem is not None and origem not in _cfg_atual(request).cors_origens:
-        return simples(403, "Origem não autorizada.")
+    if request.method in METODOS_INSEGUROS:
+        origem = request.headers.get("origin")
+        if request.headers.get("sec-fetch-site") == "cross-site":
+            return simples(403, "Requisição de outro site recusada.")
+        if origem is not None and origem not in _cfg_atual(request).cors_origens:
+            return simples(403, "Origem não autorizada.")
+        if origem is None and COOKIE_SESSAO in request.cookies:
+            return simples(403, "Requisição sem Origin com o cookie da sessão recusada.")
     return await call_next(request)
 
 
@@ -112,6 +130,8 @@ async def limitar_requisicoes(request: Request, call_next: Proximo) -> Response:
             limitadores.append(LIMITE_BUSCA)
         if caminho == "/espacos" and request.method == "POST":
             limitadores.append(LIMITE_ESPACOS)
+        if caminho.startswith(ROTAS_ENTRADA) and request.method == "POST":
+            limitadores = [LIMITE_ENTRADA]
         for limitador in limitadores:
             permitido, espera = limitador.permitir(ip)
             if not permitido:

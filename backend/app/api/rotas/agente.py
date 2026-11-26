@@ -16,6 +16,7 @@ from app.api.dependencias import (
     Dados,
     EspacoId,
     Motores,
+    SessaoCookie,
     Token,
     abrir_estado,
     exigir_token,
@@ -36,6 +37,7 @@ async def chat(
     da: Dados,
     token: Token = None,
     espaco: EspacoId = None,
+    sessao: SessaoCookie = None,
 ) -> ChatResposta:
     """Agente com tool use (E2). As ações voltam como propostas: nada é aplicado sem o clique do usuário.
 
@@ -45,7 +47,7 @@ async def chat(
     if cfg.modo == "mock":
         marcar_mock(response)
         return mocks.carregar().chat
-    estado = await asyncio.to_thread(abrir_estado, cfg, espaco)
+    estado = await asyncio.to_thread(abrir_estado, cfg, espaco, sessao)
     async with http_interno(cfg.llm_timeout_s) as http:
         provedor = criar_provedor(cfg, http)
         return await responder_chat(

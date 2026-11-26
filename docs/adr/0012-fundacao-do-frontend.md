@@ -46,13 +46,13 @@ Ela entrega tudo de que as telas precisam, menos as telas: as páginas mostram s
   - O CI roda `npm run contrato:checar` (`--check`) e falha se os tipos ficarem atrás do contrato.
   - O gerador rodou com toda a rede do Node bloqueada e não tentou nenhuma conexão.
 - **O cliente é o `openapi-fetch` 0.17.0**, embrulhado em `src/api/cliente.ts`. Toda requisição:
-  - sai sem credenciais (`credentials: 'omit'`), sem Referer e sem cache;
+  - sai sem credenciais (`credentials: 'omit'`), sem Referer e sem cache. **Revisto na C1** ([ADR 0015](0015-contas.md)): `credentials: 'same-origin'`, com a API em `/api` pelo proxy do Vite;
   - recusa redirecionamento (`redirect: 'error'`);
   - tem tempo limite de 30 s.
 - **`chamar()` devolve `{ dados, mock }` ou lança `ErroApi`**, com o tipo: resposta, rede, tempo, cancelado, entrada ou formato.
   - O corpo de erro só é aproveitado se tiver o formato da RFC 9457 (`src/api/problema.ts`).
   - Um corpo fora do formato (HTML de proxy, texto) nunca chega à tela; em seu lugar vai uma frase em português pelo status.
-- **O endereço da API (`src/api/config.ts`)** é `127.0.0.1:8000` no desenvolvimento e `/api` no build (L11 do ADR 0011), ou `VITE_CONTAAI_API`.
+- **O endereço da API (`src/api/config.ts`)** é `127.0.0.1:8000` no desenvolvimento e `/api` no build (L11 do ADR 0011), ou `VITE_CONTAAI_API`. **Revisto na C1** ([ADR 0015](0015-contas.md)): `/api` também no desenvolvimento, pelo proxy do Vite.
   - Recusa `//host`, usuário e senha embutidos, consulta, fragmento, `javascript:` e http fora da máquina local.
 
 **Achados, todos corrigidos com teste:**

@@ -107,7 +107,8 @@ export interface paths {
         };
         /**
          * Listar Alertas
-         * @description Alertas de margem gerados pelas notas de compra, do mais recente para o mais antigo.
+         * @description Alertas de margem gerados pelas notas de compra, do mais recente para o mais antigo. Sem `cnpj`, os de
+         *     todas as empresas que quem chama alcança.
          */
         get: operations["listar_alertas_alertas_get"];
         put?: never;
@@ -129,7 +130,8 @@ export interface paths {
         put?: never;
         /**
          * Aplicar Alerta
-         * @description Aplica o preço sugerido do alerta como preço de venda do item. Só com o clique do usuário (P3).
+         * @description Aplica o preço sugerido do alerta como preço de venda do item. Só com o clique do usuário (P3). Um alerta de
+         *     empresa fora do alcance de quem chama responde como alerta inexistente.
          */
         post: operations["aplicar_alerta_alertas__alerta_id__aplicar_post"];
         delete?: never;
@@ -232,7 +234,8 @@ export interface paths {
         };
         /**
          * Contador Painel
-         * @description Painel do contador (D1): empresas da carteira com os alertas abertos, a mais urgente primeiro.
+         * @description Painel do contador (D1): as empresas que quem chama alcança, com os alertas abertos, a mais urgente
+         *     primeiro.
          */
         get: operations["contador_painel_contador_painel_get"];
         put?: never;
@@ -278,6 +281,153 @@ export interface paths {
         get: operations["espaco_atual_espacos_atual_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/contas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cadastrar
+         * @description Cria a conta (pendente) e a organização dela, e devolve o segredo do segundo fator. A conta só vale
+         *     depois de POST /contas/ativar com o primeiro código do aplicativo, dentro do prazo.
+         */
+        post: operations["cadastrar_contas_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/contas/ativar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ativar
+         * @description Confirma o primeiro código: a conta passa a valer, a sessão começa e saem os 10 códigos de recuperação.
+         */
+        post: operations["ativar_contas_ativar_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sessoes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Entrar
+         * @description Primeira etapa: e-mail e senha. Certos, o passe vai no cookie e falta o código (POST /sessoes/codigo).
+         */
+        post: operations["entrar_sessoes_post"];
+        /**
+         * Sair De Todos
+         * @description Sai em todos os aparelhos: apaga todas as sessões da conta.
+         */
+        delete: operations["sair_de_todos_sessoes_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sessoes/codigo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Segunda Etapa
+         * @description Segunda etapa: o código do aplicativo ou um código de recuperação. Certo, a sessão começa (token novo a
+         *     cada entrada). O código de recuperação usado deixa de valer e outro entra no lugar.
+         */
+        post: operations["segunda_etapa_sessoes_codigo_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conta": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Conta
+         * @description Quem entrou: e-mail, organização e papel, empresas, códigos de recuperação restantes e avisos.
+         */
+        get: operations["conta_conta_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sessoes/atual": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Sair
+         * @description Sai neste aparelho: a sessão é apagada no servidor, e não só o cookie.
+         */
+        delete: operations["sair_sessoes_atual_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conta/excluir": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Excluir
+         * @description Apaga a conta (LGPD, art. 18 VI), com a senha de novo. Se a pessoa é a única integrante da organização, a
+         *     organização e os dados dela vão junto, inclusive o banco de estado.
+         */
+        post: operations["excluir_conta_excluir_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -401,7 +551,8 @@ export interface paths {
          *
          *     Com X-ContaAI-Espaco, restaura só aquele espaço de avaliação, pela cópia do banco-modelo (sem token e sem
          *     chamar os motores, se o modelo já estiver montado). Sem o header, restaura a demonstração compartilhada e
-         *     exige o token da demo quando ele está configurado.
+         *     exige o token da demo quando ele está configurado. Com a sessão de uma conta (e sem o header), recusa: os
+         *     dados de uma organização nunca são trocados pelas sementes (ADR 0015).
          */
         post: operations["demo_restaurar_demo_restaurar_post"];
         delete?: never;
@@ -672,6 +823,17 @@ export interface components {
              */
             vigenteDesde: string;
         };
+        /** AtivacaoResposta */
+        AtivacaoResposta: {
+            conta: components["schemas"]["ContaResposta"];
+            /**
+             * Codigosrecuperacao
+             * @description Mostrados uma vez só. Cada um vale uma vez.
+             */
+            codigosRecuperacao: string[];
+            /** Aviso */
+            aviso: string;
+        };
         /** Body_nfe_importar_nfe_importar_post */
         Body_nfe_importar_nfe_importar_post: {
             /**
@@ -696,6 +858,48 @@ export interface components {
              * @description De onde vieram os candidatos (índice local dos dados abertos e versão do motor).
              */
             fonte?: string | null;
+        };
+        /** CadastroRequisicao */
+        CadastroRequisicao: {
+            /**
+             * Email
+             * @description E-mail de quem entra.
+             */
+            email: string;
+            /**
+             * Senha
+             * @description De 8 a 128 caracteres, sem regra de composição. Senhas comuns, o e-mail e o nome do produto são recusados.
+             */
+            senha: string;
+            /**
+             * Organizacao
+             * @description Nome da organização (escritório ou empresa).
+             */
+            organizacao: string;
+        };
+        /**
+         * CadastroResposta
+         * @description O segredo do segundo fator. A conta só vale depois de POST /contas/ativar com o primeiro código, dentro de
+         *     `expiraEm` (o passe vai no cookie).
+         */
+        CadastroResposta: {
+            /**
+             * Otpauth
+             * @description Endereço otpauth:// para o QR code do aplicativo autenticador.
+             */
+            otpauth: string;
+            /**
+             * Segredo
+             * @description O mesmo segredo, em base32, para digitar à mão no aplicativo.
+             */
+            segredo: string;
+            /**
+             * Expiraem
+             * Format: date-time
+             */
+            expiraEm: string;
+            /** Aviso */
+            aviso: string;
         };
         /** CandidatoNcm */
         CandidatoNcm: {
@@ -906,6 +1110,43 @@ export interface components {
             /** Compramensal */
             compraMensal: components["schemas"]["ItemCompraMensal"][];
         };
+        /** CodigoRequisicao */
+        CodigoRequisicao: {
+            /**
+             * Codigo
+             * @description Os 6 dígitos do aplicativo autenticador.
+             */
+            codigo: string;
+        };
+        /** ContaResposta */
+        ContaResposta: {
+            /** Email */
+            email: string;
+            /**
+             * Criadaem
+             * Format: date-time
+             */
+            criadaEm: string;
+            organizacao: components["schemas"]["OrganizacaoDaConta"];
+            /**
+             * Empresas
+             * @description CNPJs que a organização acessa (a C3 cadastra a empresa própria).
+             */
+            empresas: string[];
+            /** Codigosrecuperacaorestantes */
+            codigosRecuperacaoRestantes: number;
+            /**
+             * Eventos
+             * @description Os mais recentes primeiro (ex.: código de recuperação usado).
+             */
+            eventos: components["schemas"]["EventoSeguranca"][];
+            /**
+             * Sessaoexpiraem
+             * Format: date-time
+             * @description Limite total da sessão (8 h). Sem uso por 30 min, ela acaba antes.
+             */
+            sessaoExpiraEm: string;
+        };
         /**
          * ContextoChat
          * @description O que a tela já sabe: a operação, o regime e os itens que o usuário já confirmou (P3).
@@ -1039,6 +1280,33 @@ export interface components {
              */
             dataCenario: string;
         };
+        /** EntrarRequisicao */
+        EntrarRequisicao: {
+            /**
+             * Email
+             * @description E-mail de quem entra.
+             */
+            email: string;
+            /** Senha */
+            senha: string;
+        };
+        /**
+         * EntrarResposta
+         * @description Senha certa: falta o código (POST /sessoes/codigo, com o passe que foi no cookie).
+         */
+        EntrarResposta: {
+            /**
+             * Etapa
+             * @default codigo
+             * @constant
+             */
+            etapa: "codigo";
+            /**
+             * Expiraem
+             * Format: date-time
+             */
+            expiraEm: string;
+        };
         /** ErroDescricao */
         ErroDescricao: {
             /** Codigo */
@@ -1094,6 +1362,24 @@ export interface components {
          * @enum {string}
          */
         EstadoItem: "CALCULADO" | "CALCULO_SIMULADO" | "NAO_CALCULADO" | "INCONSISTENCIA_ENTRADA" | "NAO_IMPLEMENTADO" | "FALHA_TECNICA";
+        /** EventoSeguranca */
+        EventoSeguranca: {
+            /**
+             * Tipo
+             * @constant
+             */
+            tipo: "codigo-recuperacao-usado";
+            /**
+             * Em
+             * Format: date-time
+             */
+            em: string;
+        };
+        /** ExcluirContaRequisicao */
+        ExcluirContaRequisicao: {
+            /** Senha */
+            senha: string;
+        };
         /**
          * ExplicarRequisicao
          * @description Explicação de um item qualquer (o GET /explicar/{itemId} conhece só o catálogo de demonstração).
@@ -1621,6 +1907,18 @@ export interface components {
             aliquotasNominais?: components["schemas"]["AliquotasNominais-Output"] | null;
             premissasDas?: components["schemas"]["PremissasDas-Output"] | null;
         };
+        /** OrganizacaoDaConta */
+        OrganizacaoDaConta: {
+            /** Id */
+            id: string;
+            /** Nome */
+            nome: string;
+            /**
+             * Papel
+             * @enum {string}
+             */
+            papel: "dono" | "membro";
+        };
         /** OrigemAlerta */
         OrigemAlerta: {
             /**
@@ -2058,6 +2356,30 @@ export interface components {
             modo: "mock" | "real";
             /** Motores */
             motores: components["schemas"]["SaudeMotor"][];
+        };
+        /** SegundaEtapaRequisicao */
+        SegundaEtapaRequisicao: {
+            /**
+             * Codigo
+             * @description Código do aplicativo.
+             */
+            codigo?: string | null;
+            /**
+             * Codigorecuperacao
+             * @description Um dos códigos de recuperação (uso único).
+             */
+            codigoRecuperacao?: string | null;
+        };
+        /** SegundaEtapaResposta */
+        SegundaEtapaResposta: {
+            conta: components["schemas"]["ContaResposta"];
+            /**
+             * Novocodigorecuperacao
+             * @description Com um código de recuperação: o código que entra no lugar dele (mostrado uma vez).
+             */
+            novoCodigoRecuperacao?: string | null;
+            /** Aviso */
+            aviso?: string | null;
         };
         /**
          * TipoProblema
@@ -3379,6 +3701,657 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemaValidacao"];
+                };
+            };
+            /** @description Rota que só funciona no modo real (CONTAAI_MODO=real). */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+        };
+    };
+    cadastrar_contas_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CadastroRequisicao"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CadastroResposta"];
+                };
+            };
+            /** @description Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Este e-mail já tem uma conta (sem confirmação de e-mail, o cadastro não esconde isso). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Corpo sem Content-Length (corpo em pedaços não é aceito). */
+            411: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Corpo maior que o limite. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Senha recusada (curta, longa ou comum) ou entrada fora do contrato. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaValidacao"];
+                };
+            };
+            /** @description Limite de requisições por minuto atingido (header Retry-After). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Rota que só funciona no modo real (CONTAAI_MODO=real). */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+        };
+    };
+    ativar_contas_ativar_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CodigoRequisicao"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AtivacaoResposta"];
+                };
+            };
+            /** @description Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description E-mail, senha ou código incorretos, ou passe vencido. A frase não diz qual. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Corpo sem Content-Length (corpo em pedaços não é aceito). */
+            411: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Corpo maior que o limite. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaValidacao"];
+                };
+            };
+            /** @description Espera depois de falhas seguidas na conta, conta bloqueada (100 falhas) ou limite por IP (header Retry-After). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Rota que só funciona no modo real (CONTAAI_MODO=real). */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+        };
+    };
+    entrar_sessoes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EntrarRequisicao"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EntrarResposta"];
+                };
+            };
+            /** @description Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description E-mail, senha ou código incorretos, ou passe vencido. A frase não diz qual. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Corpo sem Content-Length (corpo em pedaços não é aceito). */
+            411: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Corpo maior que o limite. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaValidacao"];
+                };
+            };
+            /** @description Limite de requisições por minuto atingido (header Retry-After). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Rota que só funciona no modo real (CONTAAI_MODO=real). */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+        };
+    };
+    sair_de_todos_sessoes_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Sem sessão, ou sessão encerrada ou expirada (o cookie é apagado na resposta). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaValidacao"];
+                };
+            };
+            /** @description Rota que só funciona no modo real (CONTAAI_MODO=real). */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+        };
+    };
+    segunda_etapa_sessoes_codigo_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SegundaEtapaRequisicao"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SegundaEtapaResposta"];
+                };
+            };
+            /** @description Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description E-mail, senha ou código incorretos, ou passe vencido. A frase não diz qual. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Corpo sem Content-Length (corpo em pedaços não é aceito). */
+            411: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Corpo maior que o limite. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaValidacao"];
+                };
+            };
+            /** @description Espera depois de falhas seguidas na conta, conta bloqueada (100 falhas) ou limite por IP (header Retry-After). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Rota que só funciona no modo real (CONTAAI_MODO=real). */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+        };
+    };
+    conta_conta_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContaResposta"];
+                };
+            };
+            /** @description Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Sem sessão, ou sessão encerrada ou expirada (o cookie é apagado na resposta). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaValidacao"];
+                };
+            };
+            /** @description Rota que só funciona no modo real (CONTAAI_MODO=real). */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+        };
+    };
+    sair_sessoes_atual_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Sem sessão, ou sessão encerrada ou expirada (o cookie é apagado na resposta). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaValidacao"];
+                };
+            };
+            /** @description Rota que só funciona no modo real (CONTAAI_MODO=real). */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+        };
+    };
+    excluir_conta_excluir_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExcluirContaRequisicao"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Sem sessão, ou sessão encerrada ou expirada (o cookie é apagado na resposta). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description A única dona de uma organização com outros membros precisa passar a posse antes. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Corpo sem Content-Length (corpo em pedaços não é aceito). */
+            411: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Corpo maior que o limite. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaValidacao"];
+                };
+            };
+            /** @description Espera depois de falhas seguidas, ou conta bloqueada (header Retry-After). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
                 };
             };
             /** @description Rota que só funciona no modo real (CONTAAI_MODO=real). */

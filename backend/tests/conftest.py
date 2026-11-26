@@ -319,3 +319,4 @@ def sem_limite_de_requisicoes(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(middlewares, "LIMITE_GERAL", LimitadorPorIp(0))
     monkeypatch.setattr(middlewares, "LIMITE_BUSCA", LimitadorPorIp(0))
     monkeypatch.setattr(middlewares, "LIMITE_ESPACOS", LimitadorPorIp(0))
+    monkeypatch.setattr(middlewares, "LIMITE_ENTRADA", LimitadorPorIp(0))

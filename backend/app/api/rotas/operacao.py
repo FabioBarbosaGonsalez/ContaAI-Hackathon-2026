@@ -13,6 +13,7 @@ from app.api.dependencias import (
     Cfg,
     EspacoId,
     Motores,
+    SessaoCookie,
     Token,
     abrir_estado,
     espacos,
@@ -42,15 +43,24 @@ rotas = APIRouter(tags=["operação"])
         },
     },
 )
-async def demo_restaurar(cfg: Cfg, motores: Motores, token: Token = None, espaco: EspacoId = None) -> RestaurarResposta:
+async def demo_restaurar(
+    cfg: Cfg, motores: Motores, token: Token = None, espaco: EspacoId = None, sessao: SessaoCookie = None
+) -> RestaurarResposta:
     """Volta o estado às sementes de data/demo (empresas fictícias e notas iniciais), desfazendo tudo o que foi
     importado ou aplicado. Atômico: se um motor falhar no meio, o estado fica como estava.
 
     Com X-ContaAI-Espaco, restaura só aquele espaço de avaliação, pela cópia do banco-modelo (sem token e sem
     chamar os motores, se o modelo já estiver montado). Sem o header, restaura a demonstração compartilhada e
-    exige o token da demo quando ele está configurado."""
+    exige o token da demo quando ele está configurado. Com a sessão de uma conta (e sem o header), recusa: os
+    dados de uma organização nunca são trocados pelas sementes (ADR 0015)."""
     so_no_modo_real(cfg)
-    estado = await asyncio.to_thread(abrir_estado, cfg, espaco)
+    estado = await asyncio.to_thread(abrir_estado, cfg, espaco, sessao)
+    if estado.sessao is not None:
+        raise HTTPException(
+            status_code=403,
+            detail="Só a demonstração e os espaços de avaliação podem ser restaurados. Os dados da sua organização "
+            "não são trocados pelos da demonstração.",
+        )
     exigir_token_fora_do_espaco(cfg, token, estado)
     if estado.espaco is None:
         await restaurar(estado.repositorio, motores, cfg.pasta_demo)

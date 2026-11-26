@@ -13,7 +13,7 @@ Por isso entram três etapas de contas (C1 a C3) entre o 3b e o 3c. O 3c depende
 ## Decisões do usuário (2026-11-26)
 
 1. **"Explorar a demonstração" sem cadastro é obrigatório.** A conta demo é o espaço de avaliação de hoje ([ADR 0010](adr/0010-espacos-de-avaliacao.md)).
-2. **Sem confirmação de e-mail e sem recuperação de senha no começo.** Quem perdeu o acesso volta por convite.
+2. **Sem confirmação de e-mail e sem recuperação de senha no começo.** Quem perdeu o aplicativo do segundo fator entra com um código de recuperação (C1); quem perdeu a senha volta por convite.
 3. **O contador só sugere.** Ele não aplica preço na empresa do cliente.
 4. **O 3a entrou como estava** (CNPJ fixo da Serra Azul e a barra atual). Ele é refeito para o plano novo na C2 e na C3.
 5. **Banco:** SQLite agora, com as tabelas novas já desenhadas para o PostgreSQL (tipos e SQL portáveis, a organização em todas as tabelas). Depois, é só trocar o banco.
@@ -30,7 +30,7 @@ Por isso entram três etapas de contas (C1 a C3) entre o 3b e o 3c. O 3c depende
 | Fundação do frontend | PR #11, ADR 0012 |
 | 3a: Painel, Catálogo e explicação lateral | PR #18, ADR 0013 |
 | `GET /notas` (antes do 3b) | PR #19, revisão no ADR 0008 |
-| 3b: Notas e Regime (e o Painel sem alerta) | este PR, ADR 0014 |
+| 3b: Notas e Regime (e o Painel sem alerta) | PR #20, ADR 0014 |
 
 ## A ordem
 
@@ -78,15 +78,83 @@ Cada etapa sai em um PR, ou em mais de um quando o backend vem antes da tela.
 - usuários, sessões em cookie `HttpOnly`, organizações e membros com papéis;
 - autorização por CNPJ: o CNPJ deixa de ser só filtro e passa a ser permissão (pendência do ADR 0008);
 - a conta demo é o espaço de avaliação;
-- proxy `/api` no Vite. A tela e a API ficam na mesma origem, o que o cookie precisa (hoje o cliente manda `credentials: 'omit'`, ADR 0012).
+- proxy `/api` no Vite. A tela e a API ficam na mesma origem, o que o cookie precisa (antes da C1, o cliente mandava `credentials: 'omit'`, ADR 0012).
 
-**A decidir e verificar antes do código:**
-- como guardar a senha. A biblioteca ou a função da stdlib precisa ter licença e gratuidade conferidas;
-- o limite de tentativas de entrada;
-- a validade da sessão e a saída em todos os aparelhos;
-- o CSRF com cookie: hoje há a conferência de `Origin` nos POST (ADR 0011). Falta decidir se basta junto com `SameSite`.
+**Decisões do usuário (2026-11-26):**
+- **Senha:** Argon2id, com o argon2-cffi (25.1.0, licença MIT, gratuito). É a primeira escolha do OWASP (Password Storage Cheat Sheet): 19 MiB de memória, 2 passes, paralelismo 1.
+- **Segundo fator obrigatório na conta real:** TOTP (RFC 6238), escrito com a biblioteca padrão do Python (`hmac`, `hashlib`, `secrets`), sem dependência nova e sem SMS. O código sai de qualquer aplicativo autenticador gratuito. A demonstração segue sem cadastro e sem segundo fator.
+- **Tamanho da senha:** no mínimo 8 caracteres, sem regra de composição, e pelo menos 64 aceitos. O NIST SP 800-63B-4 (§3.1.1.2) exige 15 para a senha usada sozinha e permite 8 só quando ela faz parte de uma autenticação de múltiplos fatores. Por isso o mínimo de 8 depende do TOTP.
+- **Senhas comuns:** a lista `100k-most-used-passwords-NCSC.txt` do SecLists (licença MIT, lida em 2026-11-26), guardada no repositório só com as senhas de 8 caracteres ou mais, mais as palavras do produto e o e-mail de quem se cadastra. A senha inteira é comparada, não pedaços (§3.1.1.2). Nenhum dado sai do servidor. **Não verificado:** os termos do próprio NCSC sobre a lista (o endereço do NCSC respondeu 404).
+- **Tentativas de entrada:** espera crescente a partir da 5ª falha seguida e bloqueio da conta em 100 falhas, o teto do NIST (§3.2.2: "no more than 100"; a espera de "30 seconds up to an hour" é técnica complementar). A conta bloqueada só volta por um comando de administrador no servidor. Entrar com sucesso zera as falhas.
+- **Excluir a conta:** se a pessoa é a única dona, a organização e os dados dela são apagados junto. Se há outros membros, ela passa a posse antes. A C1 não tem obrigação legal de guardar esses dados (LGPD, art. 16 I; o art. 18 VI garante a eliminação "exceto nas hipóteses previstas no art. 16").
+- **Papéis:** dono (gerencia membros e apaga a organização) e membro (importa notas e grava preços). O contador entra no 3c.
+
+**Achados do mapeamento:**
+1. **As contas reais não podem morar no banco da demonstração.** O `POST /demo/restaurar` substitui o banco principal inteiro pela cópia das sementes (`Banco.copiar_para`). Contas e empresas reais ficam num banco próprio, `contas.db`, com migrações próprias. O banco da demo e os espaços continuam como estão.
+2. **Rotas que atravessam empresas.** Com dados reais, elas vazariam dados de um cliente para outro:
+   - o `GET /alertas` sem `cnpj` devolve os alertas de todas as empresas;
+   - o `GET /contador/painel` lista todas as empresas do banco;
+   - o `POST /alertas/{id}/aplicar` age pelo id do alerta, sem conferir a empresa.
+
+   O `POST /nfe/importar` escolhe a empresa pelo destinatário da nota, e o chat lê o estado: os dois também passam pela conferência.
+3. **CNPJ sem acesso responde 404, e não 403,** para não revelar quais CNPJs existem.
+4. **Sem recuperação de senha, o bloqueio em 100 falhas trancaria a conta para sempre.** Daí o desbloqueio pelo administrador e os códigos de recuperação do segundo fator.
+
+**Segmentos (um PR de backend):**
+
+| # | Segmento | O que entra |
+|---|---|---|
+| S1 | Banco de contas | `contas.db` com usuários, sessões, organizações, membros, acesso a empresas, segundo fator e tentativas de entrada. SQL portável para o PostgreSQL (decisão 5): ids em texto, datas ISO em UTC, sem `STRICT`, `GLOB` nem `julianday`, e a organização em toda tabela |
+| S2 | Cadastro e senha | `POST /contas` cria o usuário e a organização dele. Hash Argon2id, lista de senhas comuns e mensagem genérica, que não revela se o e-mail já tem conta (OWASP, Authentication Cheat Sheet) |
+| S3 | Sessão | `POST /sessoes` (entrar), `DELETE /sessoes/atual` (sair), `DELETE /sessoes` (sair de todos os aparelhos) e `GET /conta`. Detalhes abaixo |
+| S3b | Segundo fator | Ativação no cadastro, entrada em duas etapas e códigos de recuperação. Detalhes abaixo |
+| S4 | Limite de tentativas | Contador de falhas por conta, no banco (o OWASP associa o contador à conta, e não ao IP), mais o limite por IP que já existe. Vale para a senha, o código e o código de recuperação. E-mail inexistente passa pelo mesmo caminho e pelo mesmo tempo (hash de mentira) |
+| S5 | CSRF | A conferência de `Origin` que já existe (ADR 0011), mais: recusar POST com `Sec-Fetch-Site: cross-site` e exigir `Origin` em POST que traz o cookie. O OWASP diz que `SameSite` sozinho é defesa em profundidade, não a defesa |
+| S6 | Autorização por empresa | Uma dependência resolve quem chama (sessão, espaço ou anônimo) e o conjunto de CNPJs permitido, em todas as rotas de estado, fechando os vazamentos acima. Anônimo e espaço veem só os CNPJs fictícios da demo (P10) |
+| S7 | Excluir a conta | `DELETE /conta` apaga o usuário, as sessões, o segundo fator e o vínculo com a organização, e a organização quando a pessoa é a única dona (LGPD, art. 18 VI) |
+| S8 | Mesma origem | Proxy `/api` no `dev` e no `preview` do Vite (a documentação confirma o `rewrite` e que o `preview.proxy` herda do `server.proxy`). O cliente troca `credentials: 'omit'` por `'same-origin'`. A CSP fica só com `connect-src 'self'` |
+| S9 | Verificação e documentação | Contrato e OpenAPI regerados; testes de cada rota com cada tipo de quem chama; ataques (enumeração, sessão fixada, CSRF, força bruta, código repetido); cookie conferido no Chrome; ZAP (gratuito, já usado no ADR 0011); ADR 0015, `seguranca.md` e README |
+
+**A sessão (S3), pelo OWASP (Session Management Cheat Sheet):**
+- token aleatório de 256 bits (o OWASP pede ao menos 128 bits, de preferência 160 ou mais), com só o hash guardado no banco;
+- token novo a cada login, contra sessão fixada;
+- cookie `HttpOnly`, `Secure`, `SameSite=Strict` (o preferido pelo OWASP), `Path=/` e sem `Domain`;
+- 30 min sem uso e 8 h no total. O OWASP dá de 15 a 30 min sem uso para aplicação de baixo risco e 4 a 8 h como exemplo de limite total;
+- sair invalida a sessão no servidor, e não só o cookie.
+
+**O segundo fator (S3b), pelo NIST SP 800-63B-4:**
+- a conta só vale depois de confirmar o primeiro código. A API devolve o endereço `otpauth://`, e o QR code é desenhado na C2;
+- entrar tem duas etapas: a senha dá um passe curto (5 min, só para a segunda etapa), e a sessão só nasce depois do código;
+- segredo de 160 bits (o mínimo é 112, §3.1.4.1), guardado no `contas.db` com acesso restrito (§3.1.4.2);
+- código de 6 dígitos (o mínimo do §3.1.4.1), passo de 30 s e tolerância de um passo para cada lado, pelo desvio do relógio (§3.1.4.2);
+- cada código é aceito uma vez só (§3.1.4.2: "accept a given OTP only once while it is valid");
+- 10 códigos de recuperação, cada um com 64 bits ou mais, guardados só como hash e de uso único. Usar um invalida o código, gera outro e avisa a pessoa (§4.2). Eles substituem a recuperação de senha que a C1 não tem.
+
+**Conferido nas fontes (2026-11-26):** NIST SP 800-63B-4, §2.2, §3.1.1.2, §3.1.4, §3.2.2 e §4.2 (pages.nist.gov); LGPD, art. 16, 18 e 46 (planalto.gov.br, texto original com as notas de alteração); licença MIT do SecLists.
+
+**A conferir durante o código:**
+- **O prefixo `__Host-` no `http://localhost`:** a MDN diz que esse cookie precisa ser criado "por uma página segura (HTTPS)". A exceção do localhost está escrita só para o `Secure`. Conferir no Chrome no S3, antes de fixar o nome do cookie.
+- **O e-mail sem confirmação** (decisão 2): qualquer pessoa pode criar uma conta com o e-mail de outra. Registrar o risco no ADR e nos termos (C2).
+
+**Implementação futura (fora da C1):**
+- **Passkey (WebAuthn), a opção resistente a phishing.** Para o nível AAL2 completo, o NIST pede oferecer "at least one phishing-resistant authentication option" (§2.2), e o TOTP não é resistente a phishing (§3.1.4). É gratuita, mas pede bastante trabalho no backend e na tela. Até lá, a C1 fica com senha e TOTP, e a lacuna é registrada no ADR 0015.
+
+**Custo:** nenhum serviço pago e nenhuma chamada externa. A única dependência nova é o argon2-cffi (MIT). O TOTP usa só a biblioteca padrão.
 
 **Saída:** ADR novo; as rotas de estado respondem só a quem tem acesso à empresa; a demonstração sem cadastro segue igual.
+
+**Feito (2026-11-26, [ADR 0015](adr/0015-contas.md)):**
+- S1 a S9 entregues;
+- o `__Host-` foi conferido no Chrome 158, em `http://127.0.0.1` e em `http://localhost`: o navegador aceita e devolve o cookie;
+- o estado de cada organização fica num SQLite próprio, como os espaços: a fronteira entre clientes é o arquivo, e o conjunto de CNPJs é a segunda camada.
+
+O que mudou em relação a este mapa:
+- **O cadastro não esconde que o e-mail já tem conta:** sem confirmação de e-mail, uma resposta falsa se denunciaria na ativação. A entrada esconde.
+- **Excluir a conta virou `POST /conta/excluir` com a senha,** no lugar do `DELETE /conta`.
+- **Ficou para depois:**
+  - convites de membros e transferência de posse (3c);
+  - empresas da organização (C3);
+  - cifrar o segredo do TOTP (E6).
 
 ## C2: telas de entrada
 

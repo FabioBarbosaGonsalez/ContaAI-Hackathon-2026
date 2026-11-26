@@ -41,13 +41,13 @@ async function erroDe(promessa: Promise<unknown>): Promise<ErroApi> {
 }
 
 describe('criarCliente', () => {
-  it('envia sem credenciais, sem Referer, sem cache e recusando redirecionamento', async () => {
+  it('envia cookies só na mesma origem, sem Referer, sem cache e recusando redirecionamento', async () => {
     const { cliente, pedidos } = clienteCom(() => json(SAUDE));
     await chamar(cliente.GET('/saude'));
 
     const pedido = pedidos[0];
     expect(pedido?.url).toBe(`${BASE}/saude`);
-    expect(pedido?.credentials).toBe('omit');
+    expect(pedido?.credentials).toBe('same-origin');
     expect(pedido?.redirect).toBe('error');
     expect(pedido?.cache).toBe('no-store');
     expect(pedido?.referrerPolicy).toBe('no-referrer');

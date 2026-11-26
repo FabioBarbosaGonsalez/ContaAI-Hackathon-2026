@@ -67,6 +67,8 @@ curl -H "X-ContaAI-Espaco: $ID" -F "arquivo=@../data/demo/notas/nfe-compra-2.xml
 
 Com `CONTAAI_TOKEN_DEMO` definido, as rotas que mudam a demonstração compartilhada (importar, aplicar e restaurar sem o header do espaço) e o `/chat` pedem o header `X-ContaAI-Token`. Uma nota cujo destinatário não é uma das empresas fictícias é recusada antes de gravar qualquer coisa: dado real não entra no banco.
 
+**Contas (C1, [ADR 0015](docs/adr/0015-contas.md)), só no modo real.** `POST /contas` cria a conta e devolve o segredo do segundo fator (TOTP, para qualquer aplicativo autenticador). `POST /contas/ativar` confirma o primeiro código e devolve 10 códigos de recuperação. Para entrar, use `POST /sessoes` (e-mail e senha) e depois `POST /sessoes/codigo`. A sessão anda num cookie `HttpOnly` de mesma origem, por isso a tela fala com a API em `/api`, pelo proxy do Vite. Com a sessão, as rotas de estado leem o banco da organização da pessoa, e a demonstração segue aberta para quem não entrou. Uma conta bloqueada depois de 100 tentativas erradas só volta pelo servidor: `uv run python -m app.contas desbloquear <e-mail>`.
+
 `GET /cenarios/presets` (valores de 2027 com fonte) e `GET /saude` (estado e versões dos motores) são reais nos dois modos. O CORS libera só `http://localhost:3000` e `http://127.0.0.1:3000`; para outra origem, use `CONTAAI_CORS_ORIGENS='["http://..."]'`.
 
 ### Tela
@@ -74,10 +76,10 @@ Com `CONTAAI_TOKEN_DEMO` definido, as rotas que mudam a demonstração compartil
 ```bash
 cd frontend
 npm ci        # dependências travadas no package-lock.json, sem scripts de instalação
-npm run dev   # http://127.0.0.1:3000, falando com a API em http://127.0.0.1:8000
+npm run dev   # http://127.0.0.1:3000; a tela chama /api, e o Vite repassa para http://127.0.0.1:8000
 ```
 
-Com a API em outro endereço: `VITE_CONTAAI_API=http://127.0.0.1:8010 npm run dev`. Toda variável `VITE_*` vai para o navegador; nunca ponha segredo nela.
+Com a API em outro endereço: `CONTAAI_API_ALVO=http://127.0.0.1:8010 npm run dev` (vale também para o `vite preview`). Essa variável fica no servidor do Vite. Toda variável `VITE_*` vai para o navegador; nunca ponha segredo nela. `VITE_CONTAAI_API` aponta a tela direto para outra origem, mas aí a conta não funciona, porque o cookie da sessão só anda na mesma origem.
 
 A barra mostra o modo da API. No modo real, "Criar meu espaço" cria um espaço de avaliação, e o id fica só no navegador. O rodapé traz o aviso legal e as versões dos motores.
 
@@ -147,6 +149,7 @@ No Linux e no macOS, o [Makefile](Makefile) tem atalhos para os mesmos comandos:
 - [ADR 0012](docs/adr/0012-fundacao-do-frontend.md): fundação do frontend (Vite + React, cliente tipado, espaço e token na tela, tokens do estilo, shell, CSP com Trusted Types e testes de ataque no navegador)
 - [ADR 0013](docs/adr/0013-telas-painel-e-catalogo.md): telas do Painel e do Catálogo e explicação lateral (PR 3a), com correção da classificação e troca de preço pela tela
 - [ADR 0014](docs/adr/0014-telas-notas-e-regime.md): telas de Notas (envio do XML, recibo e notas importadas) e de Regime (régua do crédito, caixa, empate e premissas), PR 3b
+- [ADR 0015](docs/adr/0015-contas.md): contas com segundo fator (TOTP), sessão em cookie, tentativas, CSRF, um banco de estado por organização e o CNPJ como permissão, C1
 - [Segurança](docs/seguranca.md): o que o projeto protege, como, e o que está em aberto; para relatar uma vulnerabilidade, [SECURITY.md](SECURITY.md)
 - [Contrato OpenAPI](docs/contrato/openapi.json): o que frontend e agente consomem
 - [Dados de demonstração](data/demo/README.md): distribuidora, carteira do contador, cliente B2B, notas de compra fictícias e sementes do estado
@@ -168,7 +171,7 @@ Etapa 4 (recorrência) concluída no backend: leitor seguro da NF-e, casamento c
 
 Antes da Etapa 5: espaço de avaliação por visitante (ADR 0010) e o contrato para a tela, com as proteções do navegador e os testes de segurança (ADR 0011).
 
-Etapa 5 (interface) em andamento: a fundação do frontend está pronta (ADR 0012): projeto e CI, cliente tipado do contrato, espaço de avaliação e modo, tokens e fontes, shell e segurança da tela. PR 3a (Painel, Catálogo e explicação lateral) pronto ([ADR 0013](docs/adr/0013-telas-painel-e-catalogo.md)), e PR 3b (Notas e Regime) também ([ADR 0014](docs/adr/0014-telas-notas-e-regime.md)). Próximo: contas no backend (C1), pelo [plano v2.1](docs/plano-v2.1.md).
+Etapa 5 (interface) em andamento: a fundação do frontend está pronta (ADR 0012): projeto e CI, cliente tipado do contrato, espaço de avaliação e modo, tokens e fontes, shell e segurança da tela. PR 3a (Painel, Catálogo e explicação lateral) pronto ([ADR 0013](docs/adr/0013-telas-painel-e-catalogo.md)), e PR 3b (Notas e Regime) também ([ADR 0014](docs/adr/0014-telas-notas-e-regime.md)). Contas no backend (C1) prontas ([ADR 0015](docs/adr/0015-contas.md)). Próximo: as telas de entrada (C2), pelo [plano v2.1](docs/plano-v2.1.md).
 
 ## Créditos e licenças
 

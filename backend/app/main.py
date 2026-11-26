@@ -26,7 +26,8 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.api import middlewares, problemas
 from app.api.dependencias import banco, http_interno, novo_cliente_motores, repositorio
-from app.api.rotas import agente, calculo, classificacao, espacos, explicacao, notas, operacao
+from app.api.dependencias import contas as contas_do_processo
+from app.api.rotas import agente, calculo, classificacao, contas, espacos, explicacao, notas, operacao
 from app.config import Configuracao, configuracao
 from app.contrato import AVISO_LEGAL
 from app.motores.cliente import FalhaMotor
@@ -65,6 +66,7 @@ async def ciclo_de_vida(_: FastAPI) -> AsyncIterator[None]:
     cfg = configuracao()
     if cfg.modo == "real":
         banco(cfg.banco_caminho)  # migra na subida: um esquema alterado impede o backend de subir
+        contas_do_processo(cfg)  # idem para o contas.db (ADR 0015)
         if cfg.semear_ao_subir:
             await semear_se_vazio(cfg)
     yield
@@ -94,10 +96,11 @@ app.add_middleware(BaseHTTPMiddleware, dispatch=middlewares.verificar_origem)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=configuracao().cors_origens,
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["Content-Type", "X-ContaAI-Token", "X-ContaAI-Espaco"],
     # Sem isto, o JavaScript de outra origem não lê estes headers (só os da lista segura do padrão Fetch).
     expose_headers=["Retry-After", "X-ContaAI-Mock"],
+    # Sem credenciais entre origens: o cookie da sessão só anda na mesma origem (proxy /api, ADR 0015).
     allow_credentials=False,
 )
 app.add_middleware(BaseHTTPMiddleware, dispatch=middlewares.verificar_host)
@@ -105,7 +108,7 @@ app.add_middleware(BaseHTTPMiddleware, dispatch=middlewares.cabecalhos_de_segura
 
 problemas.registrar(app)
 
-for modulo in (calculo, notas, espacos, classificacao, explicacao, agente, operacao):
+for modulo in (calculo, notas, espacos, contas, classificacao, explicacao, agente, operacao):
     app.include_router(modulo.rotas)
 
 

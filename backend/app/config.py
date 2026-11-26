@@ -70,6 +70,18 @@ class Configuracao(BaseSettings):
     # Uma busca de NCM nova faz até ~430 consultas ao motor (3 NCMs × ~144 classificações): limite próprio.
     limite_busca_por_minuto: int = 20  # por IP, em GET /busca/ncm; 0 desliga
     limite_espacos_por_minuto: int = 5  # por IP, em POST /espacos; 0 desliga
+    # Contas (C1, ADR 0015): cadastro, entrada e código, por IP. Soma-se ao contador de falhas de cada conta.
+    limite_entrada_por_minuto: int = 10  # 0 desliga
+
+    @property
+    def contas_caminho(self) -> Path:
+        """contas.db, ao lado do banco da demo e fora dele: restaurar a demo não toca nas contas (ADR 0015)."""
+        return self.banco_caminho.parent / "contas.db"
+
+    @property
+    def pasta_organizacoes(self) -> Path:
+        """Um SQLite de estado por organização, como os espaços de avaliação (ADR 0015)."""
+        return self.banco_caminho.parent / "organizacoes"
 
     @field_validator("banco_caminho", "pasta_demo", mode="before")
     @classmethod

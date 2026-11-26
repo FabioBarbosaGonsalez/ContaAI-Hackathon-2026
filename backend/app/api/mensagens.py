@@ -38,6 +38,8 @@ PADROES: dict[str, str] = {
     r"^[a-z-]{3,40}$": "Use o nome de um tipo de problema: de 3 a 40 letras minúsculas ou hífens.",
     r"^[a-z0-9][a-z0-9-]{0,63}$": "Use até 64 letras minúsculas, dígitos ou hífens, sem começar com hífen.",
     r"^alerta-[0-9a-f]{16}$": "Use o id de um alerta: alerta- seguido de 16 caracteres de 0 a 9 e de a a f.",
+    r"^[^@\s]{1,64}@[^@\s]+\.[^@\s]+$": "Use um e-mail, como nome@empresa.com.br.",
+    r"^[A-Za-z2-7]{4}-?[A-Za-z2-7]{4}-?[A-Za-z2-7]{5}$": "Use um código de recuperação, como ABCD-EFGH-IJKLM.",
 }
 
 # value_error que não nasce no ContaAI: o FastAPI recusa um campo de arquivo que veio como texto.
