@@ -63,6 +63,8 @@ describe('texto: 4,5:1 (WCAG 2.2, 1.4.3)', () => {
     ['--atencao', '--superficie'],
     ['--atencao', '--fundo'],
     ['--acao-texto', '--acao'],
+    ['--acao-texto', '--negativo'], // o botão de excluir a conta (conta.css, .botao-perigo)
+    ['--acao-texto', '--selo-negativo-tinta'], // o mesmo botão sob o ponteiro
     ['--texto', '--acao-secundaria'],
     ['--selo-positivo-tinta', '--selo-positivo-fundo'],
     ['--selo-negativo-tinta', '--selo-negativo-fundo'],
@@ -83,6 +85,12 @@ describe('gráfico, foco e borda de campo: 3:1 (WCAG 2.2, 1.4.11 e 2.4.13)', () 
     ['--foco', '--superficie'],
     ['--foco', '--fundo'],
     ['--borda-campo', '--superficie'],
+    ['--forca-fraca', '--fundo'],
+    ['--forca-media', '--fundo'],
+    ['--forca-forte', '--fundo'],
+    ['--forca-fraca', '--superficie'],
+    ['--forca-media', '--superficie'],
+    ['--forca-forte', '--superficie'],
   ];
   it.each(pares)('%s sobre %s', (frente, fundo) => {
     expect(contraste(cor(frente), cor(fundo))).toBeGreaterThanOrEqual(3);

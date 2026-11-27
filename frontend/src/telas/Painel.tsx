@@ -257,8 +257,7 @@ function NenhumAlerta() {
     <div className="margens__achado">
       <p className="achado achado--linha">Nenhum item com a margem abaixo do alvo.</p>
       <p className="texto-suave">
-        Quando uma nota de compra baixar a margem de um item, o alerta aparece aqui com o preço que volta ao alvo.{' '}
-        <Link para="/notas">Importar uma nota</Link>
+        Uma nota de compra que baixar a margem gera um alerta aqui. <Link para="/notas">Importar uma nota</Link>
       </p>
     </div>
   );

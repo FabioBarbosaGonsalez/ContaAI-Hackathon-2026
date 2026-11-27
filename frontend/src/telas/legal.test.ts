@@ -2,6 +2,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { TIPO_CONTA_BLOQUEADA } from './formulario.tsx';
 import { COOKIES, REGRAS_DA_CONTA, VERSAO_TERMOS, dataDaVersao } from './legal.ts';
 
 // A fonte das regras citadas nos termos e na privacidade: os arquivos do backend, lidos como texto.
@@ -19,6 +20,7 @@ function constante(arquivo: string, nome: string): string {
 describe('regras da conta citadas nos termos e na privacidade', () => {
   it('são as do backend', () => {
     expect(Number(constante('contas/senha.py', 'MINIMO'))).toBe(REGRAS_DA_CONTA.senhaMinima);
+    expect(Number(constante('contas/senha.py', 'MAXIMO'))).toBe(REGRAS_DA_CONTA.senhaMaxima);
     expect(Number(constante('contas/totp.py', 'DIGITOS'))).toBe(REGRAS_DA_CONTA.digitosDoCodigo);
     expect(Number(constante('contas/servico.py', 'CODIGOS_RECUPERACAO'))).toBe(REGRAS_DA_CONTA.codigosDeRecuperacao);
     expect(Number(constante('contas/servico.py', 'FALHAS_PARA_ESPERAR'))).toBe(REGRAS_DA_CONTA.falhasParaEsperar);
@@ -29,6 +31,12 @@ describe('regras da conta citadas nos termos e na privacidade', () => {
     expect(constante('contas/servico.py', 'SESSAO_TOTAL')).toBe(`timedelta(hours=${String(REGRAS_DA_CONTA.sessaoTotalH)})`);
     expect(constante('contas/servico.py', 'PASSE')).toBe(`timedelta(minutes=${String(REGRAS_DA_CONTA.passeMin)})`);
     expect(constante('contas/servico.py', 'PENDENTE')).toBe(`timedelta(minutes=${String(REGRAS_DA_CONTA.pendenteMin)})`);
+  });
+
+  it('o tipo do 429 da conta bloqueada existe no backend (problemas.py)', () => {
+    const fonte = readFileSync(join(APP, 'api', 'problemas.py'), 'utf8');
+    expect(TIPO_CONTA_BLOQUEADA.startsWith('/problemas/')).toBe(true);
+    expect(fonte).toContain(`type=f"{PREFIXO}${TIPO_CONTA_BLOQUEADA.slice('/problemas/'.length)}"`);
   });
 
   it('a versão dos termos é a do backend', () => {

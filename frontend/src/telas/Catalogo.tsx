@@ -293,7 +293,7 @@ export function Catalogo() {
         {!gravacao.pode && <p className="gravar__motivo catalogo__motivo">{gravacao.motivo}</p>}
       </Bloco>
       <Bloco titulo="Premissas do cálculo" className="catalogo__premissas">
-        {calculo.dados === undefined ? <Carregando /> : <ListaDePremissas premissas={calculo.dados.premissas} />}
+        {calculo.dados === undefined ? <Carregando /> : <ListaDePremissas premissas={calculo.dados.premissas} compacta />}
       </Bloco>
       <Explicacao
         pedido={explicacao}

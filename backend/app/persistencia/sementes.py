@@ -44,7 +44,7 @@ class VinculoClienteB2B(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    empresa: str = Field(pattern=r"^\d{14}$")
+    empresa: str = Field(pattern=r"^[0-9]{14}$")
     arquivo: str
 
 

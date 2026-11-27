@@ -25,7 +25,7 @@ _IGNORAR = frozenset(
     "pacote pct lata garrafa caixa cx barra unidade unidades un fardo saco kg g gr ml l lt litro litros".split()
 )
 _PALAVRA = re.compile(r"[a-z0-9]+")
-_NCM = re.compile(r"^\d{8}$")
+_NCM = re.compile(r"^[0-9]{8}$")
 PESO_DESCRICAO, PESO_CAPITULO = 3, 1
 
 

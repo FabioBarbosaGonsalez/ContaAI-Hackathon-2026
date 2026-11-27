@@ -30,6 +30,8 @@ export const AVISO_RASCUNHO =
 export const REGRAS_DA_CONTA = {
   /** senha.py, MINIMO */
   senhaMinima: 8,
+  /** senha.py, MAXIMO */
+  senhaMaxima: 128,
   /** totp.py, DIGITOS */
   digitosDoCodigo: 6,
   /** servico.py, CODIGOS_RECUPERACAO */

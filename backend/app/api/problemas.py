@@ -24,6 +24,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.agente.provedor import ProvedorFalhou
 from app.api.mensagens import traduzir
+from app.contas.servico import ContaBloqueada
 from app.contrato import (
     CampoInvalido,
     OrigemCampo,
@@ -120,6 +121,14 @@ TIPOS: dict[str, TipoProblema] = {
             title="Provedor de IA indisponível",
             status=[503],
             descricao="O provedor de IA do chat não está configurado ou falhou. As rotas de cálculo seguem funcionando.",
+        ),
+        TipoProblema(
+            type=f"{PREFIXO}conta-bloqueada",
+            title="Conta bloqueada",
+            status=[429],
+            descricao="Depois de 100 tentativas erradas seguidas, a conta fica bloqueada até um administrador "
+            "desbloquear. Esperar não adianta: o Retry-After (1 h) só pede a clientes automáticos que não insistam. "
+            "As outras esperas do limite de tentativas saem como about:blank, com o Retry-After que vale.",
         ),
         TipoProblema(
             type=f"{PREFIXO}sementes-indisponiveis",
@@ -275,6 +284,10 @@ async def _espacos_esgotados(_: Request, exc: EspacosEsgotados) -> JSONResponse:
     return resposta(tipado("espacos-esgotados", 503, detalhe), {"Retry-After": str(exc.espera_s)})
 
 
+async def _conta_bloqueada(_: Request, exc: ContaBloqueada) -> JSONResponse:
+    return resposta(tipado("conta-bloqueada", 429, exc.mensagem), {"Retry-After": str(exc.espera_s)})
+
+
 async def _inesperado(_: Request, exc: Exception) -> JSONResponse:
     """Qualquer outra exceção: registra no log do servidor e responde sem pilha nem mensagem interna."""
     log.exception("Erro não tratado", exc_info=exc)
@@ -294,6 +307,7 @@ def registrar(app: FastAPI) -> None:
     app.add_exception_handler(consultas.Conflito, _conflito)  # type: ignore[arg-type]
     app.add_exception_handler(EspacoInexistente, _espaco_inexistente)  # type: ignore[arg-type]
     app.add_exception_handler(EspacosEsgotados, _espacos_esgotados)  # type: ignore[arg-type]
+    app.add_exception_handler(ContaBloqueada, _conta_bloqueada)  # type: ignore[arg-type]
     app.add_exception_handler(Exception, _inesperado)
 
 

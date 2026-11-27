@@ -252,7 +252,7 @@ def test_todo_padrao_do_contrato_tem_frase() -> None:
 class _Ex(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    texto: str = Field(default="ok", min_length=2, max_length=5, pattern=r"^\d{2}$")
+    texto: str = Field(default="ok", min_length=2, max_length=5, pattern=r"^[0-9]{2}$")
     inteiro: int = 0
     numero: Annotated[Decimal, Field(ge=0, le=Decimal("1000000000"), decimal_places=4)] = Decimal(0)
     positivo: Annotated[Decimal, Field(gt=0, lt=100)] = Decimal(1)

@@ -49,6 +49,16 @@
   --grafico-comparacao: #8a8a8a;
   --grafico-destaque: #1d5fbf;
 
+  /*
+   * Medidor de força da senha (Criar conta): vermelho, amarelo e verde, a pedido do usuário. É a exceção à regra
+   * do cromo sem cor, e a palavra ao lado da barra diz a força em tinta normal (a cor não é o único sinal). As três
+   * cores têm 3:1 no fundo e na superfície (WCAG 2.2, 1.4.11). O amarelo é escuro porque o amarelo puro dá 1,9:1
+   * no branco.
+   */
+  --forca-fraca: #c4242a; /* o mesmo --negativo */
+  --forca-media: #b58105;
+  --forca-forte: #2e7d32; /* o mesmo --positivo */
+
   /* Selos de estado (pills): fundo claro e tinta escura do mesmo matiz */
   --selo-positivo-fundo: #dcfae5;
   --selo-positivo-tinta: #04250e;

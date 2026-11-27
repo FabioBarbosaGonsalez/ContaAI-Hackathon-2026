@@ -71,6 +71,16 @@ class AguardeParaTentar(Exception):
         self.mensagem = str(self)
 
 
+class ContaBloqueada(AguardeParaTentar):
+    """429 da conta bloqueada (100 falhas): só um administrador desbloqueia, e esperar não adianta. Sai com o tipo
+    /problemas/conta-bloqueada, para a tela não mostrar uma contagem. O Retry-After (1 h) fica, para um cliente
+    automático não insistir. Um e-mail sem conta também chega a este bloqueio (contador em memória), então a
+    resposta não revela se o e-mail tem conta."""
+
+    def __init__(self) -> None:
+        super().__init__(ESPERA_MAXIMA_S, MENSAGEM_BLOQUEADA)
+
+
 class CadastroRecusado(Exception):
     """409 (e-mail já usado) ou 422 (senha recusada)."""
 
@@ -93,6 +103,16 @@ class Cadastro:
     segredo: str
     endereco: str
     expira_em: datetime
+
+
+@dataclass(frozen=True)
+class Entrada:
+    """O resultado da primeira etapa. `ativacao` vem só para a conta pendente: o segredo novo do segundo fator,
+    porque a pessoa ainda não confirmou o primeiro código (plano v2.1, C2b, decisão 1)."""
+
+    passe: str
+    expira_em: datetime
+    ativacao: Cadastro | None = None
 
 
 @dataclass(frozen=True)
@@ -207,7 +227,7 @@ class _FalhasDesconhecidas:
 
 def _barrar(falhas: _Falhas, agora: datetime) -> None:
     if falhas.bloqueada:
-        raise AguardeParaTentar(ESPERA_MAXIMA_S, MENSAGEM_BLOQUEADA)
+        raise ContaBloqueada
     if falhas.espera_ate is not None and falhas.espera_ate > agora:
         raise AguardeParaTentar(max(1, int((falhas.espera_ate - agora).total_seconds()) + 1))
 
@@ -362,13 +382,20 @@ class Contas:
 
     # -- entrada ----------------------------------------------------------------------------------------
 
-    def entrar(self, email: str, senha: str, agora: datetime) -> str:
-        """Primeira etapa: confere a senha e devolve o passe para a segunda (o código)."""
+    def entrar(self, email: str, senha: str, agora: datetime) -> Entrada:
+        """Primeira etapa: confere a senha e devolve o passe para a segunda (o código).
+
+        Conta pendente com a senha certa (o passe da ativação venceu antes do primeiro código): sai um passe novo
+        de ativação, com um segredo novo, e a pessoa volta ao passo do QR. Sem isso, o e-mail ficaria preso até o
+        cadastro pendente vencer (o cadastro de novo dá 409). A senha é exigida, então ninguém de fora assume o
+        cadastro, e a resposta só difere depois da senha certa: a entrada continua sem dizer se o e-mail existe.
+        O segredo muda porque o antigo já foi entregue uma vez ("o segredo não aparece de novo")."""
         email = normalizar_email(email)
         with self.banco.transacao(escrita=True) as c:
             self._limpar(c, agora)
             linha = c.execute(
-                "SELECT id, senha_hash FROM usuarios WHERE email = ? AND situacao = 'ativa'", (email,)
+                "SELECT id, senha_hash, situacao FROM usuarios WHERE email = ? AND situacao IN ('ativa', 'pendente')",
+                (email,),
             ).fetchone()
             falhas = self._falhas(c, linha["id"]) if linha else self._desconhecidos.de(email)
         _barrar(falhas, agora)
@@ -380,17 +407,34 @@ class Contas:
             self._falhou(linha["id"], agora)
             raise EntradaRecusada
         passe = _novo_token()
+        expira = agora + PASSE
+        pendente = linha["situacao"] == "pendente"
         with self.banco.transacao(escrita=True) as c:
             if regras.precisa_refazer(linha["senha_hash"]):
                 c.execute(
                     "UPDATE usuarios SET senha_hash = ? WHERE id = ?",
                     (regras.gerar_hash(regras.normalizar(senha)), linha["id"]),
                 )
+            if not pendente:
+                c.execute(
+                    "INSERT INTO passes (hash, usuario_id, tipo, expira_em) VALUES (?, ?, 'entrada', ?)",
+                    (_resumo(passe), linha["id"], _t(expira)),
+                )
+                return Entrada(passe, expira)
+            segredo = totp.novo_segredo()
+            # Só o passe novo vale; o cadastro pendente dura mais 30 min a partir daqui (não some no meio do passe).
+            pendente_ate = _t(agora + PENDENTE)
+            c.execute("DELETE FROM passes WHERE usuario_id = ?", (linha["id"],))
             c.execute(
-                "INSERT INTO passes (hash, usuario_id, tipo, expira_em) VALUES (?, ?, 'entrada', ?)",
-                (_resumo(passe), linha["id"], _t(agora + PASSE)),
+                "UPDATE segundo_fator SET segredo = ?, ultimo_passo = 0 WHERE usuario_id = ?",
+                (segredo, linha["id"]),
             )
-        return passe
+            c.execute("UPDATE usuarios SET pendente_ate = ? WHERE id = ?", (pendente_ate, linha["id"]))
+            c.execute(
+                "INSERT INTO passes (hash, usuario_id, tipo, expira_em) VALUES (?, ?, 'ativacao', ?)",
+                (_resumo(passe), linha["id"], _t(expira)),
+            )
+        return Entrada(passe, expira, Cadastro(passe, segredo, totp.endereco(segredo, email), expira))
 
     def confirmar_codigo(
         self, passe: str, codigo: str | None, recuperacao: str | None, agora: datetime

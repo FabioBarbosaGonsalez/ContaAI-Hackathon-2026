@@ -1,7 +1,9 @@
-// As páginas da tela. Painel e Catálogo entraram no PR 3a, Regime e Notas no 3b, as páginas públicas na C2;
-// Contador entra no 3c.
+// As páginas da tela. Painel e Catálogo entraram no PR 3a, Regime e Notas no 3b, as páginas públicas na C2a,
+// Entrar, Criar conta e Sua conta na C2b; Contador entra no 3c.
 
 import { Catalogo } from '../telas/Catalogo.tsx';
+import { CriarConta } from '../telas/CriarConta.tsx';
+import { Entrar } from '../telas/Entrar.tsx';
 import { Inicio } from '../telas/Inicio.tsx';
 import { Notas } from '../telas/Notas.tsx';
 import { Painel } from '../telas/Painel.tsx';
@@ -31,6 +33,8 @@ export const PAGINAS: Record<CaminhoDoApp, () => React.JSX.Element> = {
 
 export const PAGINAS_PUBLICAS: Record<CaminhoPublico, () => React.JSX.Element> = {
   '/': Inicio,
+  '/entrar': Entrar,
+  '/criar-conta': CriarConta,
   '/termos': Termos,
   '/privacidade': Privacidade,
 };
@@ -44,8 +48,8 @@ export function SemEmpresa({ titulo }: { titulo: string }) {
     <Pagina titulo={titulo}>
       <div className="vazio sem-empresa">
         <p>
-          A sua organização ainda não tem empresa cadastrada, e o cadastro da empresa ainda não está disponível.
-          Enquanto isso, a demonstração mostra todas as telas com uma empresa fictícia.
+          Sua organização ainda não tem empresa, e o cadastro de empresas ainda não está disponível. Enquanto isso,
+          veja todas as telas na demonstração.
         </p>
         <p>
           <BotaoDemonstracao className="botao-principal" />

@@ -61,6 +61,8 @@ class Ambiente:
     contexto: ContextoChat | None
     data_sem_contexto: date | None = None  # data das consultas quando não há contexto (padrão: hoje)
     repositorio: Repositorio | None = None  # estado (E4): alertas das notas de compra
+    # As empresas que quem chama alcança (Estado.cnpjs, ADR 0015). None: sem filtro (testes do agente sem rota).
+    cnpjs: frozenset[str] | None = None
     usos: dict[str, int] = field(default_factory=dict)  # chamadas por ferramenta nesta mensagem
 
     @property
@@ -88,7 +90,7 @@ class BuscarNcmArgs(_Args):
 
 
 class ListarCclasstribArgs(_Args):
-    ncm: str = Field(pattern=r"^\d{8}$")
+    ncm: str = Field(pattern=r"^[0-9]{8}$")
 
 
 class SemArgs(_Args):
@@ -120,7 +122,7 @@ class ItemArgs(_Args):
 
 
 class ErroArgs(_Args):
-    codigo: str = Field(pattern=r"^(REG|VSN)-\d{3}$")
+    codigo: str = Field(pattern=r"^(REG|VSN)-[0-9]{3}$")
 
 
 Executor = Callable[[Any, Ambiente], Awaitable[dict[str, Any]]]
@@ -268,9 +270,14 @@ async def _listar_alertas(args: ListarAlertasArgs, amb: Ambiente) -> dict[str, A
         return {"indisponivel": SEM_ESTADO}
     cnpj = amb.contexto.cnpj if amb.contexto is not None else None
     try:
+        if cnpj is not None and amb.cnpjs is not None and cnpj not in amb.cnpjs:
+            # O mesmo 404 das rotas para um CNPJ fora do alcance (ADR 0015).
+            raise consultas.NaoEncontrado("Empresa não cadastrada.")
         lista = consultas.alertas(amb.repositorio, cnpj, args.abertos or None)
     except consultas.NaoEncontrado as e:
         raise FalhaFerramenta(e.mensagem) from None
+    if amb.cnpjs is not None:
+        lista = [a for a in lista if a.cnpj in amb.cnpjs]
     # descricaoItem vem do cadastro; o texto da nota (xProd) não entra no resultado (dado não confiável).
     return {
         "total": len(lista),

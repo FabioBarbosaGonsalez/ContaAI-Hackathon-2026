@@ -90,6 +90,17 @@ export function dataDoDocumento(iso: string | null | undefined): string {
   return `${dia}/${mes}/${ano}`;
 }
 
+const INSTANTE = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+
+/**
+ * Um instante da API (UTC), no fuso do navegador: "2026-11-26T12:00:00Z" → "26/11/2026, 09:00" em Brasília.
+ * Para a conta (criada em, sessão, avisos), que são momentos e não datas de documento (ver dataDoDocumento).
+ */
+export function instante(iso: string | null | undefined): string {
+  const data = iso ? new Date(iso) : null;
+  return data === null || Number.isNaN(data.getTime()) ? TRACO : INSTANTE.format(data);
+}
+
 /** CNPJ com a máscara oficial: 36817420000113 → 36.817.420/0001-13. */
 export function cnpj(valor: string): string {
   return /^\d{14}$/u.test(valor)

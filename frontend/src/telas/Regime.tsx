@@ -33,27 +33,27 @@ import './telas.css';
 type ItemComparado = Comparacao['itens'][number];
 
 const FONTE_DO_CREDITO: Record<ItemComparado['fonteCredito'], string> = {
-  nfe: 'da nota (grupo IBSCBS)',
-  motor: 'calculado pelo motor RR',
+  nfe: 'da nota',
+  motor: 'estimado',
   custo_zero: 'custo zero',
 };
 
 /** O achado da tela: o crédito que o cliente leva em cada regime e o que isso custa no caixa da empresa. */
 export function achadoDoRegime(c: Comparacao): string {
+  // A frase de simulação (P6) já está no subtítulo da página, e o valor da venda, na régua logo abaixo.
   const frases = [
-    `Para vender ${reais(c.valorVenda)} por mês a ${c.cliente.nome}, no Simples híbrido o cliente leva ${reais(
-      c.hibrido.creditoCliente,
-    )} de crédito; no tradicional, ${reais(c.tradicional.creditoCliente)}.`,
+    `No híbrido, o cliente leva ${reais(c.hibrido.creditoCliente)} de crédito por mês; no tradicional, ${reais(
+      c.tradicional.creditoCliente,
+    )}.`,
   ];
   const diferenca = Number(c.diferencaCaixa);
   if (diferenca < 0) {
-    frases.push(`Em troca, a empresa paga ${reais(Math.abs(diferenca))} a mais de imposto por mês no híbrido.`);
+    frases.push(`Em troca, a empresa paga ${reais(Math.abs(diferenca))} a mais de imposto.`);
   } else if (diferenca > 0) {
-    frases.push(`E a empresa fica com ${reais(diferenca)} a mais de caixa por mês no híbrido.`);
+    frases.push(`E a empresa fica com ${reais(diferenca)} a mais de caixa.`);
   } else {
-    frases.push('O caixa da empresa fica igual nos dois regimes.');
+    frases.push('O caixa da empresa fica igual.');
   }
-  frases.push('Isso vale para as premissas abaixo.');
   return frases.join(' ');
 }
 
@@ -149,7 +149,7 @@ function Regua({ c }: { c: Comparacao }) {
         escala={escala}
         nota={
           sobra !== 0
-            ? `${reaisComSinal(c.diferencaPrecoCliente)} sobre a venda: centavos do arredondamento da base de cada linha.`
+            ? `${reaisComSinal(c.diferencaPrecoCliente)} de arredondamento.`
             : undefined
         }
       />
@@ -232,9 +232,7 @@ function Caixa({ c }: { c: Comparacao }) {
         <dt>Diferença de caixa por mês</dt>
         <dd>
           <span className="num faixa__lider">{reaisComSinal(c.diferencaCaixa)}</span>
-          <span className="texto-suave caixa__explica">
-            o caixa no híbrido menos o caixa no tradicional, ao mesmo preço total ao cliente
-          </span>
+          <span className="texto-suave caixa__explica">híbrido menos tradicional, ao mesmo preço</span>
         </dd>
       </div>
     </dl>
@@ -245,6 +243,10 @@ function Caixa({ c }: { c: Comparacao }) {
 // A venda por item e o empate
 
 function TabelaDaVenda({ c }: { c: Comparacao }) {
+  // A origem do crédito (da nota ou estimado) vai uma vez no cabeçalho quando é a mesma em todos os itens, e em cada
+  // linha só quando muda de um item para outro: repetir a mesma palavra em toda linha é ruído.
+  const fontes = new Set(c.itens.map((i) => i.fonteCredito));
+  const fonteUnica = fontes.size === 1 ? c.itens[0]?.fonteCredito : undefined;
   return (
     <div className="tabela__moldura">
       <table className="tabela tabela--lista">
@@ -266,6 +268,9 @@ function TabelaDaVenda({ c }: { c: Comparacao }) {
             </th>
             <th scope="col" className="num">
               Crédito das compras
+              {fonteUnica !== undefined && (
+                <span className="tabela__sub tabela__sub--texto">{FONTE_DO_CREDITO[fonteUnica]}</span>
+              )}
             </th>
           </tr>
         </thead>
@@ -289,7 +294,9 @@ function TabelaDaVenda({ c }: { c: Comparacao }) {
               </td>
               <td data-rotulo="Crédito das compras" className="num">
                 {reais(i.creditoCompras)}
-                <span className="tabela__sub tabela__sub--texto">{FONTE_DO_CREDITO[i.fonteCredito]}</span>
+                {fonteUnica === undefined && (
+                  <span className="tabela__sub tabela__sub--texto">{FONTE_DO_CREDITO[i.fonteCredito]}</span>
+                )}
               </td>
             </tr>
           ))}
@@ -323,10 +330,7 @@ function Empate({ c }: { c: Comparacao }) {
   const e = c.empateTradicional;
   if (!e) {
     return (
-      <p className="texto-suave">
-        O preço de empate não fechou no motor do Simples dentro da tolerância por linha: a comparação acima continua
-        valendo.
-      </p>
+      <p className="texto-suave">O preço de empate não fechou no motor do Simples. A comparação acima vale.</p>
     );
   }
   const desconto = Number(e.descontoNecessario);
@@ -335,9 +339,8 @@ function Empate({ c }: { c: Comparacao }) {
   return (
     <>
       <p>
-        Contra um concorrente do regime regular que cobre o mesmo preço total, no tradicional o preço teria de ser{' '}
-        <span className="num dinheiro">{reais(e.precoCliente)}</span> ({quanto}) para o cliente pagar o mesmo custo
-        líquido.
+        Para empatar com um concorrente do regime regular, o preço no tradicional teria de ser{' '}
+        <span className="num dinheiro">{reais(e.precoCliente)}</span> ({quanto}).
       </p>
       <dl className="caixa__contas">
         <div>
@@ -353,7 +356,10 @@ function Empate({ c }: { c: Comparacao }) {
           <dd className="num">{reais(e.custoLiquidoAlvo)}</dd>
         </div>
       </dl>
-      <p className="texto-suave origem">{e.hipotese}</p>
+      {/* A definição que o número precisa; o detalhe do cálculo fica nas simplificações (hipotese da API). */}
+      <p className="texto-suave origem">
+        O concorrente vende os mesmos itens pelo mesmo preço total, e o custo do cliente nele é o do híbrido.
+      </p>
     </>
   );
 }
@@ -455,13 +461,16 @@ function BlocosDaComparacao({ catalogo, cliente, comparacao }: PropsBlocos) {
       </Bloco>
       <Bloco titulo="Premissas da comparação" className="regime__premissas">
         <ListaDePremissas premissas={c.premissas} compacta />
-      </Bloco>
-      <Bloco titulo="Simplificações" className="regime__simplificacoes">
-        <ul className="simplificacoes">
-          {c.simplificacoes.map((s) => (
-            <li key={s}>{s}</li>
-          ))}
-        </ul>
+        {/* As simplificações e a hipótese do empate valem para ler os números, mas não precisam estar abertas: o
+            nome e o valor das premissas ficam à vista (P6 a P8), e o resto abre com um clique. */}
+        <details className="simplificacoes__detalhe">
+          <summary>Simplificações do cálculo</summary>
+          <ul className="simplificacoes">
+            {[...c.simplificacoes, ...(c.empateTradicional ? [c.empateTradicional.hipotese] : [])].map((s) => (
+              <li key={s}>{s}</li>
+            ))}
+          </ul>
+        </details>
       </Bloco>
     </>
   );
@@ -495,8 +504,8 @@ export function Regime() {
     corpo = (
       <Bloco titulo="Comparação de regimes">
         <p>
-          A comparação começa em 2027. Antes disso, o motor do Simples não calcula a NF-e (VSN-015): não há lado
-          tradicional para comparar. O cenário desta empresa é de{' '}
+          A comparação começa em 2027: antes disso, o motor do Simples não calcula a NF-e (VSN-015). O cenário desta
+          empresa é de{' '}
           <span className="num">{dataDoDocumento(dados.cenario.operacao.data)}</span>.
         </p>
       </Bloco>
@@ -506,9 +515,7 @@ export function Regime() {
       <Bloco titulo="Comparação de regimes">
         <div className="vazio">
           <p>Nenhum cliente empresa cadastrado.</p>
-          <p className="texto-suave">
-            A comparação é sobre a venda mensal a um cliente do regime regular, que aproveita o crédito de CBS e IBS.
-          </p>
+          <p className="texto-suave">A comparação usa a venda mensal a um cliente do regime regular.</p>
         </div>
       </Bloco>
     );

@@ -6,6 +6,7 @@ Rodam no CI com os motores falsos do conftest (valores fictícios). Os números 
 
 from __future__ import annotations
 
+import asyncio
 import re
 import sqlite3
 from decimal import Decimal
@@ -14,12 +15,15 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+from app.agente.ferramentas import Ambiente, FalhaFerramenta, ListarAlertasArgs, _listar_alertas
+from app.api.dependencias import repositorio
 from app.config import Configuracao, configuracao
 from app.contrato import (
     AlertasResposta,
     AplicarAlertaResposta,
     CatalogoResposta,
     ChatResposta,
+    ContextoChat,
     NfeImportarResposta,
     PainelContadorResposta,
 )
@@ -361,6 +365,36 @@ def test_agente_lista_os_alertas_sem_numero_inventado(demo) -> None:
     assert r.ferramentasChamadas == ["listar_alertas"] and r.verificacao == "aprovada"
     assert "Cerveja de malte" in r.resposta and "nota 1002 de 16/03/2027" in r.resposta
     assert "R$ 3,79" in r.resposta  # o preço atual, que está no JSON da ferramenta
+
+
+def test_ferramenta_de_alertas_so_ve_as_empresas_de_quem_chama(demo) -> None:
+    """ADR 0015: como as rotas, a ferramenta do chat filtra por Estado.cnpjs e trata o CNPJ de fora como inexistente."""
+    importar(nota(NOTA_2))
+    repo = repositorio(app.dependency_overrides.get(configuracao, configuracao)())
+    args = ListarAlertasArgs(abertos=True)
+
+    def ambiente(cnpjs: frozenset[str] | None, cnpj: str | None = None) -> Ambiente:
+        contexto = None
+        if cnpj is not None:
+            contexto = ContextoChat.model_validate(
+                {
+                    "data": "2027-03-16",
+                    "uf": "RS",
+                    "municipio": 4314902,
+                    "aliquotasNominais": {"cbs": "8.8", "ibsEstadual": "0.05", "ibsMunicipal": "0.05"},
+                    "premissasDas": {"anexo": "I", "cAtivSN": "01", "pCBSSN": "1.1612", "pIBSSN": "0.0129"},
+                    "regime": "simples_tradicional",
+                    "itens": [],
+                    "cnpj": cnpj,
+                }
+            )
+        return Ambiente(None, None, contexto, repositorio=repo, cnpjs=cnpjs)  # type: ignore[arg-type]
+
+    assert asyncio.run(_listar_alertas(args, ambiente(None)))["total"] > 0
+    assert asyncio.run(_listar_alertas(args, ambiente(frozenset({SERRA_AZUL}))))["total"] > 0
+    assert asyncio.run(_listar_alertas(args, ambiente(frozenset())))["total"] == 0
+    with pytest.raises(FalhaFerramenta, match="Empresa não cadastrada"):
+        asyncio.run(_listar_alertas(args, ambiente(frozenset(), SERRA_AZUL)))
 
 
 # ---------------------------------------------------------------------------

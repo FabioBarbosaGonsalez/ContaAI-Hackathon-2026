@@ -62,7 +62,7 @@ O mapeamento achou três pontos que mudam o desenho:
 - **Parâmetros:** HMAC-SHA1, 6 dígitos e passo de 30 s, o padrão dos aplicativos autenticadores. O segredo tem 160 bits e é guardado no `contas.db`, que só o backend lê.
 - **Tolerância de um passo para cada lado**, a recomendação da RFC 6238 (§5.2).
 - **Uso único:** o passo do último código aceito fica gravado, e só vale um passo maior. Conferir e gravar acontecem na mesma transação de escrita, para que duas requisições com o mesmo código não passem as duas.
-- **Ativação:** o `POST /contas` cria a conta pendente e devolve o endereço `otpauth://` (o QR code é desenhado na C2) e o segredo em texto. A conta só vale depois do `POST /contas/ativar` com o primeiro código, até 5 minutos depois do cadastro. Um cadastro pendente vence em 30 minutos, e o e-mail fica livre de novo.
+- **Ativação:** o `POST /contas` cria a conta pendente e devolve o endereço `otpauth://` (o QR code é desenhado na C2) e o segredo em texto. A conta só vale depois do `POST /contas/ativar` com o primeiro código, até 5 minutos depois do cadastro. Um cadastro pendente vence em 30 minutos, e o e-mail fica livre de novo. Se o passe vence antes, a entrada com a senha volta ao QR (revisão da C2b, no fim).
 - **Códigos de recuperação:** 10, cada um com 65 bits sorteados (13 caracteres de base32 em 3 grupos), guardados só como SHA-256. Usar um apaga o código, cria outro no lugar (devolvido uma vez só, na resposta) e grava um evento que o `GET /conta` mostra. Eles substituem a recuperação de senha que a C1 não tem.
 
 ### 4. Entrada e sessão (S3)
@@ -138,7 +138,7 @@ As rotas de conta respondem 501 no modo mock, como as outras que mudam o estado.
 |---|---|
 | `POST /contas` | Cadastro (201): `otpauth`, `segredo` e `expiraEm`; o passe vai no cookie |
 | `POST /contas/ativar` | Primeiro código: a conta vale, a sessão começa e saem os 10 códigos de recuperação |
-| `POST /sessoes` | E-mail e senha: o passe vai no cookie |
+| `POST /sessoes` | E-mail e senha: o passe vai no cookie (`etapa: "codigo"`; numa conta pendente, `etapa: "ativacao"` com um segredo novo, revisão da C2b) |
 | `POST /sessoes/codigo` | Código do aplicativo ou de recuperação: a sessão começa |
 | `GET /conta` | E-mail, organização e papel, empresas, códigos restantes, eventos e fim da sessão |
 | `DELETE /sessoes/atual` e `DELETE /sessoes` | Sair neste aparelho e em todos |
@@ -198,3 +198,68 @@ As rotas de conta respondem 501 no modo mock, como as outras que mudam o estado.
 **Em aberto:**
 - **Pedir o aceite de novo quando os termos mudarem:** fica para a primeira mudança. A conta guarda a versão aceita, então dá para saber quem aceitou qual.
 - **A base legal na LGPD** (provavelmente o art. 7º V, execução de contrato) não foi lida no texto da lei.
+
+## Revisão de 2026-11-26: a conta pendente pela entrada (C2b)
+
+- Código: `Contas.entrar` em `backend/app/contas/servico.py`, a rota `POST /sessoes` em `backend/app/api/rotas/contas.py` e `EntrarAtivacaoResposta` em `backend/app/contrato.py`.
+- Decisão do usuário (plano v2.1, C2b, decisão 1).
+
+**O problema:** o passe da ativação dura 5 minutos, e o cadastro pendente, 30. Quem deixava o passe vencer no passo do QR não tinha saída: o cadastro de novo dava 409 ("Este e-mail já tem uma conta. Entre com a senha e o código."), e a entrada só aceitava conta ativa. O e-mail ficava preso por até 25 minutos.
+
+**O que mudou:**
+- **Entrar numa conta pendente com a senha certa** responde 200 com `etapa: "ativacao"`, um segredo novo (`otpauth` e `segredo`), `expiraEm` e o aviso do cadastro. O passe novo é de ativação: o próximo passo é o `POST /contas/ativar`, e ele não serve para o `POST /sessoes/codigo`.
+- **O segredo é trocado.** O antigo já foi entregue uma vez, e o aviso do cadastro diz que ele não aparece de novo. O passo gravado do TOTP volta a 0, e o código do segredo antigo deixa de valer.
+- **Só o último passe vale:** os passes anteriores da pessoa são apagados.
+- **O cadastro pendente ganha mais 30 minutos** a partir da entrada, para não sumir no meio do passe novo.
+- **A conta ativa segue igual,** agora com `etapa: "codigo"` obrigatório na resposta. O contrato virou uma união com o discriminador `etapa`, e o tipo gerado da tela separa os dois casos.
+
+**Segurança:**
+- **A senha é exigida,** então ninguém de fora assume o cadastro de outra pessoa.
+- **A resposta só muda depois da senha certa.** Senha errada numa conta pendente dá o mesmo 401, com a mesma frase, de um e-mail sem conta, e a falha conta para a espera como numa conta ativa.
+- **Não abre nova forma de descobrir e-mails:** o cadastro já mostra que o e-mail existe (409), como diz a seção 3.
+- **Prender o e-mail por mais tempo** só é possível para quem sabe a senha, isto é, para quem se cadastrou. Sem confirmação de e-mail, o cadastro já permitia isso.
+- **Testes:** `tests/test_contas.py`, os três testes `test_conta_pendente_*` e o `test_a_entrada_na_conta_pendente_*`.
+
+## Revisão de 2026-11-26: varredura do projeto
+
+- Código: `backend/app/contas/totp.py`, os padrões do contrato (`backend/app/contrato.py`, as rotas, `backend/app/dados_demo.py`, `backend/app/persistencia/sementes.py`, `backend/app/nfe/leitor.py`), `backend/app/api/mensagens.py`, a ferramenta `listar_alertas` em `backend/app/agente/ferramentas.py` e o cache `banco()` em `backend/app/api/dependencias.py`.
+
+**O que estava errado:**
+- **Código do segundo fator em dígitos de outra escrita dava 500.** No Pydantic (e no `re` do Python), o `\d` aceita qualquer dígito Unicode, como os árabes (`١٢٣٤٥٦`). O contrato deixava o código passar, e o `hmac.compare_digest` recusa texto fora do ASCII com `TypeError`. Reproduzido no `POST /contas/ativar`. O mesmo `\d` deixava passar CNPJ, NCM, CST e cClassTrib nessas escritas, no contrato e no XML da NF-e.
+- **A ferramenta `listar_alertas` do chat não filtrava pelas empresas de quem chama,** ao contrário das rotas. Hoje não vazava nada, porque cada organização tem o próprio banco, mas a regra do CNPJ como permissão (seção 7) valia só nas rotas.
+- **O cache `banco()` não tinha teto:** cada espaço de avaliação ficava guardado até o processo acabar.
+
+**O que mudou:**
+- Os padrões usam `[0-9]` no lugar de `\d` (48 trocas); as chaves de `mensagens.py` e o `PADRAO_CODIGO` da tela acompanham, e o `openapi.json` foi exportado de novo. O `totp.conferir` também exige `isascii()`, como segunda barreira.
+- `Ambiente.cnpjs` recebe o `Estado.cnpjs` da rota do chat: a ferramenta filtra a lista e trata um CNPJ de fora como inexistente, com a mesma frase das rotas.
+- `banco()` guarda até 256 arquivos. Um arquivo que sai do cache só roda `migrar()` de novo, sem nada a aplicar.
+- **O e-mail não aceita mais `:`** (decisão do usuário). O Key Uri Format (lido em 2026-11-26, plano v2.1, C2b) diz que o nome da conta no rótulo do `otpauth://` não pode ter `:`, e o `:` separa o emissor da conta. O padrão passou a `^[^@\s:]{1,64}@[^@\s:]+\.[^@\s:]+$` no cadastro e na entrada, na tela (`regrasDeEntrada.ts`) e nas frases de `mensagens.py`. Nenhuma conta publicada é afetada: o ContaAI ainda não está no ar (E6), e só os bancos de teste locais existem.
+- Ficaram com `\d` de propósito o `verificador.py` e o `roteiro.py` do agente: eles leem texto livre, e lá o padrão amplo pega mais números.
+
+**Testes:** `tests/test_contas.py` (`test_codigo_com_digitos_de_outra_escrita_*`, `test_cnpj_com_digitos_de_outra_escrita_*` e o caso árabe no teste do TOTP) `test_email_com_dois_pontos_e_recusado`, e `tests/test_nfe.py::test_ferramenta_de_alertas_so_ve_as_empresas_de_quem_chama`. Mutação conferida: com o `\d` de volta no código e no CNPJ, e sem o `isascii()`, os três testes de contas falham.
+
+## Revisão de 2026-11-26: organização só com espaços (C2b, etapa 6)
+
+- Código: `backend/app/contrato.py` (`NomeDaOrganizacao`).
+
+**O que estava errado:** o nome da organização tinha só `min_length=1` no contrato, e a rota tira os espaços das pontas depois (`req.organizacao.strip()`). Um nome só com espaços, como `" "`, passava pelo contrato, virava `""` e criava a organização sem nome (201). Reproduzido com teste antes do conserto. Achado ao escrever o formulário de Criar conta, que já recusa esse nome antes de enviar.
+
+**O que mudou:** o campo `organizacao` do `POST /contas` tira os espaços das pontas no próprio contrato (`str.strip`, que tira também os de Unicode, como o U+00A0 e o U+3000) e recusa o resultado vazio com 422 e a frase "Informe o nome da organização.". O `openapi.json` não muda (o esquema continua com `minLength` 1 e `maxLength` 120), e o `strip()` da rota ficou sem efeito, mas inofensivo.
+
+**Testes:** `tests/test_contas.py::test_organizacao_so_com_espacos_e_recusada` (seis formas de espaço, e o e-mail continua livre depois das recusas).
+
+## Revisão de 2026-11-27: o 429 da conta bloqueada (C2b, etapa 8)
+
+- Código: `backend/app/contas/servico.py` (`ContaBloqueada`), `backend/app/api/problemas.py` (tipo `conta-bloqueada` e tratador), `backend/app/api/rotas/contas.py` (`_recusa`) e, na tela, `frontend/src/telas/formulario.tsx` (`falhaDe`).
+
+**O que estava errado:** a espera crescente e o bloqueio em 100 falhas saíam com o mesmo 429, o mesmo `type` (`about:blank`) e, no teto, o mesmo `Retry-After` de 3600 s. A tela de Entrar só tinha a frase para diferenciar, e mostraria "Aguarde 60 min" para uma conta que não volta sozinha: só o administrador desbloqueia (`python -m app.contas desbloquear <e-mail>`). O mesmo valia para a ativação e para excluir a conta.
+
+**O que mudou:**
+- O bloqueio lança `ContaBloqueada` (subclasse de `AguardeParaTentar`), e a resposta sai com o tipo próprio `/problemas/conta-bloqueada` (RFC 9457), título "Conta bloqueada" e a mesma frase de antes. `GET /problemas/conta-bloqueada` descreve o tipo. As outras esperas seguem `about:blank`.
+- O `Retry-After` de 3600 s ficou: ele não promete a volta da conta, só pede a um cliente automático que não insista.
+- **Não revela se o e-mail existe:** um e-mail sem conta também chega ao bloqueio (o contador em memória soma as falhas igual), e a resposta é idêntica, corpo e cabeçalho. A frase já dizia "Conta bloqueada" antes desta revisão, então o tipo não acrescenta informação.
+- A tela lê o tipo em `falhaDe`: com ele, não há contagem e o botão fica ligado (outra conta pode ser usada). Vale para Entrar, a ativação e, na etapa 9, excluir a conta.
+- O `openapi.json` foi exportado de novo (descrições do 429 em `POST /sessoes`, `POST /sessoes/codigo`, `POST /contas/ativar` e `POST /conta/excluir`).
+- **Achado no caminho, anterior a esta etapa:** em `POST /sessoes`, a resposta 429 do limite por IP (`respostas.LIMITE`) vinha depois no dicionário e apagava a descrição da espera e do bloqueio. O contrato da rota onde eles mais acontecem dizia só "limite de requisições por minuto". A ordem foi invertida: a descrição da rota, que já cita o limite por IP, prevalece.
+
+**Testes:** `tests/test_contas.py::test_conta_bloqueada_tem_tipo_proprio_e_igual_para_email_sem_conta` (a espera comum segue `about:blank`; conta e e-mail sem conta dão a mesma resposta), `test_cem_falhas_bloqueiam_e_so_o_administrador_desbloqueia` agora espera `ContaBloqueada`; na tela, `formulario.test.tsx`, `entrar.test.tsx` e `legal.test.ts` (o tipo da tela existe em `problemas.py`). Conferido também no Chrome 158, com a API real.

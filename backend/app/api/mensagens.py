@@ -26,19 +26,19 @@ GENERICA = "Valor inválido."
 # Cada padrão (regex) do contrato com a frase que explica o formato. Padrão novo no contrato sem frase aqui
 # reprova o teste test_todo_padrao_do_contrato_tem_frase.
 PADROES: dict[str, str] = {
-    r"^\d{2}$": "Use exatamente 2 dígitos, sem pontos nem traços.",
-    r"^\d{3}$": "Use exatamente 3 dígitos, sem pontos nem traços.",
-    r"^\d{6}$": "Use exatamente 6 dígitos, sem pontos nem traços.",
-    r"^\d{8}$": "Use exatamente 8 dígitos, sem pontos nem traços.",
-    r"^\d{9}$": "Use exatamente 9 dígitos, sem pontos nem traços.",
-    r"^\d{14}$": "Use exatamente 14 dígitos, sem pontos nem traços.",
+    r"^[0-9]{2}$": "Use exatamente 2 dígitos, sem pontos nem traços.",
+    r"^[0-9]{3}$": "Use exatamente 3 dígitos, sem pontos nem traços.",
+    r"^[0-9]{6}$": "Use exatamente 6 dígitos, sem pontos nem traços.",
+    r"^[0-9]{8}$": "Use exatamente 8 dígitos, sem pontos nem traços.",
+    r"^[0-9]{9}$": "Use exatamente 9 dígitos, sem pontos nem traços.",
+    r"^[0-9]{14}$": "Use exatamente 14 dígitos, sem pontos nem traços.",
     r"^[A-Z]{2}$": "Use a sigla da UF com 2 letras maiúsculas (ex.: SP).",
-    r"^(REG|VSN)-\d{3}$": "Use um código de erro dos motores, como REG-011 ou VSN-015.",
+    r"^(REG|VSN)-[0-9]{3}$": "Use um código de erro dos motores, como REG-011 ou VSN-015.",
     r"^[0-9a-f]{32}$": "Use o id do espaço de avaliação: 32 caracteres de 0 a 9 e de a a f.",
     r"^[a-z-]{3,40}$": "Use o nome de um tipo de problema: de 3 a 40 letras minúsculas ou hífens.",
     r"^[a-z0-9][a-z0-9-]{0,63}$": "Use até 64 letras minúsculas, dígitos ou hífens, sem começar com hífen.",
     r"^alerta-[0-9a-f]{16}$": "Use o id de um alerta: alerta- seguido de 16 caracteres de 0 a 9 e de a a f.",
-    r"^[^@\s]{1,64}@[^@\s]+\.[^@\s]+$": "Use um e-mail, como nome@empresa.com.br.",
+    r"^[^@\s:]{1,64}@[^@\s:]+\.[^@\s:]+$": "Use um e-mail, como nome@empresa.com.br.",
     r"^[A-Za-z2-7]{4}-?[A-Za-z2-7]{4}-?[A-Za-z2-7]{5}$": "Use um código de recuperação, como ABCD-EFGH-IJKLM.",
 }
 

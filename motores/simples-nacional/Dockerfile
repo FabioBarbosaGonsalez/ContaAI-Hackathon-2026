@@ -4,7 +4,7 @@
 # Fonte: https://github.com/ReceitaFederal/calculadora-rtc-simples-nacional
 #
 # O README oficial manda gerar o banco com os scripts do repositório do Regime Regular;
-# por isso este build também baixa o RR na tag fixada. Versões fixadas (princípio P5).
+# por isso este build também baixa o RR na versão fixada (commit verificado pelo SHA). Versões fixadas (princípio P5).
 # O build busca o commit verificado pelo SHA, e não pela tag: em 2026-11-25 a Receita republicou a
 # tag 1.7.2 do RR no commit 39363aa (remove ArredondamentoUtils.java e CaptchaException.java). O
 # commit verificado em 2026-11-24 (32df719) continua no histórico oficial. Trocar de commit exige PR
@@ -19,7 +19,7 @@ ARG SN_TAG=1.0.2
 ARG SN_SHA=f90b6525e6d5823e784baecfc6fef0ad2f04b74f
 
 # ---------------------------------------------------------------------------
-# Código-fonte do Regime Regular na tag fixada (tem o Flyway e os scripts SQL do banco).
+# Código-fonte do Regime Regular na versão fixada (commit verificado pelo SHA) (tem o Flyway e os scripts SQL do banco).
 # curl: o mvnw oficial baixa o maven-wrapper.jar com curl ou wget, e a imagem JDK não traz nenhum dos dois.
 FROM eclipse-temurin:25-jdk AS fonte-rr
 ARG RR_TAG
@@ -46,7 +46,7 @@ RUN --mount=type=cache,target=/root/.m2,sharing=locked \
  && test -s calculadora/db/calculadora-pro.db
 
 # ---------------------------------------------------------------------------
-# Código-fonte e JAR do Simples Nacional na tag fixada
+# Código-fonte e JAR do Simples Nacional na versão fixada (commit verificado pelo SHA)
 FROM fonte-rr AS build
 ARG SN_TAG
 ARG SN_SHA

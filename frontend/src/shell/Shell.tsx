@@ -3,18 +3,22 @@
 // - a marca na borda esquerda da coluna;
 // - no app: os destinos em texto e, à direita, onde a pessoa está (modo, espaço ou conta). No celular, a barra
 //   fica com a marca e um botão de menu, e os destinos vão para uma folha de tela cheia;
-// - nas páginas públicas (C2, ADR 0016): só a marca e o caminho para a demonstração, sem os destinos do app.
+// - nas páginas públicas (C2, ADR 0016): só a marca, Entrar e o caminho para a demonstração, sem os destinos do
+//   app. Quem entrou vê o caminho ao Painel e o menu da conta (C2b, etapa 9);
+// - a página da conta (C2b) usa a barra do app, sem marcar nenhum destino.
 
 import { useRef, type ReactNode } from 'react';
 import './shell.css';
-import { useConta } from '../sessao/ganchos.ts';
+import { useConta, useContasLigadas } from '../sessao/ganchos.ts';
 import { BarreiraDeErro } from './BarreiraDeErro.tsx';
 import { AvisoDemonstracao, BotaoDemonstracao, BotaoMinhaConta } from './demonstracao.tsx';
 import { Marca } from './Marca.tsx';
+import { MenuDaConta } from './MenuDaConta.tsx';
 import { Link, useCaminho } from './navegacao.tsx';
+import { Conta } from '../telas/Conta.tsx';
 import { NaoEncontrada, PAGINAS, PAGINAS_PUBLICAS, SemEmpresa } from './paginas.tsx';
 import { Rodape } from './Rodape.tsx';
-import { ROTAS, rotaDe, rotaPublicaDe } from './rotas.ts';
+import { ROTAS, ehPaginaDaConta, rotaDe, rotaPublicaDe } from './rotas.ts';
 import { StatusSessao } from './StatusSessao.tsx';
 
 function Destinos({ atual, aoEscolher }: { atual: string | null; aoEscolher?: () => void }) {
@@ -72,13 +76,23 @@ function Moldura({ barra, depoisDaBarra, chave, children }: PropsMoldura) {
 
 function ShellPublico({ caminho, children }: { caminho: string; children: ReactNode }) {
   const conta = useConta();
+  const contasLigadas = useContasLigadas();
   const conectada = conta.tipo === 'conectada';
+  // Entrar só aparece quando as contas existem (modo real), já se sabe que ninguém entrou, e fora da própria página.
+  const mostrarEntrar =
+    contasLigadas && !conectada && conta.tipo !== 'carregando' && conta.tipo !== 'desligada' && caminho !== '/entrar';
   return (
     <Moldura
       chave={caminho}
       barra={
         <div className="barra__publica">
           {conectada ? <BotaoMinhaConta className="botao-texto" /> : <BotaoDemonstracao className="botao-texto" />}
+          {conta.tipo === 'conectada' && <MenuDaConta conta={conta.conta} />}
+          {mostrarEntrar && (
+            <Link para="/entrar" className="botao-texto">
+              Entrar
+            </Link>
+          )}
         </div>
       }
     >
@@ -144,6 +158,14 @@ export function Shell() {
       <ShellPublico caminho={caminho}>
         <PaginaPublica />
       </ShellPublico>
+    );
+  }
+
+  if (ehPaginaDaConta(caminho)) {
+    return (
+      <ShellDoApp caminho={caminho} atual={null}>
+        <Conta />
+      </ShellDoApp>
     );
   }
 

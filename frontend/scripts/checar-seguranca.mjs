@@ -68,6 +68,16 @@ try {
 }
 const api = loadEnv('production', RAIZ, 'VITE_').VITE_CONTAAI_API;
 
+// As licenças das bibliotecas do navegador (vite.config.ts, build.license): sem o arquivo, o build sai sem os
+// avisos de copyright que a MIT pede.
+try {
+  if (!readFileSync(join(DIST, 'licencas.md'), 'utf8').includes('## react ')) {
+    problemas.push('dist/licencas.md: não lista as bibliotecas do build');
+  }
+} catch {
+  problemas.push('dist/licencas.md: o build saiu sem as licenças das bibliotecas (vite.config.ts, build.license)');
+}
+
 const html = readFileSync(join(DIST, 'index.html'), 'utf8');
 const esperada = politicaDeSeguranca({ api, cabecalho: false }).replaceAll("'", '&#39;');
 // HTML não diferencia maiúsculas (<SCRIPT> vale como <script>): toda busca de tag e atributo usa a flag i

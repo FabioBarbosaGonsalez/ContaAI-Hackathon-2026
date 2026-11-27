@@ -22,14 +22,14 @@ class _Modelo(BaseModel):
 
 class AtividadeSimples(_Modelo):
     anexo: Anexo
-    cAtivSN: str = Field(pattern=r"^\d{2}$")
+    cAtivSN: str = Field(pattern=r"^[0-9]{2}$")
     descricaoAtividade: str
     fonte: str
 
 
 class Empresa(_Modelo):
     razaoSocial: str
-    cnpj: str = Field(pattern=r"^\d{14}$")
+    cnpj: str = Field(pattern=r"^[0-9]{14}$")
     regimeAtual: Literal["simples_tradicional", "simples_hibrido"]
     uf: str = Field(pattern=r"^[A-Z]{2}$")
     municipio: int
@@ -67,8 +67,8 @@ class Cenario(_Modelo):
 
 
 class ImpostoSeletivoDemo(_Modelo):
-    cst: str = Field(pattern=r"^\d{3}$")
-    cClassTrib: str = Field(pattern=r"^\d{6}$")
+    cst: str = Field(pattern=r"^[0-9]{3}$")
+    cClassTrib: str = Field(pattern=r"^[0-9]{6}$")
     litrosPorUnidade: Decimal
     motivo: str
 
@@ -76,14 +76,14 @@ class ImpostoSeletivoDemo(_Modelo):
 class ItemCatalogo(_Modelo):
     id: str = Field(pattern=PADRAO_ID_ITEM)
     descricao: str
-    ncm: str = Field(pattern=r"^\d{8}$")
+    ncm: str = Field(pattern=r"^[0-9]{8}$")
     ncmDescricaoOficial: str
-    cst: str = Field(pattern=r"^\d{3}$")
-    cClassTrib: str = Field(pattern=r"^\d{6}$")
+    cst: str = Field(pattern=r"^[0-9]{3}$")
+    cClassTrib: str = Field(pattern=r"^[0-9]{6}$")
     classificacaoFonte: str
     impostoSeletivo: ImpostoSeletivoDemo | None
     unidade: Literal["UN", "KG"]
-    cnpjFornecedor: str = Field(pattern=r"^\d{14}$", description="O código do fornecedor só é único dentro dele.")
+    cnpjFornecedor: str = Field(pattern=r"^[0-9]{14}$", description="O código do fornecedor só é único dentro dele.")
     codigoFornecedor: str = Field(min_length=1, max_length=60)
     precoVenda: Decimal = Field(gt=0)
     margemAlvoPct: Decimal = Field(gt=0, lt=100)
@@ -102,7 +102,7 @@ class Distribuidora(_Modelo):
 
 class Cliente(_Modelo):
     razaoSocial: str
-    cnpj: str = Field(pattern=r"^\d{14}$")
+    cnpj: str = Field(pattern=r"^[0-9]{14}$")
     regime: Literal["regime_regular"]
     uf: str = Field(pattern=r"^[A-Z]{2}$")
     municipio: int

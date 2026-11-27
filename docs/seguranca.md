@@ -85,6 +85,7 @@ Os dados do repositório e dos testes são sintéticos (P10): empresas, CNPJs, n
 - **Segundo fator obrigatório:** TOTP (RFC 6238) com a biblioteca padrão, sem SMS.
   - Segredo de 160 bits, 6 dígitos, passo de 30 s, um passo de tolerância e cada código aceito uma vez.
   - 10 códigos de recuperação de 65 bits, guardados só como hash, de uso único e com aviso quando um é usado.
+  - Conta pendente com o passe vencido: entrar com a senha certa troca o segredo e dá um passe novo de ativação. A senha errada responde como qualquer outra (revisão da C2b no ADR 0015).
 - **Sessão:**
   - cookie `__Host-contaai_sessao`, `HttpOnly`, `Secure`, `SameSite=Strict`, sem `Domain`;
   - token de 256 bits, só o hash no banco, token novo a cada entrada;
@@ -92,7 +93,7 @@ Os dados do repositório e dos testes são sintéticos (P10): empresas, CNPJs, n
   - sair apaga a sessão no servidor.
 - **Tentativas:** contador de falhas seguidas por conta, que soma senha, código e código de recuperação.
   - Espera crescente da 5ª falha em diante (30 s até 1 h).
-  - Bloqueio em 100 falhas (NIST §3.2.2), com desbloqueio só pelo administrador no servidor.
+  - Bloqueio em 100 falhas (NIST §3.2.2), com desbloqueio só pelo administrador no servidor. O 429 do bloqueio tem o tipo próprio `/problemas/conta-bloqueada`, e a tela não mostra contagem para ele; as outras esperas saem como `about:blank` (revisão da etapa 8 da C2b no ADR 0015).
   - Um e-mail sem conta tem o mesmo contador e o mesmo trabalho: a entrada não revela se a conta existe.
   - O cadastro revela, porque sem confirmação de e-mail não há como esconder (achado do ADR 0015).
 - **Autorização por empresa:**
@@ -164,6 +165,10 @@ A tela é a próxima camada exposta a XSS. A fundação do frontend (PR 2 da E5)
    - o cookie só vai às rotas da conta e, quando a tela mostra a conta, às rotas de dados. Fora disso, o pedido sai com `credentials: 'omit'`; na conta, o espaço e o token não vão;
    - um 401 com o cookie, fora das rotas de entrada, encerra a sessão na tela;
    - o nome da organização é mostrado como texto (testado com `<img onerror>`).
+   - **C2b:** o segredo do segundo fator e os códigos de recuperação voltam só a quem chamou a ação e ficam na memória do componente. Não entram no estado da sessão nem no armazenamento do navegador (testado);
+   - uma resposta antiga do `GET /conta` que chega depois de entrar ou sair é descartada (testado);
+   - **Criar conta (C2b, etapas 6 e 7):** cada passo leva os próprios dados embora quando acaba: a senha sai com o passo 1, e o QR e o segredo saem com o passo 2 (também quando o passe vence). O QR é desenhado na tela, sem serviço externo. O `.txt` dos códigos é um `Blob` na memória, baixado por um link `blob:` revogado logo depois, sem servidor. O envio é por `fetch`, e o `<form>` não tem `action` (a CSP tem `form-action 'none'`). Conferido no Chrome 158 com o build e a API real: nenhuma violação da CSP do começo ao fim, e o endereço e o armazenamento do navegador ficam vazios.
+   - **Medidor de força da senha (Criar conta):** a estimativa roda no navegador, com o zxcvbn-ts (`@zxcvbn-ts/core` 4.2.0 e `@zxcvbn-ts/language-common` 4.1.3, MIT, versões fixas, sem chamada de rede nem `eval` no código, `npm audit` 0). A senha não sai da página. A biblioteca é um arquivo à parte no build, baixado do próprio endereço só quando a pessoa digita a senha (conferido no Chrome: nenhum pedido a terceiros e nenhuma violação da CSP). O medidor só orienta; quem aceita ou recusa a senha é o backend.
 6. **O id do espaço fica no navegador (`localStorage`), nunca no endereço da página.**
    - Só é aceito no padrão de 32 hexadecimais.
    - Vai só às rotas que declaram o header no contrato.

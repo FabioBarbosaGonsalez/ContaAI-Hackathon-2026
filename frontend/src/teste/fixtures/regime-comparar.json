@@ -110,7 +110,7 @@
     }
   ],
   "empateTradicional": {
-    "hipotese": "Concorrente do regime regular que vende os mesmos itens pelo mesmo preço total: o custo líquido do cliente nele é o do lado híbrido. O preço de empate de cada linha sai do ajuste afim no motor SN, arredondado ao centavo para baixo; o custo líquido resultante pode diferir em centavos de custoLiquidoAlvo.",
+    "hipotese": "Concorrente do regime regular que vende os mesmos itens pelo mesmo preço total: o custo líquido do cliente nele é o do lado híbrido. O preço de empate de cada linha sai do ajuste afim no motor SN, arredondado ao centavo para baixo; o custo líquido resultante pode diferir em centavos do custo no concorrente.",
     "precoCliente": "18489.49",
     "descontoNecessario": "1409.16",
     "tributo": "217.09",
@@ -121,8 +121,8 @@
   "fonteTradicional": "motor",
   "simplificacoes": [
     "O restante do DAS (IRPJ, CSLL, CPP etc.) é tratado como igual nos dois regimes; só a parcela de CBS/IBS muda (plano, 11.2).",
-    "Mesmo preço total ao cliente nos dois regimes: no híbrido, a base de cada linha é o valor que somado à CBS/IBS (e ao IS) dá esse preço. Pode sobrar diferença de centavos pelo arredondamento (diferencaPrecoCliente).",
-    "diferencaCaixa compara os tributos a preço igual: tributo no DAS − (débito − crédito das compras).",
+    "Mesmo preço total ao cliente nos dois regimes: no híbrido, a base de cada linha é o valor que somado à CBS/IBS (e ao IS) dá esse preço. O arredondamento pode deixar alguns centavos de diferença.",
+    "A diferença de caixa compara os tributos ao mesmo preço: tributo no DAS − (débito − crédito das compras).",
     "Crédito das compras das unidades vendidas: o crédito por unidade informado (grupo IBSCBS da NF-e) ou, sem ele, o motor RR sobre o custo. Supõe os débitos da compra pagos pelo fornecedor (LC 214/2025, art. 47, caput).",
     "No Simples tradicional o crédito das compras não é aproveitado (LC 214/2025, art. 47, §9º, I).",
     "ICMS fora das contas."

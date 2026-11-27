@@ -57,7 +57,7 @@ async def explicar(
     item_id: Annotated[str, Path(pattern=PADRAO_ID_ITEM)],
     regime: Regime = Regime.SIMPLES_TRADICIONAL,
     cnpj: Annotated[
-        str | None, Query(pattern=r"^\d{14}$", description="Empresa do item. Sem ele, a distribuidora da demo.")
+        str | None, Query(pattern=r"^[0-9]{14}$", description="Empresa do item. Sem ele, a distribuidora da demo.")
     ] = None,
     espaco: EspacoId = None,
     sessao: SessaoCookie = None,
@@ -91,7 +91,7 @@ async def explicar_post(req: ExplicarRequisicao, cfg: Cfg, motores: Motores, da:
     responses={**respostas.MOTOR, **NAO_ENCONTRADO, **respostas.LIMITE},
 )
 async def erro(
-    cfg: Cfg, response: Response, da: Dados, codigo: Annotated[str, Path(pattern=r"^(REG|VSN)-\d{3}$")]
+    cfg: Cfg, response: Response, da: Dados, codigo: Annotated[str, Path(pattern=r"^(REG|VSN)-[0-9]{3}$")]
 ) -> ErroDescricao:
     if cfg.modo != "mock":
         achado = await da.erro(codigo)

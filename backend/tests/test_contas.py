@@ -17,18 +17,27 @@ from app.api import dependencias, middlewares
 from app.api.rotas import contas as rotas_contas
 from app.config import Configuracao, configuracao
 from app.contas import senha, totp
+from app.contas import servico as servico_contas
 from app.contas.servico import (
     ESPERA_MAXIMA_S,
     FALHAS_PARA_BLOQUEAR,
+    MENSAGEM_BLOQUEADA,
     MENSAGEM_ENTRADA,
-    AguardeParaTentar,
+    ContaBloqueada,
     Contas,
     EntradaRecusada,
     _espera,
     normalizar_codigo_recuperacao,
 )
 from app.contas.termos import MENSAGEM_VERSAO_ANTIGA, VERSAO_TERMOS
-from app.contrato import AtivacaoResposta, CadastroResposta, ContaResposta, SegundaEtapaResposta
+from app.contrato import (
+    AtivacaoResposta,
+    CadastroResposta,
+    ContaResposta,
+    EntrarAtivacaoResposta,
+    EntrarResposta,
+    SegundaEtapaResposta,
+)
 from app.main import app
 from app.seguranca import LimitadorPorIp
 from tests.test_nfe import NOTA_2, SERRA_AZUL, nota
@@ -169,6 +178,34 @@ def test_totp_um_passo_de_tolerancia_e_uso_unico() -> None:
     assert totp.conferir(segredo, codigo(segredo, INICIO, 2), t, 0) is None  # fora da tolerância
     assert totp.conferir(segredo, codigo(segredo, INICIO), t, atual) is None  # já usado
     assert totp.conferir(segredo, "12a456", t, 0) is None
+    # Dígitos árabes: o isdigit() aceita, e o hmac.compare_digest dava TypeError (500 na rota).
+    assert totp.conferir(segredo, "١٢٣٤٥٦", t, 0) is None
+
+
+def test_codigo_com_digitos_de_outra_escrita_responde_422_e_nao_500(real) -> None:
+    """O \\d do Pydantic é Unicode: o contrato usa [0-9], e um código em dígitos árabes nem chega ao TOTP."""
+    c = navegador()
+    feito = cadastrar(c)
+    arabe = "١٢٣٤٥٦"
+    assert c.post("/contas/ativar", json={"codigo": arabe}).status_code == 422
+    assert c.post("/sessoes/codigo", json={"codigo": arabe}).status_code == 422
+    # A falha de formato não conta como tentativa errada: o código certo ainda entra.
+    assert c.post("/contas/ativar", json={"codigo": codigo(feito.segredo, real.agora)}).status_code == 200
+
+
+def test_cnpj_com_digitos_de_outra_escrita_e_recusado_pelo_contrato(real) -> None:
+    arabe = "٠" * 14
+    assert TestClient(app).get("/catalogo", params={"cnpj": arabe}).status_code == 422
+
+
+def test_email_com_dois_pontos_e_recusado(real) -> None:
+    """O ':' separa o emissor da conta no rótulo do otpauth:// (Key Uri Format): o contrato o recusa no e-mail."""
+    c = navegador()
+    for email in ("a:b@exemplo.com.br", "ana@exem:plo.com.br"):
+        corpo = {"email": email, "senha": SENHA, "organizacao": "Escritório", "termosAceitos": VERSAO_TERMOS}
+        r = c.post("/contas", json=corpo)
+        assert r.status_code == 422 and "Use um e-mail" in r.json()["detail"], r.text
+        assert c.post("/sessoes", json={"email": email, "senha": SENHA}).status_code == 422
 
 
 def test_endereco_otpauth() -> None:
@@ -200,8 +237,8 @@ def test_cadastro_ativacao_e_cookies(real) -> None:
         assert atributo in passe
     assert "Domain" not in passe
 
-    # Antes de ativar, a conta não entra e GET /conta não existe.
-    entrar(c, "ana@exemplo.com.br", status=401)
+    # Antes de ativar, não há sessão. (Entrar com a senha numa conta pendente volta ao QR, com outro segredo:
+    # test_conta_pendente_com_o_passe_vencido_volta_ao_qr_pela_entrada.)
     assert c.get("/conta").status_code == 401
 
     assert c.post("/contas/ativar", json={"codigo": codigo(feito.segredo, real.agora, 3)}).status_code == 401
@@ -250,12 +287,80 @@ def test_email_repetido_e_cadastro_pendente_que_vence(real) -> None:
     cadastrar(navegador())
 
 
+def test_conta_pendente_com_o_passe_vencido_volta_ao_qr_pela_entrada(real) -> None:
+    """Plano v2.1, C2b, decisão 1: o passe da ativação (5 min) vence antes do cadastro pendente (30 min). Entrar
+    com a senha certa dá um segredo novo e um passe novo de ativação; sem isso, o e-mail ficava preso."""
+    c = navegador()
+    antigo = cadastrar(c)
+    real.andar(minutes=6)
+    assert c.post("/contas/ativar", json={"codigo": codigo(antigo.segredo, real.agora)}).status_code == 401
+    r = entrar(c)
+    corpo = EntrarAtivacaoResposta.model_validate(r.json())
+    assert corpo.etapa == "ativacao" and corpo.segredo != antigo.segredo
+    assert corpo.expiraEm == real.agora + timedelta(minutes=5)
+    assert corpo.otpauth.startswith("otpauth://totp/") and corpo.segredo in corpo.otpauth
+    assert any(x.startswith("__Host-contaai_passe=") for x in set_cookies(r))
+    # O passe é de ativação: não serve para a segunda etapa da entrada.
+    assert c.post("/sessoes/codigo", json={"codigo": codigo(corpo.segredo, real.agora)}).status_code == 401
+    # O segredo antigo deixou de valer; o novo ativa.
+    assert c.post("/contas/ativar", json={"codigo": codigo(antigo.segredo, real.agora)}).status_code == 401
+    r = c.post("/contas/ativar", json={"codigo": codigo(corpo.segredo, real.agora)})
+    assert r.status_code == 200, r.text
+    # Ativa, a conta volta ao caminho de sempre: senha e depois o código.
+    assert EntrarResposta.model_validate(entrar(navegador()).json()).etapa == "codigo"
+
+
+def test_conta_pendente_com_a_senha_errada_responde_como_qualquer_erro(real) -> None:
+    cadastrar(navegador())
+    pendente = entrar(navegador(), senha_="senha errada demais", status=401).json()
+    desconhecido = entrar(navegador(), "ninguem@exemplo.com", "senha errada demais", status=401).json()
+    assert pendente["detail"] == desconhecido["detail"] == MENSAGEM_ENTRADA
+    # A falha conta para a espera, como numa conta ativa.
+    with sqlite3.connect(configuracao().contas_caminho) as b:
+        assert b.execute("SELECT falhas_seguidas FROM tentativas").fetchone()[0] == 1
+
+
+def test_a_entrada_na_conta_pendente_estende_o_cadastro_e_so_o_ultimo_passe_vale(real) -> None:
+    c = navegador()
+    cadastrar(c)
+    real.andar(minutes=28)
+    primeiro = EntrarAtivacaoResposta.model_validate(entrar(navegador()).json())
+    segundo_navegador = navegador()
+    segundo = EntrarAtivacaoResposta.model_validate(entrar(segundo_navegador).json())
+    real.andar(minutes=4)  # passou dos 30 min do cadastro, dentro do passe novo
+    # O passe e o segredo da primeira entrada foram trocados pela segunda.
+    assert c.post("/contas/ativar", json={"codigo": codigo(primeiro.segredo, real.agora)}).status_code == 401
+    r = segundo_navegador.post("/contas/ativar", json={"codigo": codigo(segundo.segredo, real.agora)})
+    assert r.status_code == 200, r.text
+
+
+def test_conta_pendente_vencida_some_e_a_entrada_recusa(real) -> None:
+    cadastrar(navegador())
+    real.andar(minutes=31)
+    assert entrar(navegador(), status=401).json()["detail"] == MENSAGEM_ENTRADA
+
+
 def test_senha_recusada_no_cadastro_responde_422_com_a_frase(real) -> None:
     r = navegador().post(
         "/contas",
         json={"email": "b@exemplo.com", "senha": "password", "organizacao": "B", "termosAceitos": VERSAO_TERMOS},
     )
     assert r.status_code == 422 and "muito comum" in r.json()["detail"]
+
+
+def test_organizacao_so_com_espacos_e_recusada(real) -> None:
+    """O nome passa pelo strip(): só com espaços (inclusive os de Unicode, como o U+00A0 e o U+3000), ele ficaria
+    vazio, e a organização nasceria sem nome. A recusa é 422 com a frase, e nada é criado."""
+    for vazio in (" ", "   ", "\t\n", "\u00a0", "\u3000", "\x1c"):
+        r = navegador().post(
+            "/contas",
+            json={"email": "b@exemplo.com", "senha": SENHA, "organizacao": vazio, "termosAceitos": VERSAO_TERMOS},
+        )
+        assert r.status_code == 422, repr(vazio)
+        [erro] = r.json()["campos"]
+        assert erro["campo"].endswith("organizacao") and erro["detalhe"] == "Informe o nome da organização."
+    # O e-mail continua livre: nada foi criado.
+    assert cadastrar(navegador(), "b@exemplo.com").otpauth
 
 
 def test_cadastro_exige_o_aceite_da_versao_atual_dos_termos(real) -> None:
@@ -420,11 +525,35 @@ def test_cem_falhas_bloqueiam_e_so_o_administrador_desbloqueia(tmp_path) -> None
         with pytest.raises(EntradaRecusada):
             servico.entrar("ana@exemplo.com.br", "senha errada demais", agora)
         agora += timedelta(seconds=ESPERA_MAXIMA_S + 1)
-    with pytest.raises(AguardeParaTentar, match="bloqueada"):
+    with pytest.raises(ContaBloqueada):
         servico.entrar("ana@exemplo.com.br", SENHA, agora + timedelta(days=30))
     assert servico.desbloquear("ANA@exemplo.com.br")
     assert servico.entrar("ana@exemplo.com.br", SENHA, agora)
     assert not servico.desbloquear("ninguem@exemplo.com.br")
+
+
+def test_conta_bloqueada_tem_tipo_proprio_e_igual_para_email_sem_conta(real, monkeypatch: pytest.MonkeyPatch) -> None:
+    """O bloqueio sai como /problemas/conta-bloqueada (a tela não mostra contagem) e não revela se o e-mail tem
+    conta: o e-mail sem conta chega à mesma resposta. A espera comum segue about:blank."""
+    monkeypatch.setattr(servico_contas, "FALHAS_PARA_BLOQUEAR", 6)
+    conta_ativa(navegador(), real)
+    respostas = []
+    for email in ("ana@exemplo.com.br", "ninguem@exemplo.com.br"):
+        real.agora = INICIO
+        for i in range(6):
+            entrar(navegador(), email, "senha errada demais", status=401)
+            if i == 4:
+                espera = entrar(navegador(), email, SENHA, status=429)
+                assert espera.json()["type"] == "about:blank"
+            real.andar(seconds=ESPERA_MAXIMA_S + 1)
+        r = entrar(navegador(), email, SENHA, status=429)
+        assert r.headers["content-type"].startswith("application/problem+json")
+        respostas.append((r.json(), r.headers["Retry-After"]))
+    assert respostas[0] == respostas[1]
+    corpo, retry = respostas[0]
+    assert corpo["type"] == "/problemas/conta-bloqueada" and corpo["title"] == "Conta bloqueada"
+    assert corpo["detail"] == MENSAGEM_BLOQUEADA and retry == str(ESPERA_MAXIMA_S)
+    assert navegador().get("/problemas/conta-bloqueada").json()["status"] == [429]
 
 
 def test_limite_por_ip_nas_rotas_de_entrada(real, monkeypatch: pytest.MonkeyPatch) -> None:
