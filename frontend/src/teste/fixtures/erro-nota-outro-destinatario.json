@@ -1,0 +1,6 @@
+{
+  "type": "/problemas/nota-recusada",
+  "title": "NF-e não pode ser importada",
+  "status": 422,
+  "detail": "O destinatário da nota não é uma empresa cadastrada no ContaAI. Nada foi gravado."
+}

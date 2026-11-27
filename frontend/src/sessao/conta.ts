@@ -7,7 +7,8 @@
 // - Quem tem conta também pode ver a demonstração compartilhada, como todo mundo (plano v2.1, C2, decisão 2).
 //   Nesse caso, os pedidos de dados saem sem o cookie (`credentials: 'omit'`, no middleware da sessão), e a API
 //   responde como a quem não tem conta.
-// - As ações (cadastrar, ativar, entrar, código, sair, sair de todos e excluir, C2b) só mudam o estado da conta.
+// - As ações (cadastrar, ativar, entrar, código, sair, sair de todos e excluir, C2b; cadastrar a empresa, C3a) só
+//   mudam o estado da conta.
 //   O segredo do segundo fator e os códigos de recuperação voltam a quem chamou e não ficam aqui: o componente
 //   os guarda na memória dele, e eles somem quando a pessoa sai do passo (plano v2.1, C2b, etapa 4).
 
@@ -21,6 +22,8 @@ export type DadosDoCadastro = components['schemas']['CadastroRequisicao'];
 export type Cadastro = components['schemas']['CadastroResposta'];
 export type DadosDaEntrada = components['schemas']['EntrarRequisicao'];
 export type SegundaEtapa = { codigo: string } | { codigoRecuperacao: string };
+export type DadosDaEmpresa = components['schemas']['EmpresaCadastroRequisicao'];
+export type EmpresaCadastrada = components['schemas']['EmpresaResposta'];
 
 /** Depois da senha certa: o código, ou (conta pendente) o QR de novo, com o mesmo formato do cadastro. */
 export type ProximoPasso = { etapa: 'codigo'; expiraEm: string } | { etapa: 'ativacao'; cadastro: Cadastro };
@@ -238,6 +241,27 @@ export class SessaoConta {
       throw erro;
     }
     this.fechar();
+  }
+
+  /**
+   * Cadastra a empresa da conta (POST /empresas, C3a, ADR 0018). Na resposta 201, a conta passa a ter o CNPJ sem
+   * esperar outro GET /conta: a resposta é da própria API e diz qual empresa entrou. Um GET /conta que saiu antes e
+   * chega depois não a tira (o contador `versao`). A tela passa a mostrar os dados da conta.
+   * 401: a sessão acabou (o middleware marca); 403: só o dono cadastra; 409: já cadastrada ou o limite; 422: CNPJ,
+   * município ou atividade recusados; 429: limite; 502 e 503: os motores.
+   */
+  async cadastrarEmpresa(cliente: ClienteApi, dados: DadosDaEmpresa): Promise<EmpresaCadastrada> {
+    const { dados: resposta } = await chamar(cliente.POST('/empresas', { body: dados }));
+    const atual = this.estado;
+    if (atual.tipo === 'conectada') {
+      const cnpj = resposta.empresa.cnpj;
+      const empresas = atual.conta.empresas.includes(cnpj)
+        ? atual.conta.empresas
+        : [...atual.conta.empresas, cnpj].sort();
+      this.versao += 1;
+      this.mudar({ tipo: 'conectada', conta: { ...atual.conta, empresas }, naDemo: false });
+    }
+    return resposta;
   }
 
   /** A sessão começou: a tela passa a mostrar os dados da conta (e não os da demonstração). */

@@ -1,4 +1,5 @@
-// Peças dos formulários da conta (C2b, ADR 0016): Criar conta, Entrar e excluir a conta.
+// Peças dos formulários da conta (C2b, ADR 0016): Criar conta, Entrar e excluir a conta; e do cadastro da empresa
+// (C3a, ADR 0018): a lista de escolha e o grupo de opções.
 //
 // - Cada campo tem rótulo visível, e a ajuda e o erro ficam ligados ao campo por aria-describedby, para o leitor
 //   de tela ler junto (WCAG 1.3.1 e 3.3.1). O campo com erro leva aria-invalid.
@@ -19,6 +20,7 @@ import {
   useState,
   type InputHTMLAttributes,
   type ReactNode,
+  type SelectHTMLAttributes,
   type Ref,
 } from 'react';
 import { ErroApi } from '../api/problema.ts';
@@ -382,4 +384,122 @@ export function rotuloDoEnvio(enviando: boolean, esperaMs: number | null, durant
     return `Aguarde ${formatarRestante(esperaMs)}`;
   }
   return enviando ? durante : acao;
+}
+
+interface PropsLista extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'id' | 'aria-describedby' | 'aria-invalid'> {
+  rotulo: string;
+  ajuda?: ReactNode;
+  erro?: string | null;
+  id?: string;
+  ref?: Ref<HTMLSelectElement>;
+  children: ReactNode;
+}
+
+/** Uma lista de escolha (o `<select>` do navegador), com o rótulo, a ajuda e o erro como os outros campos. */
+export function CampoDeLista({ rotulo, ajuda, erro = null, id, ref, children, ...lista }: PropsLista) {
+  const idCampo = useIdDoCampo(id);
+  const idAjuda = `${idCampo}-ajuda`;
+  const idErro = `${idCampo}-erro`;
+  const descricao = [ajuda === undefined ? null : idAjuda, erro === null ? null : idErro].filter((x) => x !== null).join(' ');
+  return (
+    <div className="campo campo--formulario">
+      <label htmlFor={idCampo}>{rotulo}</label>
+      <select
+        {...lista}
+        ref={ref}
+        id={idCampo}
+        className="campo__lista"
+        aria-invalid={erro === null ? undefined : true}
+        aria-describedby={descricao === '' ? undefined : descricao}
+      >
+        {children}
+      </select>
+      {ajuda !== undefined && (
+        <p id={idAjuda} className="campo__ajuda">
+          {ajuda}
+        </p>
+      )}
+      {erro !== null && (
+        <p id={idErro} className="campo__erro">
+          {erro}
+        </p>
+      )}
+    </div>
+  );
+}
+
+export interface Opcao {
+  valor: string;
+  rotulo: ReactNode;
+  /** Uma frase sob o rótulo, lida junto da opção. */
+  detalhe?: ReactNode;
+}
+
+interface PropsOpcoes {
+  legenda: string;
+  nome: string;
+  opcoes: readonly Opcao[];
+  valor: string | null;
+  aoEscolher: (valor: string) => void;
+  ajuda?: ReactNode;
+  erro?: string | null;
+  /** A primeira opção recebe o foco quando o envio acusa este grupo. */
+  ref?: Ref<HTMLInputElement>;
+}
+
+/**
+ * Uma escolha entre poucas opções, com a frase de cada uma à vista (rádios num fieldset com a legenda). O erro e a
+ * ajuda ficam ligados ao grupo pelo aria-describedby do fieldset.
+ */
+export function GrupoDeOpcoes({ legenda, nome, opcoes, valor, aoEscolher, ajuda, erro = null, ref }: PropsOpcoes) {
+  const base = useIdDoCampo(undefined);
+  const idAjuda = `${base}-ajuda`;
+  const idErro = `${base}-erro`;
+  const descricao = [ajuda === undefined ? null : idAjuda, erro === null ? null : idErro].filter((x) => x !== null).join(' ');
+  return (
+    <fieldset
+      className="opcoes"
+      aria-invalid={erro === null ? undefined : true}
+      aria-describedby={descricao === '' ? undefined : descricao}
+    >
+      <legend>{legenda}</legend>
+      {ajuda !== undefined && (
+        <p id={idAjuda} className="campo__ajuda">
+          {ajuda}
+        </p>
+      )}
+      {opcoes.map((opcao, i) => {
+        const idOpcao = `${base}-${String(i)}`;
+        return (
+          <div key={opcao.valor} className="opcoes__opcao">
+            <input
+              ref={i === 0 ? ref : undefined}
+              id={idOpcao}
+              type="radio"
+              name={nome}
+              value={opcao.valor}
+              checked={valor === opcao.valor}
+              aria-describedby={opcao.detalhe === undefined ? undefined : `${idOpcao}-detalhe`}
+              onChange={() => {
+                aoEscolher(opcao.valor);
+              }}
+            />
+            <label htmlFor={idOpcao} className="opcoes__texto">
+              <span className="opcoes__rotulo">{opcao.rotulo}</span>
+              {opcao.detalhe !== undefined && (
+                <span id={`${idOpcao}-detalhe`} className="opcoes__detalhe">
+                  {opcao.detalhe}
+                </span>
+              )}
+            </label>
+          </div>
+        );
+      })}
+      {erro !== null && (
+        <p id={idErro} className="campo__erro">
+          {erro}
+        </p>
+      )}
+    </fieldset>
+  );
 }

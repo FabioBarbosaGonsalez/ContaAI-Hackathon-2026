@@ -1,4 +1,5 @@
-// As conferências que a tela faz antes de enviar os formulários da conta (C2b, ADR 0016).
+// As conferências que a tela faz antes de enviar os formulários da conta (C2b, ADR 0016) e o cadastro da empresa
+// (C3a, ADR 0018).
 //
 // - Elas só poupam uma ida à API com um erro óbvio. Quem decide é o backend, que confere tudo de novo e responde
 //   com a frase dele (senha comum, e-mail já usado etc.), e a tela mostra essa frase.
@@ -17,6 +18,13 @@ export const PADRAO_CODIGO = /^[0-9]{6}$/u;
 export const PADRAO_RECUPERACAO = /^[A-Za-z2-7]{4}-?[A-Za-z2-7]{4}-?[A-Za-z2-7]{5}$/u;
 /** Contrato: CadastroRequisicao.organizacao (maxLength). */
 export const ORGANIZACAO_MAXIMA = 120;
+/** Contrato: EmpresaCadastroRequisicao.cnpj (o padrão do backend, app/cnpj.py). */
+export const PADRAO_CNPJ = /^[0-9A-Z]{12}[0-9]{2}$/u;
+/** Contrato: EmpresaCadastroRequisicao.razaoSocial (maxLength). */
+export const RAZAO_SOCIAL_MAXIMA = 150;
+/** O backend recusa caractere de controle nos textos do cadastro (contrato.py, _texto_de_cadastro). */
+// eslint-disable-next-line no-control-regex -- é justamente o que a regra procura
+const CONTROLE = /[\x00-\x1f\x7f]/u;
 
 /**
  * Quantos caracteres o texto tem para o backend: pontos de código, como o len() do Python e o maxLength do
@@ -69,6 +77,65 @@ export function conferirOrganizacao(nome: string): string | null {
   }
   if (tamanhoEmPontos(texto) > ORGANIZACAO_MAXIMA) {
     return `O nome pode ter no máximo ${String(ORGANIZACAO_MAXIMA)} caracteres.`;
+  }
+  return null;
+}
+
+/**
+ * O CNPJ como a API o recebe: sem os pontos, a barra, o traço e os espaços, e com as letras em maiúsculas (a
+ * Receita só fala em maiúsculas; ADR 0017). O que sobrar fora do formato fica, para a conferência recusar.
+ */
+export function normalizarCnpj(texto: string): string {
+  return texto.replace(/[.\-/\s]/gu, '').toUpperCase();
+}
+
+/**
+ * Um dígito verificador, pelo cálculo do Serpro ("Cálculo dos dígitos verificadores de CNPJ alfanumérico"): o valor
+ * de cada caractere é o código ASCII menos 48; os pesos vão de 2 a 9, da direita para a esquerda, recomeçando
+ * depois do oitavo; resto 0 ou 1 dá 0, senão 11 menos o resto. Para os dígitos, é o cálculo do CNPJ numérico. É o
+ * mesmo de backend/app/cnpj.py, e o backend confere de novo.
+ */
+function digito(base: string): string {
+  let soma = 0;
+  Array.from(base)
+    .reverse()
+    .forEach((caractere, i) => {
+      soma += (caractere.charCodeAt(0) - 48) * (2 + (i % 8));
+    });
+  const resto = soma % 11;
+  return resto < 2 ? '0' : String(11 - resto);
+}
+
+/** Os dois dígitos verificadores dos 12 primeiros caracteres (já no formato: dígitos ou letras maiúsculas). */
+export function digitosVerificadoresDoCnpj(base: string): string {
+  const primeiro = digito(base);
+  return primeiro + digito(base + primeiro);
+}
+
+export function conferirCnpj(texto: string): string | null {
+  const valor = normalizarCnpj(texto);
+  if (valor === '') {
+    return 'Informe o CNPJ.';
+  }
+  if (!PADRAO_CNPJ.test(valor)) {
+    return 'Confira o CNPJ: são 14 caracteres, os 12 primeiros com números ou letras e os 2 últimos com números.';
+  }
+  if (digitosVerificadoresDoCnpj(valor.slice(0, 12)) !== valor.slice(12)) {
+    return 'CNPJ inválido: confira os dígitos verificadores.';
+  }
+  return null;
+}
+
+export function conferirRazaoSocial(texto: string): string | null {
+  const valor = texto.trim();
+  if (valor === '') {
+    return 'Informe a razão social.';
+  }
+  if (tamanhoEmPontos(valor) > RAZAO_SOCIAL_MAXIMA) {
+    return `A razão social pode ter no máximo ${String(RAZAO_SOCIAL_MAXIMA)} caracteres.`;
+  }
+  if (CONTROLE.test(valor)) {
+    return 'Use só texto, sem caracteres de controle.';
   }
   return null;
 }

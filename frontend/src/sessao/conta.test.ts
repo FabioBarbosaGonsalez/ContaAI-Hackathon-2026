@@ -1,6 +1,8 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { criarCliente } from '../api/cliente.ts';
+import empresaCadastrada from '../teste/fixtures/empresa-cadastrada.json';
+import erroEmpresaDigito from '../teste/fixtures/erro-empresa-digito.json';
 import { CONTA_DE_TESTE } from '../teste/sessaoDeTeste.ts';
 import { SessaoConta } from './conta.ts';
 import { SessaoEspaco } from './espaco.ts';
@@ -404,6 +406,65 @@ describe('SessaoConta: ações', () => {
     liberar(SEM_SESSAO());
     await consulta;
     expect(m.sessao.obter()).toMatchObject({ tipo: 'conectada', naDemo: false });
+  });
+
+  it('cadastrar a empresa: a conta passa a ter o CNPJ da resposta e a tela volta aos dados da conta (C3a)', async () => {
+    const m = montarAcoes({ 'GET /conta': NA_CONTA, 'POST /empresas': () => json(empresaCadastrada, 201) });
+    await conectar(m);
+    m.sessao.verDemonstracao();
+    const corpo = {
+      cnpj: '12ABC34501DE35',
+      razaoSocial: 'Mercearia Exemplo Ltda',
+      regimeAtual: 'simples_tradicional',
+      uf: 'RS',
+      municipio: 4314902,
+      cAtivSN: '01', // taste-skill-ignore: código oficial da atividade do Simples (cAtivSN), não é numeração
+    } as const;
+    const resposta = await m.sessao.cadastrarEmpresa(m.cliente, corpo);
+    expect(resposta.empresa.municipioNome).toBe('Porto Alegre');
+    expect(m.sessao.obter()).toMatchObject({ tipo: 'conectada', naDemo: false, conta: { empresas: ['12ABC34501DE35'] } });
+    const pedido = m.pedidos.at(-1);
+    expect(pedido?.rota).toBe('POST /empresas');
+    expect(pedido?.credenciais).toBe('same-origin');
+    expect(JSON.parse(pedido?.corpo ?? '{}')).toEqual(corpo);
+  });
+
+  it('cadastrar a empresa recusado (422): o erro sobe com a frase da API, e a conta continua sem empresa', async () => {
+    const m = montarAcoes({ 'GET /conta': NA_CONTA, 'POST /empresas': () => json(erroEmpresaDigito, 422) });
+    await conectar(m);
+    await expect(
+      m.sessao.cadastrarEmpresa(m.cliente, {
+        cnpj: '12ABC34501DE36',
+        razaoSocial: 'X',
+        regimeAtual: 'simples_tradicional',
+        uf: 'RS',
+        municipio: 4314902,
+        cAtivSN: '01', // taste-skill-ignore: código oficial da atividade do Simples (cAtivSN), não é numeração
+      }),
+    ).rejects.toMatchObject({ status: 422, message: erroEmpresaDigito.detail });
+    expect(m.sessao.obter()).toMatchObject({ tipo: 'conectada', conta: { empresas: [] } });
+  });
+
+  it('um GET /conta que sai antes do cadastro da empresa e chega depois não a tira da conta', async () => {
+    const m = montarAcoes({ 'GET /conta': NA_CONTA, 'POST /empresas': () => json(empresaCadastrada, 201) });
+    await conectar(m);
+    let liberar: (r: Response) => void = () => undefined;
+    const lento = new Promise<Response>((resolver) => {
+      liberar = resolver;
+    });
+    const clienteLento = criarCliente({ baseUrl: 'http://api.teste', fetch: () => lento });
+    const consulta = m.sessao.carregar(clienteLento, m.modo);
+    await m.sessao.cadastrarEmpresa(m.cliente, {
+      cnpj: '12ABC34501DE35',
+      razaoSocial: 'Mercearia Exemplo Ltda',
+      regimeAtual: 'simples_tradicional',
+      uf: 'RS',
+      municipio: 4314902,
+      cAtivSN: '01', // taste-skill-ignore: código oficial da atividade do Simples (cAtivSN), não é numeração
+    });
+    liberar(json(CONTA_DE_TESTE));
+    await consulta;
+    expect(m.sessao.obter()).toMatchObject({ conta: { empresas: ['12ABC34501DE35'] } });
   });
 
   it('nenhuma ação grava no armazenamento do navegador', async () => {

@@ -1,0 +1,140 @@
+/* A empresa da conta (C3a, ADR 0018): a primeira vez, o cadastro e a empresa nova sem itens. */
+
+/* A primeira vez: o estado vazio no lugar das páginas do app, na largura da coluna (como os blocos). */
+.primeira-vez {
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.primeira-vez p {
+  max-width: 720px;
+}
+
+.primeira-vez__titulo {
+  font-size: var(--tamanho-secao);
+  line-height: var(--altura-secao);
+  font-weight: var(--peso-medio);
+}
+
+.primeira-vez__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco);
+}
+
+/* A lista de escolha do formulário, com a mesma caixa do campo de texto. */
+.campo__lista {
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--borda-campo);
+  border-radius: var(--raio-controle);
+  background: var(--superficie);
+  color: var(--texto);
+}
+
+.campo__lista[aria-invalid='true'] {
+  border-color: var(--negativo);
+}
+
+.campo__lista:disabled {
+  color: var(--texto-suave);
+}
+
+.campo__nome {
+  font-weight: var(--peso-medio);
+}
+
+.campo__cnpj {
+  letter-spacing: 0.04em;
+}
+
+/* O grupo de opções (regime e atividade): a legenda como o rótulo de um campo, e cada opção com a sua frase. */
+.opcoes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 560px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.opcoes legend {
+  padding: 0;
+  margin-bottom: 4px;
+  font-weight: var(--peso-medio);
+}
+
+.opcoes__opcao {
+  display: flex;
+  gap: var(--espaco);
+  align-items: flex-start;
+  padding: 10px 0;
+}
+
+.opcoes__opcao + .opcoes__opcao {
+  border-top: 1px solid var(--regua);
+}
+
+.opcoes__opcao input {
+  margin-top: 3px;
+  accent-color: var(--acao);
+}
+
+.opcoes__texto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.opcoes__detalhe {
+  color: var(--texto-suave);
+  font-size: var(--tamanho-pequeno);
+  line-height: var(--altura-pequeno);
+}
+
+/* A empresa nova, sem itens: os dados do cadastro ao lado do que falta. */
+.empresa__dados {
+  display: grid;
+  grid-template-columns: 136px minmax(0, 1fr);
+  gap: 8px var(--espaco);
+  margin: 0;
+}
+
+.empresa__dados dt {
+  color: var(--texto-suave);
+}
+
+.empresa__dados dd {
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .primeira-vez__acoes,
+  .primeira-vez__acoes > a {
+    width: 100%;
+  }
+
+  .primeira-vez__acoes > a {
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  .campo__lista {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .opcoes {
+    max-width: none;
+  }
+
+  .empresa__dados {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+
+  .empresa__dados dd + dt {
+    margin-top: 8px;
+  }
+}

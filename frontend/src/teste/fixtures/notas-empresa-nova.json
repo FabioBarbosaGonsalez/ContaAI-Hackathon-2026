@@ -1,0 +1,13 @@
+{
+  "empresa": {
+    "cnpj": "12ABC34501DE35",
+    "razaoSocial": "Mercearia Exemplo Ltda",
+    "regimeAtual": "simples_tradicional",
+    "uf": "RS",
+    "municipio": 4314902,
+    "municipioNome": "Porto Alegre",
+    "dataCenario": "2027-03-16"
+  },
+  "notas": [],
+  "aviso": "Dados cadastrados pela sua empresa. Os resultados são simulações com as calculadoras oficiais: não são apuração fiscal e não substituem o contador."
+}

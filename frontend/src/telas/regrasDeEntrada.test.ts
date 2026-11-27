@@ -7,13 +7,19 @@ import {
   ORGANIZACAO_MAXIMA,
   PADRAO_CODIGO,
   PADRAO_EMAIL,
+  PADRAO_CNPJ,
   PADRAO_RECUPERACAO,
+  RAZAO_SOCIAL_MAXIMA,
+  conferirCnpj,
   conferirCodigo,
   conferirEmail,
   conferirOrganizacao,
+  conferirRazaoSocial,
   conferirRecuperacao,
   conferirSenhaAtual,
   conferirSenhaNova,
+  digitosVerificadoresDoCnpj,
+  normalizarCnpj,
   normalizarCodigo,
   normalizarRecuperacao,
   tamanhoDaSenha,
@@ -48,6 +54,12 @@ describe('os padrões são os do contrato', () => {
     expect(padraoAnulavel('SegundaEtapaRequisicao', 'codigo')).toBe(PADRAO_CODIGO.source);
     expect(padraoAnulavel('SegundaEtapaRequisicao', 'codigoRecuperacao')).toBe(PADRAO_RECUPERACAO.source);
     expect(propriedade('CadastroRequisicao', 'organizacao').maxLength).toBe(ORGANIZACAO_MAXIMA);
+  });
+
+  it('CNPJ e razão social do cadastro da empresa (C3a)', () => {
+    expect(propriedade('EmpresaCadastroRequisicao', 'cnpj').pattern).toBe(PADRAO_CNPJ.source);
+    expect(propriedade('EmpresaExcluirRequisicao', 'cnpjConfirmacao').pattern).toBe(PADRAO_CNPJ.source);
+    expect(propriedade('EmpresaCadastroRequisicao', 'razaoSocial').maxLength).toBe(RAZAO_SOCIAL_MAXIMA);
   });
 });
 
@@ -126,5 +138,45 @@ describe('códigos', () => {
     for (const ruim of ['ABCD-EFGH-IJK2', 'ABCD-EFGH-IJK18', 'ABCD_EFGH_IJK23']) {
       expect(conferirRecuperacao(ruim), ruim).toMatch(/^O código de recuperação tem 13/u);
     }
+  });
+});
+
+describe('CNPJ (C3a, ADR 0018)', () => {
+  it('o exemplo do manual do Serpro: 12.ABC.345/01DE-35', () => {
+    expect(digitosVerificadoresDoCnpj('12ABC34501DE')).toBe('35');
+    expect(conferirCnpj('12ABC34501DE35')).toBeNull();
+    expect(conferirCnpj('12ABC34501DE36')).toBe('CNPJ inválido: confira os dígitos verificadores.');
+  });
+
+  it('o numérico é o mesmo cálculo (a base e os dígitos do teste do backend, test_cnpj.py)', () => {
+    expect(digitosVerificadoresDoCnpj('112223330001')).toBe('81');
+    expect(conferirCnpj('11.222.333/0001-81')).toBeNull();
+    expect(conferirCnpj('11222333000182')).toMatch(/^CNPJ inválido/u);
+  });
+
+  it('aceita a máscara, os espaços e as minúsculas, e manda à API só os 14 caracteres em maiúsculas', () => {
+    expect(normalizarCnpj(' 12.abc.345/01de-35 ')).toBe('12ABC34501DE35');
+    expect(conferirCnpj('12.abc.345/01de-35')).toBeNull();
+  });
+
+  it('o CNPJ da demonstração tem o dígito inválido de propósito (ADR 0008) e é recusado', () => {
+    expect(conferirCnpj('36.817.420/0001-13')).toMatch(/^CNPJ inválido/u);
+  });
+
+  it('fora do formato: vazio, curto, longo, letra nos dígitos verificadores, acento e dígito de outra escrita', () => {
+    expect(conferirCnpj('')).toBe('Informe o CNPJ.');
+    for (const ruim of ['12ABC34501DE3', '12ABC34501DE355', '12ABC34501DEA5', '12ÁBC34501DE35', '١٢ABC34501DE35', '12ABC_34501DE35']) {
+      expect(conferirCnpj(ruim), ruim).toMatch(/^Confira o CNPJ/u);
+    }
+  });
+});
+
+describe('razão social (C3a)', () => {
+  it('sem os espaços das pontas, até 150 caracteres contados como o backend, e sem caractere de controle', () => {
+    expect(conferirRazaoSocial('   ')).toBe('Informe a razão social.');
+    expect(conferirRazaoSocial(`  ${'a'.repeat(RAZAO_SOCIAL_MAXIMA)}  `)).toBeNull();
+    expect(conferirRazaoSocial('😀'.repeat(RAZAO_SOCIAL_MAXIMA))).toBeNull(); // taste-skill-ignore: dado de teste (pontos de código)
+    expect(conferirRazaoSocial('a'.repeat(RAZAO_SOCIAL_MAXIMA + 1))).toMatch(/no máximo 150/u);
+    expect(conferirRazaoSocial('Empresa\tTeste')).toBe('Use só texto, sem caracteres de controle.');
   });
 });

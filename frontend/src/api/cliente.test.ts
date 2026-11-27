@@ -165,6 +165,20 @@ describe('chamar', () => {
     expect(erro.tipo).toBe('tempo');
   });
 
+  it('o tempo limite vale mesmo que o fetch nunca veja o sinal (a cópia da Request pode perdê-lo no Node)', async () => {
+    const { cliente } = clienteCom(() => new Promise<Response>(() => undefined), 20);
+    const erro = await erroDe(chamar(cliente.GET('/saude')));
+    expect(erro.tipo).toBe('tempo');
+  });
+
+  it('o cancelamento de quem chamou também vale sem o fetch ver o sinal', async () => {
+    const controle = new AbortController();
+    const { cliente } = clienteCom(() => new Promise<Response>(() => undefined));
+    const pedido = erroDe(chamar(cliente.GET('/saude', { signal: controle.signal })));
+    controle.abort();
+    expect((await pedido).tipo).toBe('cancelado');
+  });
+
   it('cancelamento de quem chamou vira tipo cancelado', async () => {
     const controle = new AbortController();
     const { cliente } = clienteCom(

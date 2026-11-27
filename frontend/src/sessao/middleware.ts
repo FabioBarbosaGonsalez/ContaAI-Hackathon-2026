@@ -2,7 +2,14 @@
 
 import type { Middleware } from 'openapi-fetch';
 import { CABECALHO_ESPACO, CABECALHO_TOKEN } from '../api/cliente.ts';
-import { ROTAS_COM_ESPACO, ROTAS_COM_TOKEN, ROTAS_DA_CONTA, ROTAS_DE_ENTRADA, chaveDaRota } from '../api/rotas.ts';
+import {
+  ROTAS_COM_ESPACO,
+  ROTAS_COM_TOKEN,
+  ROTAS_DA_CONTA,
+  ROTAS_DA_EMPRESA,
+  ROTAS_DE_ENTRADA,
+  chaveDaRota,
+} from '../api/rotas.ts';
 import type { SessaoConta } from './conta.ts';
 import type { SessaoEspaco } from './espaco.ts';
 import type { SessaoToken } from './token.ts';
@@ -22,7 +29,7 @@ async function tipoDoProblema(resposta: Response): Promise<unknown> {
  * - O id do espaço só vai às rotas que o declaram no contrato; o token também.
  * - Um header que quem chamou já pôs não é trocado.
  * - O cookie da sessão (ADR 0016):
- *   - as rotas da conta sempre o levam;
+ *   - as rotas da conta e as da empresa da conta (`/empresas`) sempre o levam;
  *   - as outras só o levam quando a tela mostra os dados da conta. Fora disso (sem conta, ou com a conta vendo a
  *     demonstração), o pedido sai com `credentials: 'omit'`, e a API responde como a quem não tem conta;
  *   - na conta, nem o id do espaço nem o token da demo vão: para a API, o espaço do header vence o cookie.
@@ -47,7 +54,7 @@ export function middlewareDaSessao(espaco: SessaoEspaco, token: SessaoToken, con
           request.headers.set(CABECALHO_TOKEN, valor);
         }
       }
-      if (!ROTAS_DA_CONTA.has(chave) && !naConta) {
+      if (!ROTAS_DA_CONTA.has(chave) && !ROTAS_DA_EMPRESA.has(chave) && !naConta) {
         // Copiar a Request com opções zera o referrer; o fetch do cliente o zera de novo de qualquer forma.
         return new Request(request, { credentials: 'omit' });
       }

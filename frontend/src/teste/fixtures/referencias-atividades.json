@@ -1,0 +1,26 @@
+{
+  "data": "2027-03-16",
+  "atividades": [
+    {
+      "cAtivSN": "01",
+      "descricao": "Revenda de mercadorias, venda de mercadorias industrializadas pelo contribuinte",
+      "anexo": "I"
+    },
+    {
+      "cAtivSN": "02",
+      "descricao": "Operações com os demais bens materiais, sem incidência de ICMS",
+      "anexo": "I"
+    },
+    {
+      "cAtivSN": "03",
+      "descricao": "Venda de mercadorias industrializadas pelo contribuinte, com industrialização incentivada na Zona Franca de Manaus",
+      "anexo": "II"
+    },
+    {
+      "cAtivSN": "04",
+      "descricao": "Operações com os demais bens materiais, com industrialização incentivada na Zona Franca de Manaus, sem incidência de ICMS",
+      "anexo": "II"
+    }
+  ],
+  "fonte": "GET /calculadora/simples-nacional/atividades?data=2027-03-16&tpDoc=55 (motor SN 1.0.2)"
+}
