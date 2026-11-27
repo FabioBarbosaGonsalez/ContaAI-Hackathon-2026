@@ -1,6 +1,6 @@
 # ADR 0016: telas de entrada, a conta na tela e a demonstração para quem tem conta (C2)
 
-- Status: aceito para a C2a e a C2b (criar conta, entrar e o menu da conta, seção no fim); a C2c (notas de exemplo e a verificação final) completa este ADR
+- Status: aceito (C2a; C2b e C2c nas seções do fim)
 - Data: 2026-11-26
 - Etapa: C2 do [plano v2.1](../plano-v2.1.md), dividida em três PRs pelo usuário
 - Código da C2a:
@@ -14,6 +14,10 @@
   - `frontend/src/shell/MenuDaConta.tsx`, e as rotas `/entrar`, `/criar-conta` e `/conta` em `shell/rotas.ts`;
   - `frontend/src/sessao/conta.ts` (as ações da conta na `SessaoConta`);
   - backend: a entrada numa conta pendente, o tipo `/problemas/conta-bloqueada` e o nome da organização (revisões da C2b no [ADR 0015](0015-contas.md)).
+- Código da C2c:
+  - `frontend/src/dados/notasDeExemplo.ts` e a seção das notas de exemplo em `frontend/src/telas/Notas.tsx`;
+  - `frontend/src/shell/navegacao.tsx` (`ArquivoParaBaixar`);
+  - `frontend/vite.config.ts` (`server.fs.allow` e `build.assetsInlineLimit`).
 
 ## Contexto
 
@@ -122,3 +126,33 @@ Feita em 10 etapas, validadas pelo usuário; o detalhe de cada uma, com o que fo
 - **Fica com o usuário, num Chrome comum e num celular:** o balão do gerenciador de senhas (Criar conta e Entrar) e a leitura do QR pela câmera de um aplicativo autenticador de verdade. O Chrome sem janela não mostra o balão, e o jsQR leu o print, não uma foto da tela.
 - **O aviso de 3 códigos ou menos não aparece com o backend de hoje,** porque o código usado é trocado na hora e os restantes ficam em 10. Fica pronto e testado (decisão do usuário).
 - **Sem recuperação de senha nem confirmação de e-mail** (decisões do plano v2.1); por isso o cadastro não esconde que um e-mail já existe (ADR 0015).
+
+## C2c: notas de exemplo e o fechamento da C2 (2026-11-27)
+
+Feita em 5 etapas, validadas pelo usuário; o detalhe está no [plano v2.1](../plano-v2.1.md) (C2c).
+
+### Decisões
+
+1. **Uma fonte só, sem cópia:** a tela importa os XML de `data/demo/notas` (os mesmos das sementes e dos testes do backend) por `import.meta.glob` com `?url`. No build, o Vite copia cada arquivo para `dist/assets` com um hash no nome. Ficou fora uma rota nova no backend, que pediria contrato e não funcionaria no modo mock.
+2. **O servidor de desenvolvimento abre só essa pasta.** Definir `server.fs.allow` troca a raiz padrão pela lista (lido no código do Vite 8.3.8: `raw?.fs?.allow ?? [workspaceRoot]`). Por isso a lista repete `searchForWorkspaceRoot` e soma só `data/demo/notas`, que tem apenas XML fictícios. A lista de `deny` padrão (`.env`, chaves, `.git`) continua valendo. O build e o preview não usam essa lista.
+3. **O XML sai sempre como arquivo** (`build.assetsInlineLimit`): abaixo de 4 KB, o padrão do Vite, a nota 1 (2.394 bytes) e a nota sem par (1.769) iriam para dentro do código como `data:`.
+4. **As três notas, na ordem de interesse:** a nota 2 (a cerveja sobe e gera o alerta de margem), a sem par e a nota 1, marcada como já presente na demonstração. Importar a nota 1 de novo devolve o recibo gravado (`jaImportada`). As frases vêm de `data/demo/README.md` e foram conferidas com os recibos gerados pela API (fixtures da tela).
+5. **O link passa pela `ArquivoParaBaixar`,** no `navegacao.tsx`, o único arquivo que pode montar `href` (lint, item 2 de `docs/seguranca.md`). Ela só aceita um caminho que começa com uma barra, na mesma origem, sem consulta nem fragmento e terminado no nome pedido, e um nome em minúsculas com hífen e `.xml`. Com outro valor, a tela quebra. Há testes com esquema de script, `data:`, `blob:`, `//outro.site`, outra origem, barra invertida, `..`, consulta e fragmento.
+6. **A seção aparece também na demonstração compartilhada e no modo mock,** onde ninguém importa: a pessoa baixa a nota e cria um espaço.
+
+### Verificação (2026-11-27)
+
+- **Testes:** tela 491 (eram 463), backend 500, mais os 52 de referência; lint, tsc, build, `npm run seguranca`, `contrato:checar`, ruff, format e mypy. Os testes marcados `llm` ficaram de fora porque gastam crédito.
+- **Build:** os três XML saem em `dist/assets` com o sha256 igual ao do repositório. O `dist` não tem caminho local (nome de usuário, `C:/` nem `Users/`). Aparece só o caminho relativo do repositório, como chave do `import.meta.glob`.
+- **Servidor de desenvolvimento:** as notas respondem 200. `data/demo/sementes.json` (também com `..` direto e codificado), o backend e o `.git` respondem 403. `frontend/src` segue 200, como antes.
+- **No Chrome 158**, com o build, a CSP do cabeçalho e a API real, por roteiros do DevTools Protocol no scratchpad da sessão (fora do repositório):
+  - os três downloads, pelo clique do mouse, em 1440, 768 e 390 px, com o nome certo e o sha256 igual ao do repositório, sem sair de `/notas` e sem rolagem lateral;
+  - um espaço criado pela tela, onde os três arquivos baixados foram importados: o alerta da cerveja, os itens sem par e o aviso "já tinha sido importada";
+  - **a saída da C2:** criar conta (QR, código TOTP calculado no roteiro e os 10 códigos), sair pelo menu (`GET /conta` com 401), entrar com o código da janela seguinte, ver a demonstração com a conta (com as notas de exemplo) e "Voltar à minha conta". A conta de teste foi excluída no fim;
+  - nenhuma violação da CSP, nenhuma exceção, nenhum pedido fora da origem; nada da conta no armazenamento nem no endereço.
+- **Portão da skill:** `inspect.mjs --app` em `/notas` com 0 FAIL e 0 WARN nas três larguras; crítica em `.taste-skill/app/critica-c2c.md`.
+
+### Consequências
+
+- **Fica para a C3:** as notas de exemplo são da Serra Azul. Na empresa própria, a API recusa a nota de outro destinatário (422), e falta decidir se a seção some fora da demonstração e do espaço.
+- **Fica com o usuário:** a leitura do QR pela câmera de um aplicativo autenticador de verdade. O balão do gerenciador de senhas foi conferido pelo usuário num Chrome comum (2026-11-27).

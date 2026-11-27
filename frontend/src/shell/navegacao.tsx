@@ -92,3 +92,45 @@ export function Ancora({ id, children, ...resto }: PropsAncora) {
     </a>
   );
 }
+
+const NOME_DE_ARQUIVO = /^[a-z0-9]+(?:-[a-z0-9]+)*\.xml$/;
+
+type PropsArquivo = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'href' | 'download'> & {
+  /** O endereço que o build deu ao arquivo (import.meta.glob com ?url): um caminho da própria tela. */
+  endereco: string;
+  /** O nome com que o arquivo é salvo. */
+  nome: string;
+};
+
+/**
+ * Link para baixar um arquivo servido pela própria tela, como as notas de exemplo (C2c). Só aceita um caminho que
+ * começa com uma barra, na mesma origem, sem consulta nem fragmento e terminado no nome pedido (nada de esquema de
+ * script, data: ou //outro.site), e um nome em minúsculas com hífen e .xml. Fora disso, a tela quebra em vez de
+ * montar o endereço.
+ */
+export function ArquivoParaBaixar({ endereco, nome, children, ...resto }: PropsArquivo) {
+  if (!NOME_DE_ARQUIVO.test(nome)) {
+    throw new Error('Arquivo para baixar com nome fora do padrão');
+  }
+  // O build põe um hash no nome (nfe-compra-2-AbC12_-x.xml); o servidor de desenvolvimento serve o nome puro.
+  const base = nome.slice(0, -'.xml'.length);
+  const doArquivo = new RegExp(`/${base}(?:-[A-Za-z0-9_-]+)?\\.xml$`);
+  const origem = globalThis.location.origin;
+  const url = new URL(endereco, origem);
+  if (
+    !endereco.startsWith('/') ||
+    endereco.startsWith('//') ||
+    endereco.includes('\\') ||
+    url.origin !== origem ||
+    url.search !== '' ||
+    url.hash !== '' ||
+    !doArquivo.test(url.pathname)
+  ) {
+    throw new Error('Arquivo para baixar fora da própria tela');
+  }
+  return (
+    <a {...resto} href={url.pathname} download={nome}>
+      {children}
+    </a>
+  );
+}

@@ -139,6 +139,7 @@ A tela é a próxima camada exposta a XSS. A fundação do frontend (PR 2 da E5)
 2. **Nenhum texto da API vira `href`, `src`, `style` ou nome de atributo.**
    - Os links da tela são rotas fixas do próprio app: o `Link` só aceita o tipo `Caminho`, e o lint barra `href`/`src` montado de um valor em qualquer outro lugar.
    - Desde a C2a ([ADR 0016](adr/0016-telas-de-entrada.md)), a `Ancora`, no mesmo arquivo do `Link` (`src/shell/navegacao.tsx`), monta o `#id` do índice dos termos e da privacidade. Ela só aceita um id em minúsculas, dígitos e hífen, e a tela quebra com outro valor (testado com um esquema de script e com `//outro.site`).
+   - Desde a C2c ([ADR 0016](adr/0016-telas-de-entrada.md)), a `ArquivoParaBaixar`, no mesmo arquivo, monta o link das notas de exemplo. Ela só aceita um caminho que começa com uma barra, na mesma origem, sem consulta nem fragmento e terminado no nome pedido, e um nome em minúsculas com hífen e `.xml`. Com outro valor, a tela quebra (testado com esquema de script, `data:`, `blob:`, `//outro.site`, outra origem, barra invertida e `..`).
    - O atributo `style` é proibido.
    - Os ids que vão no caminho da API só podem ter letras, dígitos e hífen. Um `..` trocaria a rota pedida.
 3. **Sem script embutido na página gerada.** O `npm run seguranca` confere no `dist/` que não há `<script>` sem `src` próprio, `<style>`, atributo `style`, `on*=` ou mapa de código. A CSP da tela (`frontend/csp.ts`) é:

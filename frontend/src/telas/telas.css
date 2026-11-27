@@ -826,6 +826,47 @@ h3 {
   max-width: 100%;
 }
 
+/* Notas de exemplo (C2c): o nome do arquivo e, ao lado, o que a nota mostra; em tela estreita, um embaixo do
+ * outro. */
+
+.exemplos {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: var(--espaco);
+  border-top: 1px solid var(--regua);
+}
+
+.exemplos__lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.exemplos__linha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px var(--respiro);
+  padding-block: 8px;
+}
+
+.exemplos__linha + .exemplos__linha {
+  border-top: 1px solid var(--regua);
+}
+
+/* 24 px de alvo, o mínimo do WCAG 2.2 (2.5.8), sem depender da exceção de espaçamento. */
+.exemplos__linha a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  color: var(--texto);
+}
+
+.exemplos__descricao {
+  color: var(--texto-suave);
+}
+
 .notas__envio .campo input.campo__arquivo {
   width: 100%;
   min-height: 0;

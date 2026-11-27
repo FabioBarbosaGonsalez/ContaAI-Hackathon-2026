@@ -217,8 +217,9 @@ describe('estado da sessão na barra', () => {
 });
 
 describe('rodapé', () => {
-  // A igualdade com AVISO_LEGAL do backend é conferida em backend/tests/test_contrato.py: o Vite não deixa o
-  // teste ler arquivos fora de frontend/ com ?raw, e abrir essa permissão valeria para o servidor de desenvolvimento.
+  // A igualdade com AVISO_LEGAL do backend é conferida em backend/tests/test_contrato.py: o Vite só deixa ler fora
+  // de frontend/ o que está em server.fs.allow (desde a C2c, só data/demo/notas), e abrir o backend valeria para o
+  // servidor de desenvolvimento.
   it('mostra o aviso legal', async () => {
     await montar(() => json(SAUDE_MOCK));
     expect(within(screen.getByRole('contentinfo')).getByText(AVISO_LEGAL)).toBeDefined();

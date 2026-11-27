@@ -1,6 +1,7 @@
 /// <reference types="vitest/config" />
+import { resolve } from 'node:path';
 import react from '@vitejs/plugin-react';
-import { defineConfig, loadEnv, type Plugin } from 'vite';
+import { defineConfig, loadEnv, searchForWorkspaceRoot, type Plugin } from 'vite';
 import { cabecalhosDeSeguranca, politicaDeSeguranca } from './csp.ts';
 
 // A tela roda em http://127.0.0.1:3000, uma origem da lista do backend (Origin nos POST, ADR 0011).
@@ -19,6 +20,14 @@ function proxyDaApi(alvo: string) {
     },
   };
 }
+
+// As notas de exemplo (C2c, ADR 0016): os XML fictícios de data/demo/notas, os mesmos das sementes e dos testes
+// do backend. A tela os importa de lá (src/dados/notasDeExemplo.ts), sem cópia. O servidor de desenvolvimento só
+// serve arquivos de dentro de server.fs.allow, e definir essa lista troca a raiz padrão por ela (Vite 8.3.8,
+// resolveServerOptions: `raw?.fs?.allow ?? [workspaceRoot]`). Por isso a lista repete a raiz padrão
+// (searchForWorkspaceRoot) e soma só essa pasta, que tem apenas XML fictícios. A lista de deny padrão (.env,
+// chaves, .git) continua valendo. O build e o preview não usam essa lista.
+const PASTA_DAS_NOTAS = resolve(import.meta.dirname, '../data/demo/notas');
 
 const CHARSET = '<meta charset="UTF-8" />';
 
@@ -50,12 +59,19 @@ export default defineConfig(({ mode }) => {
   const alvo = loadEnv(mode, import.meta.dirname, 'CONTAAI_').CONTAAI_API_ALVO || API_LOCAL;
   return {
     plugins: [react(), cspNoBuild(api)],
-    server: { ...PORTA, proxy: proxyDaApi(alvo) },
+    server: {
+      ...PORTA,
+      proxy: proxyDaApi(alvo),
+      fs: { allow: [searchForWorkspaceRoot(import.meta.dirname), PASTA_DAS_NOTAS] },
+    },
     // O preview serve o build com os cabeçalhos e o proxy /api que a E6 vai repetir.
     preview: { ...PORTA, headers: cabecalhosDeSeguranca(api), proxy: proxyDaApi(alvo) },
     build: {
       // Sem mapas de código no build publicado.
       sourcemap: false,
+      // O XML sai sempre como arquivo: abaixo de 4 KB (o padrão), o Vite o embutiria no código como data:, e a
+      // nota 1 (2.394 bytes) e a nota sem par (1.769) virariam texto em base64 no lugar de um arquivo para baixar.
+      assetsInlineLimit: (arquivo) => (arquivo.endsWith('.xml') ? false : undefined),
       // As licenças das bibliotecas que vão no navegador, num arquivo ao lado do build: a MIT pede que o aviso
       // de copyright acompanhe as cópias, e o código minificado sai sem os comentários de licença. O Vite
       // monta a lista só com o que entra no build (build.license, Vite 8).

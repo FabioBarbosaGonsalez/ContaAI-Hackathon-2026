@@ -3,7 +3,7 @@
 // Blocos, na ordem das perguntas:
 // 1. o recibo da última importação, o maior bloco, que só aparece depois de importar: o achado (o custo que
 //    mudou e a margem que caiu), os alertas com "Aplicar", os itens casados, os itens sem par e as premissas;
-// 2. o envio do XML;
+// 2. o envio do XML, com as notas de exemplo para baixar (C2c);
 // 3. as notas já importadas (GET /notas).
 //
 // Todo texto da nota (nome do emitente, descrição do item) é do fornecedor: a tela o mostra como texto, nunca
@@ -25,9 +25,10 @@ import {
   reaisPorUnidade,
   TRACO,
 } from '../dados/formatar.ts';
+import { notasDeExemplo } from '../dados/notasDeExemplo.ts';
 import type { Alerta, Catalogo, NotaImportada, ReciboNota } from '../dados/pedidos.ts';
 import { useSessao } from '../sessao/contexto.tsx';
-import { Link } from '../shell/navegacao.tsx';
+import { ArquivoParaBaixar, Link } from '../shell/navegacao.tsx';
 import { Pagina } from '../shell/Pagina.tsx';
 import { Bloco, BotaoGravar, Carregando, FalhaNoBloco, ListaDePremissas } from './comum.tsx';
 import './telas.css';
@@ -327,6 +328,37 @@ function Recibo({ recibo, catalogo, abertos, aoAplicado }: PropsRecibo) {
 // ---------------------------------------------------------------------------
 // Envio do XML
 
+/**
+ * As notas fictícias de data/demo/notas para baixar (C2c). Aparecem também na demonstração compartilhada e no
+ * modo mock, onde ninguém importa: a pessoa baixa a nota e cria um espaço para importar. O link é um arquivo da
+ * mesma origem com `download` (ArquivoParaBaixar confere o endereço), sem blob: nem script.
+ */
+function NotasDeExemplo() {
+  const idTitulo = useId();
+  const idDescricao = useId();
+  const notas = notasDeExemplo();
+  if (notas.length === 0) {
+    return null;
+  }
+  return (
+    <section className="exemplos" aria-labelledby={idTitulo}>
+      <h3 id={idTitulo}>Notas de exemplo para baixar (fictícias)</h3>
+      <ul className="exemplos__lista">
+        {notas.map((n, i) => (
+          <li key={n.arquivo} className="exemplos__linha">
+            <ArquivoParaBaixar endereco={n.endereco} nome={n.arquivo} aria-describedby={`${idDescricao}-${String(i)}`}>
+              {n.arquivo}
+            </ArquivoParaBaixar>
+            <span id={`${idDescricao}-${String(i)}`} className="exemplos__descricao">
+              {n.descricao}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 function Envio({ aoImportada }: { aoImportada: (recibo: ReciboNota) => void }) {
   const { api } = useSessao();
   const gravacao = useGravacao();
@@ -415,6 +447,7 @@ function Envio({ aoImportada }: { aoImportada: (recibo: ReciboNota) => void }) {
           {falha}
         </p>
       )}
+      <NotasDeExemplo />
     </Bloco>
   );
 }
