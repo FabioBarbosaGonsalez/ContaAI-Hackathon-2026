@@ -13,6 +13,8 @@ Tudo aqui é **fictício** (princípio P10). Empresas, CNPJs, preços, custos, m
 | `carteira/notas/*.xml` | Notas das duas empresas, com grupos validados no XSD. Na Vale Verde, a nota 2002 sobe o biscoito (R$ 3,10 → R$ 3,70) e o chocolate (R$ 4,10 → R$ 4,90) e gera dois alertas. |
 | `sementes.json` | Manifesto do estado inicial do modo real: as três empresas, os clientes B2B de cada uma (`clientesB2B`, ligados pelo CNPJ da empresa que vende) e as notas iniciais (nota 1001 da Serra Azul e as notas da carteira). A restauração carrega isso pelo mesmo código do `POST /nfe/importar` e recusa um cliente de empresa fora das sementes ou com item fora do catálogo dela (ADR 0011). |
 
+A tela de Notas oferece os três arquivos de `notas/` para baixar, lidos desta pasta pelo build da tela, sem cópia ([ADR 0016](../../docs/adr/0016-telas-de-entrada.md), C2c). As frases de lá resumem esta tabela: mudar um arquivo aqui pede rever a frase em `frontend/src/dados/notasDeExemplo.ts` (um teste acusa arquivo sem frase).
+
 Cada item do catálogo traz `cnpjFornecedor` e `codigoFornecedor`: o código do produto (cProd) só é único dentro de um fornecedor, então a nota casa pelo par (ADR 0008).
 
 ## Catálogo

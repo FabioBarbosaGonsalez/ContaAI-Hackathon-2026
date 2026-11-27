@@ -97,7 +97,8 @@ Valores do cenário de demonstração (simulação de março de 2027, premissas 
   - o crédito lido da nota (fonte: grupo IBSCBS) ou calculado pelo motor;
   - itens sem par, como pergunta, com o motivo que a API devolve (código sem cadastro, NCM ou unidade diferente);
   - a mesma nota de novo: "já importada", com o recibo da primeira vez (`jaImportada`);
-  - alertas gerados.
+  - alertas gerados;
+  - desde a C2c, as três notas de exemplo para baixar (fictícias, de `data/demo/notas`), no bloco de importar.
 - **Dados:** `POST /nfe/importar` (o recibo) e, desde o PR 3b, `GET /notas?cnpj=` (as notas já importadas, da emissão mais recente para a mais antiga, com as contagens de itens e de alertas abertos).
 
 ### Explicação (painel lateral)

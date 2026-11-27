@@ -131,6 +131,32 @@ describe('Notas', () => {
     expect(screen.getByText(/só leitura: nada é gravado/u)).toBeDefined();
   });
 
+  it('oferece as três notas de exemplo para baixar, cada uma com o que ela mostra', async () => {
+    await montar('/notas', api(SAUDE_REAL));
+    const secao = await screen.findByRole('region', { name: 'Notas de exemplo para baixar (fictícias)' });
+    const links = within(secao).getAllByRole('link');
+    expect(links.map((l) => [l.textContent, l.getAttribute('download')])).toEqual([
+      ['nfe-compra-2.xml', 'nfe-compra-2.xml'],
+      ['nfe-item-sem-par.xml', 'nfe-item-sem-par.xml'],
+      ['nfe-compra-1.xml', 'nfe-compra-1.xml'],
+    ]);
+    for (const link of links) {
+      expect(link.getAttribute('href')?.endsWith(`/data/demo/notas/${link.textContent}`)).toBe(true);
+    }
+    // A frase do que a nota mostra é a descrição do link, para o leitor de tela.
+    expect(links[0]?.getAttribute('aria-describedby')).not.toBeNull();
+    const descricao = document.getElementById(links[0]?.getAttribute('aria-describedby') ?? '');
+    expect(descricao?.textContent).toBe('A cerveja sobe de R$ 2,60 para R$ 3,05 e gera um alerta de margem.');
+    // Sem espaço, importar fica desligado, mas baixar continua valendo: a pessoa baixa e cria o espaço.
+    expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Importar nota' }).disabled).toBe(true);
+  });
+
+  it('no modo mock, as notas de exemplo também aparecem', async () => {
+    await montar('/notas', api(SAUDE_MOCK));
+    const secao = await screen.findByRole('region', { name: 'Notas de exemplo para baixar (fictícias)' });
+    expect(within(secao).getAllByRole('link')).toHaveLength(3);
+  });
+
   it('o campo só oferece XML', async () => {
     await montar('/notas', api(SAUDE_REAL), true);
     const campo = await screen.findByLabelText('Arquivo XML da NF-e');

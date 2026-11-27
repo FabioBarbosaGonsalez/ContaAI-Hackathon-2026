@@ -34,7 +34,8 @@ Por isso entram três etapas de contas (C1 a C3) entre o 3b e o 3c. O 3c depende
 | C1: contas no backend | PR #21, ADR 0015 |
 | B0: aceite dos termos (antes das telas da C2) | PR #22, revisão no ADR 0015 |
 | C2a: página inicial, rotas, a conta na tela, termos e privacidade | PR #23, ADR 0016 |
-| C2b: criar conta, entrar, o menu da conta e Sua conta | seção da C2b no ADR 0016 |
+| C2b: criar conta, entrar, o menu da conta e Sua conta | PR #24, seção da C2b no ADR 0016 |
+| C2c: notas de exemplo e o fechamento da C2 | seção da C2c no ADR 0016 |
 
 ## A ordem
 
@@ -42,7 +43,7 @@ Por isso entram três etapas de contas (C1 a C3) entre o 3b e o 3c. O 3c depende
 |---|---|---|---|
 | 1 | **3b** (feito) | Telas de Notas e de Regime | `GET /notas` (feito) |
 | 2 | **C1** (feito) | Contas no backend | 3b |
-| 3 | **C2** (B0, C2a e C2b feitos) | Telas de entrada | C1 |
+| 3 | **C2** (feito) | Telas de entrada | C1 |
 | 4 | **C3** | Dados da própria empresa | C1 e C2 |
 | 5 | **3c** | Contador, seletor de empresa e chat | C1 a C3 |
 | 6 | **E6** | Hospedagem, HTTPS, testes de ponta a ponta, vídeo e pitch | todas |
@@ -74,7 +75,7 @@ Cada etapa sai em um PR, ou em mais de um quando o backend vem antes da tela.
 - portão da skill com 0 FAIL e 0 WARN nas quatro telas da barra; crítica em `.taste-skill/app/critica-3b.md`;
 - Chrome com o build: 0 violações de CSP e 0 erros de JS no fluxo de importar e aplicar;
 - o que mudou: o Painel sem alerta (achado da medição na demonstração compartilhada) e o crédito por unidade na comparação, que só vai quando veio da nota;
-- ficou para depois: cadastrar o par de um item sem par (C3), oferecer as notas de exemplo na tela (C2) e rever o recibo de uma nota antiga (rota nova, sem etapa).
+- ficou para depois: cadastrar o par de um item sem par (C3), oferecer as notas de exemplo na tela (C2; feito na C2c) e rever o recibo de uma nota antiga (rota nova, sem etapa).
 
 ## C1: contas no backend
 
@@ -197,7 +198,7 @@ O que mudou em relação a este mapa:
 5. **Aceite dos termos com registro:** uma caixa obrigatória no cadastro, com a versão aceita e a data gravadas.
    - A política de privacidade entra como link, para ler, e não como consentimento.
    - **Base legal (lida na C2a):** o art. 7º, V, a execução de contrato a pedido do titular. É a que a privacidade cita para os dados da conta.
-6. **As notas de exemplo** (pendência do 3b) entram na C2.
+6. **As notas de exemplo** (pendência do 3b) entram na C2. **Feito na C2c.**
 
 **Achados do mapeamento:**
 1. **Com o cookie da sessão e sem espaço, a API abre o banco da organização** (`abrir_estado`), que fica vazio até a C3. As telas pedem o CNPJ fixo da Serra Azul (`CNPJ_DEMONSTRACAO`) e dariam 404. Por isso, a conta sem empresa tem um estado vazio próprio (decisão 2 para a demonstração).
@@ -232,7 +233,7 @@ O que mudou em relação a este mapa:
 **A conferir durante o código:**
 - ~~o README e a data da `uqr` 0.1.3~~: **conferidos na C2b** (decisão 3);
 - ~~se baixar os códigos como `.txt` por `blob:` passa pela CSP atual, no Chrome~~: **conferido na C2b, etapa 7** (o arquivo baixou inteiro, sem violação);
-- se os gerenciadores de senha funcionam com `form-action 'none'` (o envio é por `fetch`): **em parte, na C2b, etapa 6.** O envio não dá violação da CSP, e os campos têm `name` e `autocomplete`. O balão de salvar a senha não aparece no Chrome sem janela (headless): fica com o usuário, num Chrome comum (etapa 10);
+- se os gerenciadores de senha funcionam com `form-action 'none'` (o envio é por `fetch`): **em parte, na C2b, etapa 6.** O envio não dá violação da CSP, e os campos têm `name` e `autocomplete`. O balão de salvar a senha não aparece no Chrome sem janela (headless). **Conferido pelo usuário num Chrome comum (2026-11-27):** o balão aparece;
 - ~~se o `credentials: 'omit'` da demonstração passa pela conferência de CSRF~~: **conferido na C2a**, no Chrome. O `POST /espacos` sem cookie, com a conta aberta, criou o espaço;
 - ~~a LGPD, art. 7º, 9º e 41, e o guia de cookies da ANPD~~: **lidos na C2a** (fontes no [ADR 0016](adr/0016-telas-de-entrada.md)).
 
@@ -365,7 +366,7 @@ O que mudou em relação a este mapa:
 - **achado e consertado:** em 390 px, a barra pública rolava de lado com um e-mail longo, no passo "Guarde o código novo" do Entrar (já com a sessão, a barra mostra o menu). O botão do menu não encolhia, e "Ir ao Painel" quebrava em duas linhas. Agora a barra encolhe e o e-mail é cortado com reticências (`shell.css`); em 1440 px, nada muda. A etapa 9 tinha conferido as larguras no app, com um e-mail curto;
 - **portão da skill:** `inspect.mjs --app` com 0 FAIL e 0 WARN em nove telas e 1 WARN defensável em `/conta` (o mesmo da etapa 9); `lint.mjs --app` com 0 FAIL e os 6 WARN de antes. As telas de dados só passam com os motores de pé e as sementes no banco: com os motores fora do ar, o esqueleto de carregamento conta como vazio (`blank-gap`). Crítica em `.taste-skill/app/critica-c2b.md`;
 - **docs:** seção da C2b no [ADR 0016](adr/0016-telas-de-entrada.md); revisão da C2b no [ADR 0012](adr/0012-fundacao-do-frontend.md), com a `uqr`, o zxcvbn-ts e duas dependências deste que estavam fora dos docs (`fastest-levenshtein` 1.0.16 e `@zxcvbn-ts/dictionary-compression` 3.0.1, MIT, sem dependências próprias; nenhuma das cinco tem `fetch`, `eval` ou parecido); README;
-- **fica com o usuário:** o balão do gerenciador de senhas num Chrome comum (Criar conta e Entrar) e o QR lido pela câmera de um aplicativo autenticador de verdade.
+- **fica com o usuário:** o balão do gerenciador de senhas num Chrome comum (Criar conta e Entrar) e o QR lido pela câmera de um aplicativo autenticador de verdade. **O balão foi conferido pelo usuário em 2026-11-27** e aparece; falta o QR pela câmera.
 
 **Achado do mapa da C2b:** o passe da ativação dura 5 min, mas a conta pendente só some em 30 min (`servico.py`, `PASSE` e `PENDENTE`). Quem deixa o passe vencer no passo do QR recebe 409 ao se cadastrar de novo ("Entre com a senha e o código"), e o `entrar` só aceita conta ativa: a pessoa fica sem saída por até 25 min.
 
@@ -375,6 +376,41 @@ O que mudou em relação a este mapa:
 3. o aviso de códigos de recuperação acabando aparece com 3 ou menos.
 
 **A conferir na C2b (resolvido na etapa 8):** o 429 da espera e o da conta bloqueada (100 falhas) chegam com o mesmo status, e o bloqueio manda `Retry-After` de 3600 s. A tela não deve mostrar "tente em 1 h" para uma conta que só o administrador desbloqueia (etapa 8).
+
+**C2c: notas de exemplo e o fechamento da C2.** O mapa saiu de uma leitura do código em 2026-11-27, e o usuário validou as três recomendações:
+1. a tela lê `data/demo/notas` pelo Vite, sem rota nova no backend;
+2. oferece as três notas, com a nota 1 marcada como já presente na demonstração;
+3. a lista fica no bloco de importar, em Notas.
+
+Achados do mapa:
+- até aqui, a tela não lia nada de fora de `frontend/`. Um comentário do `App.test.tsx` registrava que abrir o `server.fs.allow` valeria para o servidor de desenvolvimento;
+- abaixo de 4 KB, o Vite embute o arquivo no código como `data:`, e duas das notas têm menos que isso;
+- importar a nota 1 de novo não dá erro: a API devolve o recibo gravado (`jaImportada`).
+
+| # | Etapa | O que entra |
+|---|---|---|
+| 1 | Conferências | `import.meta.glob` com `?url` fora da raiz, `server.fs.allow` e `assetsInlineLimit`, lidos no Vite 8.3.8 instalado |
+| 2 | Fonte única | `dados/notasDeExemplo.ts`, com uma frase por arquivo e o teste que compara as frases com a pasta |
+| 3 | Tela | A seção "Notas de exemplo para baixar (fictícias)" no bloco de importar, também na demonstração e no mock |
+| 4 | Verificação | Testes, build, segurança, o servidor de desenvolvimento e o Chrome com o build (baixar, sha256 e importar), o portão da skill |
+| 5 | Docs e fecho da C2 | ADRs 0014 e 0016, este plano, `docs/seguranca.md`, README, a saída da C2 no Chrome e a varredura |
+
+**Feito: C2c (2026-11-27, seção da C2c no [ADR 0016](adr/0016-telas-de-entrada.md)):**
+- **etapa 1:** lido no código do Vite 8.3.8 que definir `server.fs.allow` troca a raiz padrão (`raw?.fs?.allow ?? [workspaceRoot]`), que a lista de `deny` padrão continua valendo e que o `assetsInlineLimit` aceita uma função por arquivo;
+- **etapas 2 e 3:** `dados/notasDeExemplo.ts` acha os XML por `import.meta.glob` com `?url`. O `vite.config.ts` libera só essa pasta para o servidor de desenvolvimento, junto com a raiz de antes, e não deixa o XML virar `data:`. O link passa pela `ArquivoParaBaixar` (`shell/navegacao.tsx`), que só aceita um arquivo da própria origem;
+- **achado no caminho:** o lint de segurança barrou o `href` montado de um valor (item 2 de `docs/seguranca.md`). O conserto seguiu o padrão da `Ancora`: um componente no único arquivo que monta `href`, com testes de recusa;
+- **etapa 4:**
+  - testes: tela 491 (eram 463) e backend 500, mais os 52 de referência; lint, tsc, build, `npm run seguranca`, `contrato:checar`, ruff, format e mypy;
+  - no build, os três XML têm o mesmo sha256 do repositório, e não aparece nenhum caminho local;
+  - no servidor de desenvolvimento, só a pasta das notas se abriu: `sementes.json`, o backend e o `.git` respondem 403;
+  - no Chrome, os três downloads e a importação dos arquivos baixados num espaço, nas três larguras, sem violação da CSP;
+  - portão com 0 FAIL e 0 WARN em `/notas`;
+- **etapa 5, a saída da C2 conferida no Chrome com o build:** criar conta, sair, entrar, ver a demonstração com a conta e voltar à conta, sem violação da CSP nem pedido fora da origem. A conta de teste foi excluída no fim;
+- **ambiente:** a porta 8000 desta máquina está ocupada por outro container do Docker, de fora do projeto. A API de teste subiu na 8001, com o proxy do preview apontado para ela (`CONTAAI_API_ALVO`).
+
+**C2 fechada.** Dá para criar a conta, entrar, sair e voltar à demonstração (a saída da C2). Continuam pendentes:
+- o QR lido pela câmera de um aplicativo autenticador de verdade, pelo usuário;
+- o risco do contato na LGPD, para a E6.
 
 ## C3: dados da própria empresa
 
@@ -388,6 +424,8 @@ O que mudou em relação a este mapa:
 - se o P10 passa a valer só para a demonstração;
 - como guardar e apagar os dados de cada empresa;
 - a validação do dígito verificador do CNPJ. Os CNPJs da demo têm dígito inválido de propósito ([ADR 0008](adr/0008-nfe-historico-e-alertas.md)) e continuam aceitos só nela.
+
+**Achado da C2c:** as notas de exemplo da tela são da Serra Azul. Na empresa própria, a API recusa a nota de outro destinatário (422). Decidir se a seção some fora da demonstração e do espaço.
 
 **Saída:** uma conta nova cadastra a empresa, importa uma nota e vê o alerta, sem tocar nos dados da demo.
 

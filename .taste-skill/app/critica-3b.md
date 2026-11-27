@@ -44,6 +44,6 @@ O WARN `mono` do recibo em 390 px (16% do texto) vem da cara escolhida no invent
 ## O que ainda fica aquém
 
 - **Itens sem par:** a tela explica o motivo e pede para conferir o cadastro, mas não há como cadastrar o par nela (C3).
-- **A banca precisa de um XML para importar.** As notas fictícias estão no repositório (`data/demo/notas`), mas não na tela (C2).
+- **A banca precisa de um XML para importar.** As notas fictícias estão no repositório (`data/demo/notas`), mas não na tela (C2). **Resolvido na C2c** (`critica-c2c.md`).
 - **O achado do Regime é longo** (cinco linhas em 1440 px). Ele precisa dizer o crédito nos dois regimes, o custo no caixa e que vale para as premissas. Encurtar tiraria uma dessas três coisas.
 - **A demonstração compartilhada mostra −R$ 173,90 de diferença de caixa, e não os −R$ 125,79 do plano.** Os R$ 125,79 dependem da nota 2 importada (ADR 0014). A tela mostra a origem do crédito em cada linha ("calculado pelo motor RR"), então a diferença tem explicação na própria tela.
