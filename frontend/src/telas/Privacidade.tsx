@@ -149,7 +149,8 @@ export function Privacidade() {
               <ul>
                 <li>A conta e os dados dela: até você excluir a conta.</li>
                 <li>
-                  Um cadastro sem o segundo fator confirmado: deixa de valer em {R.pendenteMin} minutos e depois é apagado.
+                  Um cadastro sem o segundo fator confirmado: deixa de valer {R.pendenteMin} minutos depois do cadastro, ou
+                  da última entrada com a senha, e depois é apagado.
                 </li>
                 <li>As sessões e as etapas de entrada: apagadas depois de vencer.</li>
               </ul>
@@ -166,9 +167,9 @@ export function Privacidade() {
                 a eliminação. No ContaAI:
               </p>
               <ul>
-                <li>ver os seus dados: no menu da conta;</li>
+                <li>ver os seus dados: em “Sua conta”, no menu da conta (o botão com o seu e-mail, na barra);</li>
                 <li>
-                  excluir a conta: no menu da conta, com a senha. A exclusão apaga a conta na hora e, se você for a única
+                  excluir a conta: em “Sua conta”, com a senha. A exclusão apaga a conta na hora e, se você for a única
                   pessoa da organização, também a organização e os dados dela.
                 </li>
               </ul>

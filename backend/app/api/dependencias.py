@@ -82,9 +82,12 @@ Motores = Annotated[ClienteMotores, Depends(cliente_motores)]
 Dados = Annotated[DadosAbertos, Depends(dados_abertos)]
 
 
-@lru_cache
+@lru_cache(maxsize=256)
 def banco(caminho: Path) -> Banco:
-    """Um Banco por arquivo, migrado na primeira vez que é pedido (inclusive na subida, no modo real)."""
+    """Um Banco por arquivo, migrado na primeira vez que é pedido (inclusive na subida, no modo real).
+
+    Com teto: cada espaço de avaliação e cada organização é um arquivo, e sem teto o cache cresceria enquanto o
+    processo vive. Um arquivo que sai do cache só roda `migrar()` de novo ao voltar, sem nada a aplicar."""
     b = Banco(caminho)
     b.migrar()
     return b

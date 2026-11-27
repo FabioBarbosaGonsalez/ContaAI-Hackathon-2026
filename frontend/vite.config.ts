@@ -56,6 +56,10 @@ export default defineConfig(({ mode }) => {
     build: {
       // Sem mapas de código no build publicado.
       sourcemap: false,
+      // As licenças das bibliotecas que vão no navegador, num arquivo ao lado do build: a MIT pede que o aviso
+      // de copyright acompanhe as cópias, e o código minificado sai sem os comentários de licença. O Vite
+      // monta a lista só com o que entra no build (build.license, Vite 8).
+      license: { fileName: 'licencas.md' },
     },
     test: {
       environment: 'jsdom',

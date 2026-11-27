@@ -16,7 +16,7 @@ ARG RR_TAG=1.7.2
 ARG RR_SHA=32df7196356e81f2df08e6023fc2b6dbc48036d3
 
 # ---------------------------------------------------------------------------
-# Código-fonte do Regime Regular na tag fixada (tem o Flyway e os scripts SQL do banco).
+# Código-fonte do Regime Regular na versão fixada (commit verificado pelo SHA) (tem o Flyway e os scripts SQL do banco).
 # curl: o mvnw oficial baixa o maven-wrapper.jar com curl ou wget, e a imagem JDK não traz nenhum dos dois.
 FROM eclipse-temurin:25-jdk AS fonte-rr
 ARG RR_TAG

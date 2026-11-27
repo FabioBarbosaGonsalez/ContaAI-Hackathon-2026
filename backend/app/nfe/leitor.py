@@ -33,7 +33,7 @@ MAX_ELEMENTOS = 100_000
 MAX_ITENS = 990  # leiaute da NF-e 4.00: nItem de 1 a 990
 TOLERANCIA_VPROD = Decimal("0.01")  # |qCom × vUnCom − vProd|; escolha nossa, para o arredondamento ao centavo
 
-_DECIMAL = re.compile(r"^\d{1,15}(\.\d{1,10})?$")
+_DECIMAL = re.compile(r"^[0-9]{1,15}(\.[0-9]{1,10})?$")
 _CONTROLE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 
 
@@ -198,8 +198,8 @@ def _grupo(det: ET.Element, n: int) -> GrupoIbsCbs | None:
     grupo = det.find(_q("imposto/IBSCBS"))
     if grupo is None:
         return None
-    cst = _padrao(grupo, "CST", f"IBSCBS/CST do item {n}", r"\d{3}")
-    cclass = _padrao(grupo, "cClassTrib", f"IBSCBS/cClassTrib do item {n}", r"\d{6}")
+    cst = _padrao(grupo, "CST", f"IBSCBS/CST do item {n}", r"[0-9]{3}")
+    cclass = _padrao(grupo, "cClassTrib", f"IBSCBS/cClassTrib do item {n}", r"[0-9]{6}")
     monofasico = grupo.find(_q("gIBSCBSMono")) is not None
     valores = grupo.find(_q("gIBSCBS"))
     if valores is None:
@@ -216,7 +216,7 @@ def _grupo(det: ET.Element, n: int) -> GrupoIbsCbs | None:
 
 def _item(det: ET.Element) -> ItemLido:
     n_texto = det.get("nItem", "")
-    if not re.fullmatch(r"[1-9]\d{0,2}", n_texto) or int(n_texto) > MAX_ITENS:
+    if not re.fullmatch(r"[1-9][0-9]{0,2}", n_texto) or int(n_texto) > MAX_ITENS:
         raise NotaInvalida("Atributo nItem de um item fora do formato da NF-e.")
     n = int(n_texto)
     prod = det.find(_q("prod"))
@@ -231,7 +231,7 @@ def _item(det: ET.Element) -> ItemLido:
         nItem=n,
         cProd=_texto(prod, "cProd", f"cProd do item {n}", 60) or "",
         xProd=_texto(prod, "xProd", f"xProd do item {n}", 120) or "",
-        ncm=_padrao(prod, "NCM", f"NCM do item {n}", r"\d{8}"),
+        ncm=_padrao(prod, "NCM", f"NCM do item {n}", r"[0-9]{8}"),
         uCom=_texto(prod, "uCom", f"uCom do item {n}", 6) or "",
         qCom=q_com,
         vUnCom=v_un,
@@ -256,7 +256,7 @@ def ler_nfe(conteudo: bytes) -> NotaLida:
     if inf.get("versao") != "4.00":
         raise NotaInvalida("Só a NF-e do leiaute 4.00 é lida.")
 
-    if _padrao(inf, "ide/mod", "mod", r"\d{2}") != "55":
+    if _padrao(inf, "ide/mod", "mod", r"[0-9]{2}") != "55":
         raise NotaInvalida("Só a NF-e modelo 55 é lida (a NFC-e, modelo 65, não é nota de compra entre empresas).")
     if _padrao(inf, "ide/tpNF", "tpNF", r"[01]") != "1":
         raise NotaInvalida("A nota não é de saída do fornecedor (tpNF diferente de 1).")
@@ -274,11 +274,11 @@ def ler_nfe(conteudo: bytes) -> NotaLida:
     if inf.find(_q("dest/CNPJ")) is None:
         raise NotaInvalida("O destinatário precisa ter CNPJ.")
     emitente = Participante(
-        cnpj=_padrao(inf, "emit/CNPJ", "CNPJ do emitente", r"\d{14}"),
+        cnpj=_padrao(inf, "emit/CNPJ", "CNPJ do emitente", r"[0-9]{14}"),
         nome=_texto(inf, "emit/xNome", "xNome do emitente", 60) or "",
     )
     destinatario = Participante(
-        cnpj=_padrao(inf, "dest/CNPJ", "CNPJ do destinatário", r"\d{14}"),
+        cnpj=_padrao(inf, "dest/CNPJ", "CNPJ do destinatário", r"[0-9]{14}"),
         nome=_texto(inf, "dest/xNome", "xNome do destinatário", 60) or "",
     )
 
@@ -292,8 +292,8 @@ def ler_nfe(conteudo: bytes) -> NotaLida:
         raise NotaInvalida("A nota tem nItem repetido.")
 
     return NotaLida(
-        serie=_padrao(inf, "ide/serie", "serie", r"\d{1,3}"),
-        numero=_padrao(inf, "ide/nNF", "nNF", r"[1-9]\d{0,8}"),
+        serie=_padrao(inf, "ide/serie", "serie", r"[0-9]{1,3}"),
+        numero=_padrao(inf, "ide/nNF", "nNF", r"[1-9][0-9]{0,8}"),
         dataEmissao=dh_emi,
         emitente=emitente,
         destinatario=destinatario,

@@ -48,7 +48,9 @@ def passo(instante_s: float) -> int:
 def conferir(segredo: str, codigo: str, instante_s: float, ultimo_passo: int) -> int | None:
     """O passo em que o código vale (para gravar como último usado), ou None. Só aceita passo depois do último:
     o mesmo código, ou um mais antigo, não entra de novo."""
-    if len(codigo) != DIGITOS or not codigo.isdigit():
+    # isascii: o isdigit() aceita dígitos de outras escritas (ex.: árabes), e o hmac.compare_digest recusa texto
+    # fora do ASCII com TypeError.
+    if len(codigo) != DIGITOS or not (codigo.isascii() and codigo.isdigit()):
         return None
     chave = _chave(segredo)
     atual = passo(instante_s)

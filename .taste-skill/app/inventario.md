@@ -85,7 +85,7 @@ Valores do cenário de demonstração (simulação de março de 2027, premissas 
 - **Blocos:**
   - a régua do crédito (elemento-assinatura, seção 3 abaixo), que é o maior bloco;
   - o caixa da empresa: débito − crédito das compras contra o tributo no DAS;
-  - premissas e simplificações, sempre visíveis;
+  - premissas sempre visíveis (nome e valor); a fonte, as simplificações e a hipótese do empate abrem com um clique (revisão de 2026-11-26 no ADR 0014);
   - desde a E3 (ADR 0007), a API traz ainda as linhas por item, com a origem do crédito das compras (`fonteCredito`), e o preço de empate com um concorrente do regime regular (`empateTradicional`: R$ 18.489,49 na demo, ou R$ 1.409,16 a menos). É um bloco secundário, abaixo da régua. A tela é construída na E5.
 
 ### Importar nota (detail: a NF-e)

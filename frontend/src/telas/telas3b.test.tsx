@@ -186,7 +186,7 @@ describe('Notas', () => {
     const cerveja = within(recibo).getByText('Cerveja de malte, lata 350 ml', { selector: '.tabela__nome' }).closest('tr');
     expect(cerveja && within(cerveja).getByText('R$ 0,2715')).toBeDefined();
     expect(cerveja && within(cerveja).getByText('+17,31%')).toBeDefined();
-    expect(cerveja && within(cerveja).getAllByText('da nota (grupo IBSCBS)')).toHaveLength(1);
+    expect(cerveja && within(cerveja).getAllByText('da nota')).toHaveLength(1);
     // A lista recarrega depois da importação.
     await waitFor(() => {
       expect(pedidosA(sessao, 'GET', '/notas').length).toBeGreaterThan(antes);
@@ -243,7 +243,7 @@ describe('Notas', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Importar nota' }));
     const recibo = await screen.findByRole('region', { name: 'Recibo da nota 1002' });
     expect(within(recibo).getByRole('status').textContent).toBe(
-      'Esta nota já tinha sido importada: nada foi gravado de novo. Este é o recibo da primeira importação.',
+      'Esta nota já tinha sido importada: nada foi gravado de novo. Este é o recibo da primeira vez.',
     );
   });
 
@@ -260,8 +260,8 @@ describe('Notas', () => {
     expect(semPar && within(semPar).getByText('Refrigerante de cola, garrafa 2 L')).toBeDefined();
     expect(semPar && within(semPar).getByText('Código do produto deste fornecedor sem cadastro no catálogo.')).toBeDefined();
     expect(semPar && within(semPar).getByText('NCM da nota diferente da do cadastro (19053100): confira a classificação.')).toBeDefined();
-    expect(within(recibo).getByText(/A nota não traz o grupo IBSCBS: o crédito foi calculado pelo motor RR/u)).toBeDefined();
-    expect(within(recibo).getByText('calculado pelo motor RR')).toBeDefined();
+    expect(within(recibo).getByText('A nota não traz o grupo IBSCBS: o crédito foi estimado sobre o custo.')).toBeDefined();
+    expect(within(recibo).getByText('estimado')).toBeDefined();
     // As premissas do crédito calculado ficam junto do resultado (P6).
     expect(within(recibo).getByText('Crédito da compra sem grupo IBSCBS na nota')).toBeDefined();
     expect(within(recibo).getByText('Nenhum custo mudou com a nota 1003.')).toBeDefined();
@@ -418,9 +418,8 @@ describe('Regime', () => {
     const bloco = await screen.findByRole('region', { name: 'A venda a Mercado Bom Preço Ltda (fictício)' });
     expect(
       within(bloco).getByText(
-        'Para vender R$ 19.898,65 por mês a Mercado Bom Preço Ltda (fictício), no Simples híbrido o cliente leva ' +
-          'R$ 1.626,26 de crédito; no tradicional, R$ 233,63. Em troca, a empresa paga R$ 125,79 a mais de imposto por ' +
-          'mês no híbrido. Isso vale para as premissas abaixo.',
+        'No híbrido, o cliente leva R$ 1.626,26 de crédito por mês; no tradicional, R$ 233,63. Em troca, a empresa ' +
+          'paga R$ 125,79 a mais de imposto.',
       ),
     ).toBeDefined();
     expect(document.body.textContent).not.toMatch(/\bopte\b|recomend|escolha o/iu);
@@ -452,7 +451,7 @@ describe('Regime', () => {
         Math.round(Number(lado.precoCliente) * 100),
       );
     }
-    expect(screen.getByText('+R$ 0,03 sobre a venda: centavos do arredondamento da base de cada linha.')).toBeDefined();
+    expect(screen.getByText('+R$ 0,03 de arredondamento.')).toBeDefined();
   });
 
   it('o caixa: o tributo de cada regime e a diferença por mês', async () => {
@@ -477,20 +476,30 @@ describe('Regime', () => {
     expect(within(empate).getByText('R$ 18.489,49')).toBeDefined();
     expect(empate.textContent).toContain('(R$ 1.409,16 a menos)');
     const itens = screen.getByRole('region', { name: 'A venda por item' });
-    expect(within(itens).getAllByText('da nota (grupo IBSCBS)')).toHaveLength(3);
+    // Os três itens têm o crédito da nota: a origem aparece uma vez, no cabeçalho da coluna.
+    expect(within(itens).getAllByText('da nota')).toHaveLength(1);
+    expect(within(itens).getByRole('columnheader', { name: /Crédito das compras/u }).textContent).toContain('da nota');
     const total = within(itens).getByText('Total da venda').closest('tr');
     expect(total && within(total).getByText('R$ 19.898,65')).toBeDefined();
     expect(total && within(total).getByText('R$ 1.266,84')).toBeDefined();
   });
 
-  it('premissas e simplificações ficam sempre visíveis', async () => {
+  it('o nome e o valor das premissas ficam à vista; as simplificações e a hipótese do empate abrem com um clique', async () => {
     await montar('/regime', api(SAUDE_REAL));
     const premissas = await screen.findByRole('region', { name: 'Premissas da comparação' });
     for (const p of comparacao.premissas) {
       expect(within(premissas).getByText(p.nome)).toBeDefined();
+      expect(within(premissas).getByText(p.valor)).toBeDefined();
     }
-    const simplificacoes = screen.getByRole('region', { name: 'Simplificações' });
-    expect(within(simplificacoes).getAllByRole('listitem')).toHaveLength(comparacao.simplificacoes.length);
+    const detalhe = within(premissas).getByText('Simplificações do cálculo').closest('details');
+    expect(detalhe?.open).toBe(false);
+    const itens = detalhe ? within(detalhe).getAllByRole('listitem', { hidden: true }) : [];
+    expect(itens.map((i) => i.textContent)).toEqual([
+      ...comparacao.simplificacoes,
+      comparacao.empateTradicional?.hipotese,
+    ]);
+    // Nenhum nome de campo da API vira texto da tela.
+    expect(document.body.textContent).not.toMatch(/diferencaCaixa|diferencaPrecoCliente|custoLiquidoAlvo/u);
   });
 
   it('antes de 2027 a comparação não existe, e a tela diz por quê sem chamar a API', async () => {
@@ -501,7 +510,7 @@ describe('Regime', () => {
       api(SAUDE_REAL, () => undefined, { catalogo: { ...catalogo, cenario: { ...catalogo.cenario, operacao: operacao2026 } } }),
     );
     const bloco = await screen.findByRole('region', { name: 'Comparação de regimes' });
-    expect(bloco.textContent).toContain('A comparação começa em 2027.');
+    expect(bloco.textContent).toContain('A comparação começa em 2027:');
     expect(bloco.textContent).toContain('(VSN-015)');
     expect(within(bloco).getByText('10/08/2026')).toBeDefined();
     expect(pedidosA(sessao, 'POST', '/regime/comparar')).toHaveLength(0);
@@ -554,11 +563,25 @@ describe('Regime', () => {
   });
 });
 
+describe('a origem do crédito na venda por item', () => {
+  it('com origens diferentes, cada linha diz a sua', async () => {
+    const misturada = {
+      ...comparacao,
+      itens: comparacao.itens.map((i, n) => (n === 0 ? { ...i, fonteCredito: 'motor' as const } : i)),
+    };
+    await montar('/regime', api(SAUDE_REAL, (p) => (new URL(p.url).pathname === '/regime/comparar' ? json(misturada) : undefined)));
+    const itens = await screen.findByRole('region', { name: 'A venda por item' });
+    await within(itens).findByText('estimado');
+    expect(within(itens).getAllByText('da nota')).toHaveLength(misturada.itens.length - 1);
+    expect(within(itens).getByRole('columnheader', { name: /Crédito das compras/u }).textContent).toBe('Crédito das compras');
+  });
+});
+
 describe('achado do regime', () => {
   it('quando o híbrido deixa mais caixa, diz isso, e quando empata, diz que fica igual', () => {
     expect(achadoDoRegime({ ...comparacao, diferencaCaixa: '40.10' })).toContain(
-      'E a empresa fica com R$ 40,10 a mais de caixa por mês no híbrido.',
+      'E a empresa fica com R$ 40,10 a mais de caixa.',
     );
-    expect(achadoDoRegime({ ...comparacao, diferencaCaixa: '0.00' })).toContain('O caixa da empresa fica igual nos dois regimes.');
+    expect(achadoDoRegime({ ...comparacao, diferencaCaixa: '0.00' })).toContain('O caixa da empresa fica igual.');
   });
 });

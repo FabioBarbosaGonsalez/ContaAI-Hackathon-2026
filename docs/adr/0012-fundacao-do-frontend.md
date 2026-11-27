@@ -157,7 +157,7 @@ O `eval` foi testado por um módulo da própria página, e não pelo console do 
 
 ## Consequências
 
-- **No navegador vão** só React, React DOM, scheduler e openapi-fetch (MIT) e as fontes Geist (OFL-1.1). As outras dependências são de desenvolvimento, todas com licença livre (MIT, Apache-2.0, ISC, BSD, MPL-2.0, BlueOak e CC-BY-4.0, esta só para os dados do caniuse-lite).
+- **No navegador vão** só React, React DOM, scheduler e openapi-fetch (MIT) e as fontes Geist (OFL-1.1); desde a C2b, também a `uqr` e o zxcvbn-ts (revisão da C2b, no fim). As outras dependências são de desenvolvimento, todas com licença livre (MIT, Apache-2.0, ISC, BSD, MPL-2.0, BlueOak e CC-BY-4.0, esta só para os dados do caniuse-lite).
 - **Testes:**
   - frontend: 191 (Vitest);
   - backend: 391, com cobertura de 96%; os dois novos conferem o aviso legal, o limite de upload e os tipos da tela contra os do backend.
@@ -177,3 +177,16 @@ O `eval` foi testado por um módulo da própria página, e não pelo console do 
 - **ESLint 10:** quando o `eslint-plugin-jsx-a11y` aceitar a 10.
 - **Tradução das mensagens de validação no backend:** PR separado (decisão 2). **Resolvido:** revisão da E5 no [ADR 0009](0009-camada-http-e-erros.md).
 - **O aviso de `POST /espacos`** segue escrito para quem integra a API. A tela não o mostra.
+
+## Revisão de 2026-11-27: o que entrou no navegador com a C2b
+
+A C2b ([ADR 0016](0016-telas-de-entrada.md)) pôs três bibliotecas no build, todas MIT, com o arquivo de licença no pacote e versões de pelo menos duas semanas:
+
+| Biblioteca | Para quê | Como entra |
+|---|---|---|
+| `uqr` 0.1.3 (Project Nayuki e Anthony Fu) | A matriz do QR code do segundo fator, desenhada como SVG pela tela (`telas/QrCode.tsx`) | No arquivo principal |
+| `@zxcvbn-ts/core` 4.2.0 e `@zxcvbn-ts/language-common` 4.1.3 | O medidor de força da senha (`telas/forcaDaSenha.tsx`) | Import dinâmico: só é baixado quando a pessoa digita a senha |
+
+O build também leva duas dependências do zxcvbn-ts, achadas na verificação da C2b (`npm ls`) e até então fora dos docs: `fastest-levenshtein` 1.0.16 (do núcleo) e `@zxcvbn-ts/dictionary-compression` 3.0.1 (do dicionário). As duas são MIT, têm o arquivo de licença e não têm dependências próprias. O `@zxcvbn-ts/language-pt-br` ficou fora por causa da licença do dicionário (ODC-BY e uma lista da Wikipédia sem licença declarada; plano v2.1, C2b).
+
+Desde a revisão da etapa 5 da C2b, o `build.license` do Vite gera `dist/licencas.md` com o aviso de cada biblioteca do build, como a MIT pede, e o `npm run seguranca` falha sem ele. A lista desse arquivo é a fonte: React, React DOM, scheduler, openapi-fetch, as fontes Geist e as cinco acima. O código das cinco não tem `fetch`, `XMLHttpRequest`, `WebSocket`, `eval` nem `new Function` (busca no `node_modules`, 2026-11-27); no build, só o arquivo principal tem `fetch`, o do cliente da API. A CSP não mudou.

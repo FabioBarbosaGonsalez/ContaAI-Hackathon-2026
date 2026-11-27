@@ -92,7 +92,7 @@ class PremissasDas(_Modelo):
     """Linha de alíquotas efetivas do Simples do contribuinte (premissa rotulada, P8 e ADR 0001)."""
 
     anexo: Anexo
-    cAtivSN: str = Field(pattern=r"^\d{2}$", description="Código de atividade do Simples (ex.: 01, revenda).")
+    cAtivSN: str = Field(pattern=r"^[0-9]{2}$", description="Código de atividade do Simples (ex.: 01, revenda).")
     pCBSSN: PorcentagemEntrada = Field(ge=0, lt=100)
     pIBSSN: PorcentagemEntrada = Field(ge=0, lt=100)
     fonte: str | None = Field(
@@ -103,8 +103,8 @@ class PremissasDas(_Modelo):
 
 
 class ImpostoSeletivoEntrada(_Modelo):
-    cst: str = Field(pattern=r"^\d{3}$")
-    cClassTrib: str = Field(pattern=r"^\d{6}$")
+    cst: str = Field(pattern=r"^[0-9]{3}$")
+    cClassTrib: str = Field(pattern=r"^[0-9]{6}$")
     litrosPorUnidade: QuantidadeEntrada | None = Field(default=None, gt=0)
 
 
@@ -113,10 +113,10 @@ class ItemBase(_Modelo):
 
     id: str = Field(min_length=1, max_length=64)
     descricao: str = Field(min_length=1, max_length=200)
-    ncm: str | None = Field(default=None, pattern=r"^\d{8}$")
-    nbs: str | None = Field(default=None, pattern=r"^\d{9}$")
-    cst: str = Field(pattern=r"^\d{3}$")
-    cClassTrib: str = Field(pattern=r"^\d{6}$")
+    ncm: str | None = Field(default=None, pattern=r"^[0-9]{8}$")
+    nbs: str | None = Field(default=None, pattern=r"^[0-9]{9}$")
+    cst: str = Field(pattern=r"^[0-9]{3}$")
+    cClassTrib: str = Field(pattern=r"^[0-9]{6}$")
     impostoSeletivo: ImpostoSeletivoEntrada | None = None
     unidade: str = Field(min_length=1, max_length=6)
 
@@ -805,7 +805,7 @@ class ContextoChat(Operacao):
     regime: Regime
     itens: list[ItemEntrada] = Field(default=[], max_length=200)
     cnpj: str | None = Field(
-        default=None, pattern=r"^\d{14}$", description="Empresa da tela: os alertas do chat são os dela (E4)."
+        default=None, pattern=r"^[0-9]{14}$", description="Empresa da tela: os alertas do chat são os dela (E4)."
     )
 
     @model_validator(mode="after")
@@ -897,7 +897,7 @@ PADRAO_ID_ITEM = r"^[a-z0-9][a-z0-9-]{0,63}$"
 class AplicarPrecoRequisicao(_Modelo):
     """Preço de venda novo, escolhido pelo usuário na tela (ex.: a ação "aplicar_preco" do chat, P3)."""
 
-    cnpj: str = Field(pattern=r"^\d{14}$")
+    cnpj: str = Field(pattern=r"^[0-9]{14}$")
     valorUnitario: Decimal = Field(
         gt=0, le=TETO_ENTRADA, decimal_places=2, description="Valor do produto por unidade (vUnCom), em centavos."
     )
@@ -917,8 +917,8 @@ class CorrigirClassificacaoRequisicao(_Modelo):
     """A classificação que o usuário confirmou (P3). O CST não vem da tela: o backend usa o da fundamentação
     oficial da classificação escolhida, e só aceita uma classificação válida para a NCM do item."""
 
-    cnpj: str = Field(pattern=r"^\d{14}$")
-    cClassTrib: str = Field(pattern=r"^\d{6}$")
+    cnpj: str = Field(pattern=r"^[0-9]{14}$")
+    cClassTrib: str = Field(pattern=r"^[0-9]{6}$")
 
 
 class CorrigirClassificacaoResposta(_Modelo):
@@ -1034,13 +1034,29 @@ class SaudeResposta(_Modelo):
 # Contas (C1, ADR 0015): cadastro com segundo fator (TOTP), entrada em duas etapas, sessão em cookie e exclusão.
 # A sessão e o passe vão só em cookies HttpOnly; nenhum token aparece no corpo.
 
-PADRAO_EMAIL = r"^[^@\s]{1,64}@[^@\s]+\.[^@\s]+$"
-PADRAO_CODIGO = r"^\d{6}$"
+PADRAO_EMAIL = r"^[^@\s:]{1,64}@[^@\s:]+\.[^@\s:]+$"
+PADRAO_CODIGO = r"^[0-9]{6}$"
 PADRAO_RECUPERACAO = r"^[A-Za-z2-7]{4}-?[A-Za-z2-7]{4}-?[A-Za-z2-7]{5}$"
 Email = Annotated[str, Field(pattern=PADRAO_EMAIL, max_length=254, description="E-mail de quem entra.")]
 # O teto do contrato só evita corpo absurdo; a regra (8 a 128 caracteres, lista de senhas comuns) fica em
 # app/contas/senha.py e responde com a frase dela.
 SenhaEntrada = Annotated[str, Field(min_length=1, max_length=256)]
+
+
+def _nome_com_texto(nome: str) -> str:
+    """O nome sem os espaços das pontas (str.strip, que tira também os de Unicode). Só com espaços, ele ficaria
+    vazio e passaria pelo min_length, que confere antes: a organização nasceria sem nome (achado da C2b)."""
+    limpo = nome.strip()
+    if not limpo:
+        raise ValueError("Informe o nome da organização.")
+    return limpo
+
+
+NomeDaOrganizacao = Annotated[
+    str,
+    Field(min_length=1, max_length=120, description="Nome da organização (escritório ou empresa)."),
+    AfterValidator(_nome_com_texto),
+]
 # A versão dos termos que a pessoa aceitou ao marcar a caixa do cadastro. O enum leva a versão ao tipo gerado da
 # tela; o validador dá a frase em português para uma aba aberta com a versão antiga.
 TermosAceitos = Annotated[
@@ -1059,7 +1075,7 @@ class CadastroRequisicao(_Modelo):
         description="De 8 a 128 caracteres, sem regra de composição. Senhas comuns, o "
         "e-mail e o nome do produto são recusados."
     )
-    organizacao: str = Field(min_length=1, max_length=120, description="Nome da organização (escritório ou empresa).")
+    organizacao: NomeDaOrganizacao
     termosAceitos: TermosAceitos
 
 
@@ -1085,8 +1101,23 @@ class EntrarRequisicao(_Modelo):
 class EntrarResposta(_Modelo):
     """Senha certa: falta o código (POST /sessoes/codigo, com o passe que foi no cookie)."""
 
-    etapa: Literal["codigo"] = "codigo"
+    etapa: Literal["codigo"]
     expiraEm: datetime
+
+
+class EntrarAtivacaoResposta(_Modelo):
+    """Senha certa numa conta que ainda não confirmou o primeiro código: um segredo novo do segundo fator e o passe
+    da ativação no cookie. O próximo passo é POST /contas/ativar, como no cadastro. O segredo antigo deixa de
+    valer."""
+
+    etapa: Literal["ativacao"]
+    otpauth: str = Field(description="Endereço otpauth:// para o QR code do aplicativo autenticador.")
+    segredo: str = Field(description="O mesmo segredo, em base32, para digitar à mão no aplicativo.")
+    expiraEm: datetime
+    aviso: str
+
+
+RespostaDaEntrada = Annotated[EntrarResposta | EntrarAtivacaoResposta, Field(discriminator="etapa")]
 
 
 class SegundaEtapaRequisicao(_Modelo):

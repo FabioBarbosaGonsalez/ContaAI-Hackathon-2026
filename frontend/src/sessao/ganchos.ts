@@ -21,6 +21,15 @@ export function useConta(): EstadoConta {
   return useSyncExternalStore(conta.assinar, conta.obter);
 }
 
+/**
+ * As contas existem nesta instalação: a API respondeu ao /saude no modo real. No modo mock, as rotas da conta
+ * respondem 501, e a tela não mostra Entrar nem Criar conta.
+ */
+export function useContasLigadas(): boolean {
+  const modo = useModo();
+  return modo.tipo === 'pronto' && modo.saude.modo === 'real';
+}
+
 /** Só diz se há token; o valor nunca passa pelos componentes. */
 export function useTemToken(): boolean {
   const { token } = useSessao();

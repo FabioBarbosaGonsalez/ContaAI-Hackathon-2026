@@ -1,11 +1,12 @@
 // A demonstração e a conta (C2, ADR 0016):
 // - quem não tem conta vê a demonstração sem cadastro (plano v2.1, decisão 1);
 // - quem tem conta também pode vê-la, como todo mundo, e volta à conta pela faixa (C2, decisão 2);
-// - a faixa diz, em toda página do app fora da conta, que os dados são fictícios (P10).
+// - a faixa diz, em toda página do app fora da conta, que os dados são fictícios (P10), e leva a Criar conta (C2b)
+//   quando as contas existem e ninguém entrou.
 
 import type { MouseEvent } from 'react';
 import { useSessao } from '../sessao/contexto.tsx';
-import { useConta, useModo } from '../sessao/ganchos.ts';
+import { useConta, useContasLigadas, useModo } from '../sessao/ganchos.ts';
 import { Link } from './navegacao.tsx';
 import { INICIO_DO_APP } from './rotas.ts';
 
@@ -34,8 +35,11 @@ export function BotaoDemonstracao({ className, aoEscolher }: PropsBotao) {
   );
 }
 
-/** Volta aos dados da conta. */
-export function BotaoMinhaConta({ className, aoEscolher, texto = 'Minha conta' }: PropsBotao & { texto?: string }) {
+/**
+ * Volta aos dados da conta, no Painel. O texto não é "Minha conta": a página da conta (/conta) se chama "Sua
+ * conta", e um link com quase o mesmo nome levaria a outro lugar.
+ */
+export function BotaoMinhaConta({ className, aoEscolher, texto = 'Ir ao Painel' }: PropsBotao & { texto?: string }) {
   const { conta } = useSessao();
   const aoClicar = (evento: MouseEvent<HTMLAnchorElement>) => {
     if (evento.button === 0 && !evento.metaKey && !evento.ctrlKey && !evento.shiftKey && !evento.altKey) {
@@ -55,6 +59,7 @@ export function AvisoDemonstracao() {
   const sessao = useSessao();
   const modo = useModo();
   const conta = useConta();
+  const contasLigadas = useContasLigadas();
   if (modo.tipo !== 'pronto' || (conta.tipo === 'conectada' && !conta.naDemo)) {
     return null;
   }
@@ -64,15 +69,20 @@ export function AvisoDemonstracao() {
   if (conta.tipo === 'encerrada') {
     texto = 'Sua sessão terminou, e você voltou à demonstração. A empresa, as notas e o cliente são fictícios.';
     complemento = (
-      <button
-        type="button"
-        className="botao-texto"
-        onClick={() => {
-          sessao.conta.dispensarAviso();
-        }}
-      >
-        Entendi
-      </button>
+      <span className="aviso-demo__acoes">
+        <Link para="/entrar" className="botao-texto">
+          Entrar de novo
+        </Link>
+        <button
+          type="button"
+          className="botao-texto"
+          onClick={() => {
+            sessao.conta.dispensarAviso();
+          }}
+        >
+          Entendi
+        </button>
+      </span>
     );
   } else if (conta.tipo === 'erro') {
     texto = `${TEXTO_DEMONSTRACAO} Não foi possível conferir a sua conta.`;
@@ -83,6 +93,12 @@ export function AvisoDemonstracao() {
     );
   } else if (conta.tipo === 'conectada') {
     complemento = <BotaoMinhaConta className="botao-texto" texto="Voltar à minha conta" />;
+  } else if (contasLigadas && conta.tipo === 'anonima') {
+    complemento = (
+      <Link para="/criar-conta" className="botao-texto">
+        Criar conta
+      </Link>
+    );
   }
 
   return (

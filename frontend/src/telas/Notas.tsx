@@ -96,8 +96,8 @@ export function achadoDoRecibo(recibo: ReciboNota, catalogo: Catalogo | undefine
 }
 
 const FONTE_DO_CREDITO: Record<NonNullable<ItemCasado['fonteCredito']>, string> = {
-  nfe: 'da nota (grupo IBSCBS)',
-  motor: 'calculado pelo motor RR',
+  nfe: 'da nota',
+  motor: 'estimado',
 };
 
 // ---------------------------------------------------------------------------
@@ -223,8 +223,7 @@ function SemPar({ recibo }: { recibo: ReciboNota }) {
         Itens que não casaram com o catálogo (<span className="num">{inteiro(recibo.itensSemPar.length)}</span>)
       </h3>
       <p className="texto-suave">
-        Eles não mudaram nenhum custo. Um item casa quando o código do fornecedor, a NCM e a unidade combinam com o
-        cadastro: confira se ele é um item do seu catálogo.
+        Não mudaram custo. Um item casa quando o código do fornecedor, a NCM e a unidade batem com o cadastro.
       </p>
       <ul className="lista">
         {recibo.itensSemPar.map((i) => (
@@ -265,7 +264,7 @@ function Recibo({ recibo, catalogo, abertos, aoAplicado }: PropsRecibo) {
     >
       {recibo.jaImportada && (
         <p className="aviso-neutro" role="status">
-          Esta nota já tinha sido importada: nada foi gravado de novo. Este é o recibo da primeira importação.
+          Esta nota já tinha sido importada: nada foi gravado de novo. Este é o recibo da primeira vez.
         </p>
       )}
       <p className="achado">{achadoDoRecibo(recibo, catalogo)}</p>
@@ -282,7 +281,7 @@ function Recibo({ recibo, catalogo, abertos, aoAplicado }: PropsRecibo) {
           <dd>
             {nota.temGrupoIbsCbs
               ? 'Lido do grupo IBSCBS da nota.'
-              : 'A nota não traz o grupo IBSCBS: o crédito foi calculado pelo motor RR sobre o custo.'}
+              : 'A nota não traz o grupo IBSCBS: o crédito foi estimado sobre o custo.'}
           </dd>
         </div>
         {nota.homologacao && (
@@ -390,8 +389,7 @@ function Envio({ aoImportada }: { aoImportada: (recibo: ReciboNota) => void }) {
             onChange={escolher}
           />
           <p id={idAjuda} className="campo__ajuda">
-            O XML da nota de compra (modelo 55), até 1 MB. A tela casa os itens com o catálogo, atualiza o custo e
-            avisa se alguma margem ficar abaixo do alvo.
+            XML da NF-e de compra (modelo 55), até 1 MB.
           </p>
         </div>
         <BotaoGravar
@@ -507,7 +505,7 @@ function Importadas({ notas, erro, aoTentar }: { notas: NotaImportada[] | undefi
     <Bloco
       titulo="Notas importadas"
       className="notas__lista"
-      extra={notas && notas.length > 0 ? <span className="bloco__meta">da emissão mais recente para a mais antiga</span> : undefined}
+      extra={notas && notas.length > 0 ? <span className="bloco__meta">mais recentes primeiro</span> : undefined}
     >
       {corpo}
     </Bloco>

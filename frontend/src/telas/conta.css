@@ -1,0 +1,515 @@
+/* Formulários da conta (C2b, ADR 0016): Criar conta, Entrar e excluir a conta. */
+
+.campo--formulario {
+  max-width: 440px;
+}
+
+.campo__entrada {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.campo--formulario .campo__entrada input {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+}
+
+.campo--formulario input[aria-invalid='true'] {
+  border-color: var(--negativo);
+}
+
+.campo__mostrar {
+  flex: 0 0 auto;
+}
+
+.campo__codigo {
+  letter-spacing: 0.12em;
+}
+
+.campo__erro {
+  color: var(--negativo);
+  font-size: var(--tamanho-pequeno);
+  line-height: var(--altura-pequeno);
+}
+
+.formulario__falha {
+  max-width: 440px;
+  padding: 12px 16px;
+  border: 1px solid var(--negativo);
+  border-radius: var(--raio-controle);
+  color: var(--negativo);
+}
+
+.contagem .num {
+  font-weight: var(--peso-medio);
+}
+
+/* "Ainda não tem conta? Criar conta": o link na cor do texto, marcado pelo sublinhado e pelo peso. */
+.porta__alternativa a {
+  color: var(--texto);
+  font-weight: var(--peso-medio);
+  text-underline-offset: 3px;
+}
+
+@media (max-width: 640px) {
+  .campo--formulario {
+    max-width: none;
+  }
+
+  .campo--formulario input,
+  .campo__mostrar {
+    min-height: 44px;
+  }
+}
+
+/* O QR code do segundo fator (etapa 5): branco em qualquer tema, com borda para separar do fundo cinza. O
+   tamanho vem dos atributos width e height (4 px por módulo); em tela estreita, encolhe e continua quadrado. */
+.qr {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-controle);
+}
+
+/* O segredo para digitar: grupos de 4 em linha, separados por margem (não por espaço), para copiar inteiro. A
+   margem fica no fim de cada grupo, então a linha quebrada começa rente. */
+.segredo {
+  display: block;
+  max-width: 440px;
+  font-family: var(--fonte-numero);
+  letter-spacing: 0.08em;
+}
+
+.segredo__grupo:not(:last-child) {
+  margin-inline-end: 0.6em;
+}
+
+/* Criar conta (etapas 6 e 7): os passos, o formulário, o QR ao lado do texto e os códigos de recuperação. A
+   coluna do texto tem 440px, a dos campos; com o QR (228px na versão 8, até 628px no pior e-mail), as duas
+   cabem na coluna de 1152px. */
+/* Grade da página Início (publicas.css): os passos em 7 colunas (667px) e a proteção da conta em 5 (473px). O
+   passo do QR cabe nas 7: 228px do QR, 24px de vão e até 415px de texto. Abaixo de 900px, empilham. */
+.cadastro {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--respiro) var(--espaco);
+  align-items: start;
+}
+
+/* Entrar é curto (dois campos): o título e o formulário ficam no meio da altura livre, e não no topo com um vão
+   até o rodapé (o portão da skill mediu 408px vazios em 1440px). O mesmo vale para os avisos curtos da porta da
+   conta (sem conta, sessão terminada, modo mock, API fora) e para a conta excluída (580px vazios em /conta). Numa tela baixa, o conteúdo passa da altura e
+   a página só cresce: nada é cortado. */
+.conteudo:has(.entrada),
+.conteudo:has(.porta__curta) {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* O aviso curto (uma frase e um ou dois botões) fica estreito e no centro, com o título acima dele: na largura
+   toda, a frase deixava o cartão vazio à direita. */
+.conteudo:has(.porta__curta) {
+  align-items: center;
+}
+
+.conteudo:has(.porta__curta) > * {
+  width: min(100%, 480px);
+}
+
+.cadastro__principal {
+  display: flex;
+  grid-column: span 7;
+  flex-direction: column;
+  gap: var(--respiro);
+  min-width: 0;
+}
+
+.cadastro__lado {
+  display: flex;
+  grid-column: span 5;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-cartao);
+  background: var(--superficie);
+}
+
+.lado__lista {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.lado__item {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: var(--espaco);
+  padding-block: 10px;
+}
+
+.lado__item + .lado__item {
+  border-top: 1px solid var(--regua);
+}
+
+.lado__item dt {
+  font-weight: var(--peso-medio);
+}
+
+.lado__item dd {
+  margin: 0;
+  color: var(--texto-suave);
+}
+
+/* A ajuda dos campos da conta em 14px: são frases para ler antes de preencher, e não legendas. */
+.cadastro .campo__ajuda {
+  font-size: var(--tamanho-corpo);
+  line-height: var(--altura-corpo);
+}
+
+@media (max-width: 900px) {
+  .cadastro__principal,
+  .cadastro__lado {
+    grid-column: 1 / -1;
+  }
+}
+
+.passos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--texto-suave);
+}
+
+.passos li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.passos__numero {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--controle);
+  border-radius: 50%;
+  font-size: var(--tamanho-pequeno);
+}
+
+.passos [aria-current='step'] {
+  color: var(--texto);
+  font-weight: var(--peso-medio);
+}
+
+.passos [aria-current='step'] .passos__numero {
+  border-color: var(--acao);
+  background: var(--acao);
+  color: var(--acao-texto);
+}
+
+.passo {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 440px;
+}
+
+.passo__titulo:focus {
+  outline: none;
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.formulario__termos {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.formulario__termos a,
+.passo .campo__ajuda a {
+  color: var(--texto);
+}
+
+.caixa__linha {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.caixa__linha input {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin: 1px 0 0;
+  accent-color: var(--acao);
+}
+
+/* O passo do QR é mais largo que os outros: o QR à esquerda, o texto e o código à direita. */
+.passo:has(.segundo-fator) {
+  max-width: none;
+}
+
+.segundo-fator {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--respiro);
+}
+
+.segundo-fator__qr {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.segundo-fator__texto {
+  display: flex;
+  flex: 1 1 320px;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 440px;
+}
+
+.segredo__bloco {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.copiar {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.copiar__resultado {
+  color: var(--texto-suave);
+  font-size: var(--tamanho-pequeno);
+  line-height: var(--altura-pequeno);
+}
+
+/* Os números são um contador do CSS com largura fixa, e não o marcador do navegador: na grade de 2 colunas, o
+   marcador "10." da direita invadia o código da esquerda (visto no Chrome). Sem o marcador, o Safari tira o papel
+   de lista do <ol>; por isso o role="list" no componente. */
+.codigos {
+  display: grid;
+  grid-template-columns: repeat(2, max-content);
+  gap: 8px 40px;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-controle);
+  background: var(--superficie);
+  list-style: none;
+  counter-reset: codigo;
+  letter-spacing: 0.04em;
+}
+
+.codigos li {
+  counter-increment: codigo;
+}
+
+/* Entrar com um código de recuperação: só o código novo, sem número (não há lista para contar). */
+.codigos--um {
+  grid-template-columns: max-content;
+  align-self: flex-start;
+  font-size: var(--tamanho-secao);
+}
+
+/* Duas classes: vence o .codigos li::before, que vem depois neste arquivo. */
+.codigos.codigos--um li::before {
+  content: none;
+}
+
+.codigos li::before {
+  content: counter(codigo) '.';
+  display: inline-block;
+  min-width: 3ch;
+  margin-inline-end: 1ch;
+  color: var(--texto-suave);
+  text-align: end;
+}
+
+.codigos__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espaco);
+}
+
+@media (max-width: 640px) {
+  .codigos {
+    grid-template-columns: max-content;
+  }
+
+  .lado__item {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+
+  .passo .botao-principal,
+  .passo .botao-secundario {
+    min-height: 44px;
+  }
+
+  .caixa__linha input {
+    width: 24px;
+    height: 24px;
+    margin: 0;
+  }
+}
+
+/* Medidor de força da senha: um terço vermelho (fraca), dois terços amarelo (média), inteiro verde (forte). A
+   palavra ao lado diz a força em tinta normal; a cor não é o único sinal (WCAG 1.4.1). */
+.forca {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.forca__trilho {
+  flex: 0 1 200px;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--controle);
+}
+
+.forca__barra {
+  display: block;
+  width: 33.333%;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--forca-fraca);
+  transition:
+    width 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.forca[data-forca='media'] .forca__barra {
+  width: 66.667%;
+  background: var(--forca-media);
+}
+
+.forca[data-forca='forte'] .forca__barra {
+  width: 100%;
+  background: var(--forca-forte);
+}
+
+.forca__rotulo {
+  font-size: var(--tamanho-pequeno);
+  line-height: var(--altura-pequeno);
+  font-weight: var(--peso-medio);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .forca__barra {
+    transition: none;
+  }
+}
+
+/* Alto contraste do sistema: o navegador troca as cores de fundo; a barra fica na cor do texto. */
+@media (forced-colors: active) {
+  .forca__trilho {
+    border: 1px solid CanvasText;
+  }
+
+  .forca__barra {
+    background: CanvasText;
+  }
+}
+
+/* Sua conta (etapa 9): as seções na coluna principal e a sessão ao lado, na grade do cadastro. */
+.conta__secao {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.conta__empresas {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.conta__eventos {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.conta__eventos li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px var(--espaco);
+  padding-block: 10px;
+}
+
+.conta__eventos li + li {
+  border-top: 1px solid var(--regua);
+}
+
+/* O aviso de poucos códigos: o selo de atenção, como texto (sem ícone). */
+.conta__aviso {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--raio-controle);
+  background: var(--selo-atencao-fundo);
+  color: var(--selo-atencao-tinta);
+}
+
+.conta__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espaco);
+}
+
+.conta__perigo {
+  padding-top: var(--respiro);
+  border-top: 1px solid var(--regua);
+}
+
+/* Excluir a conta: o único botão vermelho do app. Branco sobre --negativo dá 5,78:1 (tokens.test.ts). */
+.botao-perigo {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--altura-controle);
+  padding: 0 16px;
+  border: 0;
+  border-radius: var(--raio-controle);
+  background: var(--negativo);
+  color: var(--acao-texto);
+  font-weight: var(--peso-medio);
+  cursor: pointer;
+}
+
+.botao-perigo:hover {
+  background: var(--selo-negativo-tinta);
+}
+
+@media (max-width: 640px) {
+  .conta__acoes .botao-secundario,
+  .conta__acoes .botao-perigo {
+    min-height: 44px;
+  }
+}

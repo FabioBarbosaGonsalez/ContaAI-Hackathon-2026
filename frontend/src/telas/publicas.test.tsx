@@ -57,7 +57,7 @@ describe('página inicial', () => {
     const acoes = principal().getAllByRole('link');
     expect(acoes[0]?.textContent).toBe('Explorar a demonstração');
     expect(acoes[0]?.getAttribute('href')).toBe('/painel');
-    expect(screen.getByText(/Sem cadastro\./u)).toBeDefined();
+    expect(screen.getByText('A demonstração não pede cadastro e usa uma distribuidora fictícia.')).toBeDefined();
   });
 
   it('a barra pública não tem os destinos do app nem a faixa da demonstração', async () => {
@@ -143,7 +143,7 @@ describe('conta conectada (C2a)', () => {
   it('nas páginas do app, a conta sem empresa mostra o estado vazio e não pede o CNPJ da demonstração', async () => {
     const sessao = await montar('/painel', { conta: CONTA_DE_TESTE });
     expect(screen.getByRole('heading', { level: 1, name: 'Painel' })).toBeDefined();
-    expect(screen.getByText(/A sua organização ainda não tem empresa cadastrada/u)).toBeDefined();
+    expect(screen.getByText(/Sua organização ainda não tem empresa/u)).toBeDefined();
     expect(screen.queryByText(TEXTO_DEMONSTRACAO)).toBeNull();
     expect(within(screen.getByRole('banner')).getByText(CONTA_DE_TESTE.organizacao.nome)).toBeDefined();
     expect(rotasPedidas(sessao.pedidos)).toEqual(['/saude', '/conta']);
@@ -160,14 +160,15 @@ describe('conta conectada (C2a)', () => {
 
     fireEvent.click(screen.getByRole('link', { name: 'Voltar à minha conta' }));
     expect(sessao.conta.naConta()).toBe(true);
-    expect(screen.getByText(/A sua organização ainda não tem empresa cadastrada/u)).toBeDefined();
+    expect(screen.getByText(/Sua organização ainda não tem empresa/u)).toBeDefined();
   });
 
-  it('na página inicial, quem tem conta também vê "Minha conta"', async () => {
+  it('na página inicial, quem tem conta também vê o caminho ao Painel (e não "Minha conta", que lembra "Sua conta")', async () => {
     await montar('/', { conta: CONTA_DE_TESTE });
     const acoes = principal().getAllByRole('link');
-    expect(acoes.map((a) => a.textContent).slice(0, 2)).toEqual(['Explorar a demonstração', 'Minha conta']);
-    expect(within(screen.getByRole('banner')).getByRole('link', { name: 'Minha conta' })).toBeDefined();
+    expect(acoes.map((a) => a.textContent).slice(0, 2)).toEqual(['Explorar a demonstração', 'Ir ao Painel']);
+    expect(within(screen.getByRole('banner')).getByRole('link', { name: 'Ir ao Painel' })).toBeDefined();
+    expect(screen.queryByText('Minha conta')).toBeNull();
   });
 
   it('a sessão que acaba avisa na faixa e volta à demonstração', async () => {

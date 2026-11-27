@@ -25,9 +25,9 @@ from app.api.dependencias import (
     so_no_modo_real,
 )
 from app.contas.servico import (
-    PASSE,
     AguardeParaTentar,
     CadastroRecusado,
+    ContaBloqueada,
     EntradaRecusada,
     NovaSessao,
     PosseNaoTransferida,
@@ -40,11 +40,13 @@ from app.contrato import (
     CadastroResposta,
     CodigoRequisicao,
     ContaResposta,
+    EntrarAtivacaoResposta,
     EntrarRequisicao,
     EntrarResposta,
     EventoSeguranca,
     ExcluirContaRequisicao,
     OrganizacaoDaConta,
+    RespostaDaEntrada,
     SegundaEtapaRequisicao,
     SegundaEtapaResposta,
     TermosDaConta,
@@ -57,14 +59,20 @@ ENTRADA: respostas.Respostas = {
     **respostas.SO_MODO_REAL,
     401: {"description": "E-mail, senha ou código incorretos, ou passe vencido. A frase não diz qual."},
     429: {
-        "description": "Espera depois de falhas seguidas na conta, conta bloqueada (100 falhas) ou limite por IP "
-        "(header Retry-After)."
+        "description": "Espera depois de falhas seguidas na conta ou limite por IP (header Retry-After), ou conta "
+        "bloqueada depois de 100 falhas (/problemas/conta-bloqueada: só o administrador desbloqueia)."
     },
 }
 SESSAO: respostas.Respostas = {
     **respostas.SO_MODO_REAL,
     401: {"description": "Sem sessão, ou sessão encerrada ou expirada (o cookie é apagado na resposta)."},
 }
+
+
+AVISO_DO_SEGREDO = (
+    "Leia o QR code (ou digite o segredo) num aplicativo autenticador e envie o primeiro código. "
+    "O segredo não aparece de novo."
+)
 
 
 def _gravar_cookie(response: Response, nome: str, valor: str, ate: datetime, agora: datetime) -> None:
@@ -83,7 +91,9 @@ def _apagar_cookie(response: Response, nome: str) -> None:
     response.headers.append("Set-Cookie", cookie_apagado(nome))
 
 
-def _recusa(e: EntradaRecusada | AguardeParaTentar | CadastroRecusado) -> HTTPException:
+def _recusa(e: EntradaRecusada | AguardeParaTentar | CadastroRecusado) -> Exception:
+    if isinstance(e, ContaBloqueada):
+        return e  # tratado em app.api.problemas: /problemas/conta-bloqueada
     if isinstance(e, AguardeParaTentar):
         return HTTPException(status_code=429, detail=e.mensagem, headers={"Retry-After": str(e.espera_s)})
     if isinstance(e, CadastroRecusado):
@@ -148,8 +158,7 @@ async def cadastrar(cfg: Cfg, req: CadastroRequisicao, response: Response) -> Ca
         otpauth=feito.endereco,
         segredo=feito.segredo,
         expiraEm=feito.expira_em,
-        aviso="Leia o QR code (ou digite o segredo) num aplicativo autenticador e envie o primeiro código. "
-        "O segredo não aparece de novo.",
+        aviso=AVISO_DO_SEGREDO,
     )
 
 
@@ -171,18 +180,27 @@ async def ativar(cfg: Cfg, req: CodigoRequisicao, response: Response, passe: Pas
     )
 
 
-@rotas.post("/sessoes", response_model=EntrarResposta, responses={**ENTRADA, **respostas.LIMITE})
-async def entrar(cfg: Cfg, req: EntrarRequisicao, response: Response) -> EntrarResposta:
-    """Primeira etapa: e-mail e senha. Certos, o passe vai no cookie e falta o código (POST /sessoes/codigo)."""
+@rotas.post("/sessoes", response_model=RespostaDaEntrada, responses={**respostas.LIMITE, **ENTRADA})
+async def entrar(cfg: Cfg, req: EntrarRequisicao, response: Response) -> EntrarResposta | EntrarAtivacaoResposta:
+    """Primeira etapa: e-mail e senha. Certos, o passe vai no cookie e falta o código (POST /sessoes/codigo).
+    Numa conta que ainda não confirmou o primeiro código, sai um segredo novo (`etapa: "ativacao"`) e o próximo
+    passo é POST /contas/ativar."""
     so_no_modo_real(cfg)
     agora = agora_utc()
     try:
-        passe = await asyncio.to_thread(contas(cfg).entrar, req.email, req.senha, agora)
+        feito = await asyncio.to_thread(contas(cfg).entrar, req.email, req.senha, agora)
     except (EntradaRecusada, AguardeParaTentar) as e:
         raise _recusa(e) from None
-    expira = agora + PASSE
-    _gravar_cookie(response, COOKIE_PASSE, passe, expira, agora)
-    return EntrarResposta(expiraEm=expira)
+    _gravar_cookie(response, COOKIE_PASSE, feito.passe, feito.expira_em, agora)
+    if feito.ativacao is None:
+        return EntrarResposta(etapa="codigo", expiraEm=feito.expira_em)
+    return EntrarAtivacaoResposta(
+        etapa="ativacao",
+        otpauth=feito.ativacao.endereco,
+        segredo=feito.ativacao.segredo,
+        expiraEm=feito.expira_em,
+        aviso=AVISO_DO_SEGREDO,
+    )
 
 
 @rotas.post("/sessoes/codigo", response_model=SegundaEtapaResposta, responses=ENTRADA)
@@ -239,7 +257,10 @@ def sair_de_todos(cfg: Cfg, response: Response, sessao_token: SessaoCookie = Non
         **SESSAO,
         **respostas.LIMITE,
         409: {"description": "A única dona de uma organização com outros membros precisa passar a posse antes."},
-        429: {"description": "Espera depois de falhas seguidas, ou conta bloqueada (header Retry-After)."},
+        429: {
+            "description": "Espera depois de falhas seguidas (header Retry-After), ou conta bloqueada "
+            "(/problemas/conta-bloqueada)."
+        },
     },
 )
 async def excluir(cfg: Cfg, req: ExcluirContaRequisicao, response: Response, sessao_token: SessaoCookie = None) -> None:

@@ -146,7 +146,27 @@
 
 /* Barra das páginas públicas: só a marca e o caminho para a demonstração (ou para a conta). */
 .barra__publica {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco);
+  min-width: 0;
   margin-left: auto;
+}
+
+/* Com a conta, o e-mail é quem encolhe (reticências): os links não quebram nem empurram a página para o lado
+   (em 390 px, um e-mail longo passava da tela). */
+.barra__publica > a,
+.barra__publica > .botao-texto {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.barra__publica .menu-conta {
+  min-width: 0;
+}
+
+.barra__publica .menu-conta__botao {
+  max-width: min(240px, 100%);
 }
 
 .barra__publica a {
@@ -171,6 +191,13 @@
 
 .aviso-demo__linha a {
   color: var(--texto);
+}
+
+.aviso-demo__acoes {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px var(--espaco);
 }
 
 /* Estado da sessão */
@@ -203,6 +230,134 @@
   font-size: var(--tamanho-pequeno);
   line-height: var(--altura-pequeno);
   text-align: right;
+}
+
+.status__topo {
+  display: flex;
+  align-items: center;
+  gap: var(--respiro);
+}
+
+/* Menu da conta (C2b, etapa 9): o e-mail na barra, cortado com reticências, e um painel claro embaixo, alinhado
+   à direita. Sem sombra (o cromo não tem sombra): a borda separa o painel da página. */
+.menu-conta {
+  position: relative;
+}
+
+.menu-conta__botao {
+  display: inline-flex;
+  align-items: center;
+  max-width: 240px;
+  min-height: var(--altura-controle);
+}
+
+.menu-conta__rotulo {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.menu-conta__painel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 2;
+  width: max-content;
+  min-width: 220px;
+  max-width: min(320px, calc(100vw - 2 * var(--margem-celular)));
+  padding: 8px;
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-cartao);
+  background: var(--superficie);
+  color: var(--texto);
+  text-align: left;
+}
+
+.menu-conta__painel[hidden] {
+  display: none;
+}
+
+.menu-conta__organizacao,
+.menu-conta__email {
+  overflow: hidden;
+  margin: 0;
+  padding: 4px 8px 8px;
+  color: var(--texto-suave);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.menu-conta__email {
+  padding-bottom: 0;
+  color: var(--texto);
+  font-weight: var(--peso-medio);
+}
+
+.menu-conta__lista {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.menu-conta__item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: var(--raio-controle);
+  background: none;
+  color: var(--texto);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* Na barra (preta), o .barra__publica a e o .barra .botao-texto deixariam o item branco sobre o painel branco. */
+.barra .menu-conta__painel .menu-conta__item {
+  display: flex;
+  color: var(--texto);
+  font-weight: var(--peso-normal);
+}
+
+.menu-conta__item:hover {
+  background: var(--acao-secundaria);
+}
+
+.menu-conta__erro:empty {
+  display: none;
+}
+
+.menu-conta__erro {
+  margin: 4px 8px 0;
+  font-size: var(--tamanho-pequeno);
+  line-height: var(--altura-pequeno);
+}
+
+/* Na folha do celular: aberto, na coluna, com alvos de 44px. */
+.menu-conta--folha {
+  width: 100%;
+}
+
+.menu-conta--folha .menu-conta__organizacao,
+.menu-conta--folha .menu-conta__email {
+  padding-inline: 0;
+}
+
+.menu-conta--folha .menu-conta__item {
+  min-height: 44px;
+  padding-inline: 0;
+  font-size: var(--tamanho-secao);
+}
+
+.folha .status__topo {
+  flex-direction: column-reverse;
+  align-items: flex-start;
+  width: 100%;
 }
 
 .status__descricao {

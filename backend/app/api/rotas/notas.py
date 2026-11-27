@@ -50,7 +50,7 @@ from app.nfe.importacao import agora_utc, importar_nota
 rotas = APIRouter(tags=["notas"])
 
 TIPOS_XML = {"application/xml", "text/xml", "application/octet-stream", ""}
-CNPJ = Annotated[str, Query(pattern=r"^\d{14}$", description="CNPJ da empresa (14 dígitos).")]
+CNPJ = Annotated[str, Query(pattern=r"^[0-9]{14}$", description="CNPJ da empresa (14 dígitos).")]
 
 
 @rotas.post("/nfe/importar", response_model=NfeImportarResposta, responses=respostas.NFE)
@@ -85,7 +85,7 @@ async def nfe_importar(
 def listar_alertas(
     cfg: Cfg,
     response: Response,
-    cnpj: Annotated[str | None, Query(pattern=r"^\d{14}$", description="Só os desta empresa.")] = None,
+    cnpj: Annotated[str | None, Query(pattern=r"^[0-9]{14}$", description="Só os desta empresa.")] = None,
     abertos: Annotated[
         bool | None, Query(description="true: só os sem preço aplicado; false: só os aplicados.")
     ] = None,

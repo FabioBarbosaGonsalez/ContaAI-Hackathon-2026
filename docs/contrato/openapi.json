@@ -585,7 +585,7 @@
               "anyOf": [
                 {
                   "type": "string",
-                  "pattern": "^\\d{14}$"
+                  "pattern": "^[0-9]{14}$"
                 },
                 {
                   "type": "null"
@@ -1271,7 +1271,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "pattern": "^\\d{14}$",
+              "pattern": "^[0-9]{14}$",
               "description": "CNPJ da empresa (14 dígitos).",
               "title": "Cnpj"
             },
@@ -1376,7 +1376,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "pattern": "^\\d{14}$",
+              "pattern": "^[0-9]{14}$",
               "description": "CNPJ da empresa (14 dígitos).",
               "title": "Cnpj"
             },
@@ -1910,7 +1910,7 @@
             }
           },
           "429": {
-            "description": "Espera depois de falhas seguidas na conta, conta bloqueada (100 falhas) ou limite por IP (header Retry-After).",
+            "description": "Espera depois de falhas seguidas na conta ou limite por IP (header Retry-After), ou conta bloqueada depois de 100 falhas (/problemas/conta-bloqueada: só o administrador desbloqueia).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1978,7 +1978,7 @@
           "contas"
         ],
         "summary": "Entrar",
-        "description": "Primeira etapa: e-mail e senha. Certos, o passe vai no cookie e falta o código (POST /sessoes/codigo).",
+        "description": "Primeira etapa: e-mail e senha. Certos, o passe vai no cookie e falta o código (POST /sessoes/codigo).\nNuma conta que ainda não confirmou o primeiro código, sai um segredo novo (`etapa: \"ativacao\"`) e o próximo\npasso é POST /contas/ativar.",
         "operationId": "entrar_sessoes_post",
         "requestBody": {
           "content": {
@@ -1996,7 +1996,32 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EntrarResposta"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/EntrarResposta"
+                    },
+                    {
+                      "$ref": "#/components/schemas/EntrarAtivacaoResposta"
+                    }
+                  ],
+                  "title": "Response Entrar Sessoes Post",
+                  "discriminator": {
+                    "propertyName": "etapa",
+                    "mapping": {
+                      "codigo": "#/components/schemas/EntrarResposta",
+                      "ativacao": "#/components/schemas/EntrarAtivacaoResposta"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Espera depois de falhas seguidas na conta ou limite por IP (header Retry-After), ou conta bloqueada depois de 100 falhas (/problemas/conta-bloqueada: só o administrador desbloqueia).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
                 }
               }
             }
@@ -2013,16 +2038,6 @@
           },
           "401": {
             "description": "E-mail, senha ou código incorretos, ou passe vencido. A frase não diz qual.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problema"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Limite de requisições por minuto atingido (header Retry-After).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2187,7 +2202,7 @@
             }
           },
           "429": {
-            "description": "Espera depois de falhas seguidas na conta, conta bloqueada (100 falhas) ou limite por IP (header Retry-After).",
+            "description": "Espera depois de falhas seguidas na conta ou limite por IP (header Retry-After), ou conta bloqueada depois de 100 falhas (/problemas/conta-bloqueada: só o administrador desbloqueia).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2409,7 +2424,7 @@
             }
           },
           "429": {
-            "description": "Espera depois de falhas seguidas, ou conta bloqueada (header Retry-After).",
+            "description": "Espera depois de falhas seguidas (header Retry-After), ou conta bloqueada (/problemas/conta-bloqueada).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2628,7 +2643,7 @@
               "anyOf": [
                 {
                   "type": "string",
-                  "pattern": "^\\d{14}$"
+                  "pattern": "^[0-9]{14}$"
                 },
                 {
                   "type": "null"
@@ -2883,7 +2898,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "pattern": "^(REG|VSN)-\\d{3}$",
+              "pattern": "^(REG|VSN)-[0-9]{3}$",
               "title": "Codigo"
             }
           }
@@ -3923,7 +3938,7 @@
         "properties": {
           "cnpj": {
             "type": "string",
-            "pattern": "^\\d{14}$",
+            "pattern": "^[0-9]{14}$",
             "title": "Cnpj"
           },
           "valorUnitario": {
@@ -4068,7 +4083,7 @@
           "email": {
             "type": "string",
             "maxLength": 254,
-            "pattern": "^[^@\\s]{1,64}@[^@\\s]+\\.[^@\\s]+$",
+            "pattern": "^[^@\\s:]{1,64}@[^@\\s:]+\\.[^@\\s:]+$",
             "title": "Email",
             "description": "E-mail de quem entra."
           },
@@ -4663,7 +4678,7 @@
         "properties": {
           "codigo": {
             "type": "string",
-            "pattern": "^\\d{6}$",
+            "pattern": "^[0-9]{6}$",
             "title": "Codigo",
             "description": "Os 6 dígitos do aplicativo autenticador."
           }
@@ -4795,7 +4810,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "pattern": "^\\d{14}$"
+                "pattern": "^[0-9]{14}$"
               },
               {
                 "type": "null"
@@ -4820,12 +4835,12 @@
         "properties": {
           "cnpj": {
             "type": "string",
-            "pattern": "^\\d{14}$",
+            "pattern": "^[0-9]{14}$",
             "title": "Cnpj"
           },
           "cClassTrib": {
             "type": "string",
-            "pattern": "^\\d{6}$",
+            "pattern": "^[0-9]{6}$",
             "title": "Cclasstrib"
           }
         },
@@ -5031,12 +5046,51 @@
         ],
         "title": "EmpresaResumo"
       },
+      "EntrarAtivacaoResposta": {
+        "properties": {
+          "etapa": {
+            "type": "string",
+            "const": "ativacao",
+            "title": "Etapa"
+          },
+          "otpauth": {
+            "type": "string",
+            "title": "Otpauth",
+            "description": "Endereço otpauth:// para o QR code do aplicativo autenticador."
+          },
+          "segredo": {
+            "type": "string",
+            "title": "Segredo",
+            "description": "O mesmo segredo, em base32, para digitar à mão no aplicativo."
+          },
+          "expiraEm": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expiraem"
+          },
+          "aviso": {
+            "type": "string",
+            "title": "Aviso"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "etapa",
+          "otpauth",
+          "segredo",
+          "expiraEm",
+          "aviso"
+        ],
+        "title": "EntrarAtivacaoResposta",
+        "description": "Senha certa numa conta que ainda não confirmou o primeiro código: um segredo novo do segundo fator e o passe\nda ativação no cookie. O próximo passo é POST /contas/ativar, como no cadastro. O segredo antigo deixa de\nvaler."
+      },
       "EntrarRequisicao": {
         "properties": {
           "email": {
             "type": "string",
             "maxLength": 254,
-            "pattern": "^[^@\\s]{1,64}@[^@\\s]+\\.[^@\\s]+$",
+            "pattern": "^[^@\\s:]{1,64}@[^@\\s:]+\\.[^@\\s:]+$",
             "title": "Email",
             "description": "E-mail de quem entra."
           },
@@ -5060,8 +5114,7 @@
           "etapa": {
             "type": "string",
             "const": "codigo",
-            "title": "Etapa",
-            "default": "codigo"
+            "title": "Etapa"
           },
           "expiraEm": {
             "type": "string",
@@ -5072,6 +5125,7 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
+          "etapa",
           "expiraEm"
         ],
         "title": "EntrarResposta",
@@ -5401,12 +5455,12 @@
         "properties": {
           "cst": {
             "type": "string",
-            "pattern": "^\\d{3}$",
+            "pattern": "^[0-9]{3}$",
             "title": "Cst"
           },
           "cClassTrib": {
             "type": "string",
-            "pattern": "^\\d{6}$",
+            "pattern": "^[0-9]{6}$",
             "title": "Cclasstrib"
           },
           "litrosPorUnidade": {
@@ -5438,12 +5492,12 @@
         "properties": {
           "cst": {
             "type": "string",
-            "pattern": "^\\d{3}$",
+            "pattern": "^[0-9]{3}$",
             "title": "Cst"
           },
           "cClassTrib": {
             "type": "string",
-            "pattern": "^\\d{6}$",
+            "pattern": "^[0-9]{6}$",
             "title": "Cclasstrib"
           },
           "litrosPorUnidade": {
@@ -5484,7 +5538,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "pattern": "^\\d{8}$"
+                "pattern": "^[0-9]{8}$"
               },
               {
                 "type": "null"
@@ -5496,7 +5550,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "pattern": "^\\d{9}$"
+                "pattern": "^[0-9]{9}$"
               },
               {
                 "type": "null"
@@ -5506,12 +5560,12 @@
           },
           "cst": {
             "type": "string",
-            "pattern": "^\\d{3}$",
+            "pattern": "^[0-9]{3}$",
             "title": "Cst"
           },
           "cClassTrib": {
             "type": "string",
-            "pattern": "^\\d{6}$",
+            "pattern": "^[0-9]{6}$",
             "title": "Cclasstrib"
           },
           "impostoSeletivo": {
@@ -5697,7 +5751,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "pattern": "^\\d{8}$"
+                "pattern": "^[0-9]{8}$"
               },
               {
                 "type": "null"
@@ -5709,7 +5763,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "pattern": "^\\d{9}$"
+                "pattern": "^[0-9]{9}$"
               },
               {
                 "type": "null"
@@ -5719,12 +5773,12 @@
           },
           "cst": {
             "type": "string",
-            "pattern": "^\\d{3}$",
+            "pattern": "^[0-9]{3}$",
             "title": "Cst"
           },
           "cClassTrib": {
             "type": "string",
-            "pattern": "^\\d{6}$",
+            "pattern": "^[0-9]{6}$",
             "title": "Cclasstrib"
           },
           "impostoSeletivo": {
@@ -5910,7 +5964,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "pattern": "^\\d{8}$"
+                "pattern": "^[0-9]{8}$"
               },
               {
                 "type": "null"
@@ -5922,7 +5976,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "pattern": "^\\d{9}$"
+                "pattern": "^[0-9]{9}$"
               },
               {
                 "type": "null"
@@ -5932,12 +5986,12 @@
           },
           "cst": {
             "type": "string",
-            "pattern": "^\\d{3}$",
+            "pattern": "^[0-9]{3}$",
             "title": "Cst"
           },
           "cClassTrib": {
             "type": "string",
-            "pattern": "^\\d{6}$",
+            "pattern": "^[0-9]{6}$",
             "title": "Cclasstrib"
           },
           "impostoSeletivo": {
@@ -6952,7 +7006,7 @@
           },
           "cAtivSN": {
             "type": "string",
-            "pattern": "^\\d{2}$",
+            "pattern": "^[0-9]{2}$",
             "title": "Cativsn",
             "description": "Código de atividade do Simples (ex.: 01, revenda)."
           },
@@ -7022,7 +7076,7 @@
           },
           "cAtivSN": {
             "type": "string",
-            "pattern": "^\\d{2}$",
+            "pattern": "^[0-9]{2}$",
             "title": "Cativsn",
             "description": "Código de atividade do Simples (ex.: 01, revenda)."
           },
@@ -7607,7 +7661,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "pattern": "^\\d{6}$"
+                "pattern": "^[0-9]{6}$"
               },
               {
                 "type": "null"

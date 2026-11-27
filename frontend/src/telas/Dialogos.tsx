@@ -251,7 +251,7 @@ export function AlterarPreco({ item, aoFechar, aoGravar }: PropsPreco) {
               required
             />
             <p id={idAjuda} className="campo__ajuda">
-              Em reais, com até 2 casas. Os tributos são recalculados pelos motores depois de gravar.
+              Em reais, com até 2 casas.
             </p>
           </div>
           {falha !== null && (

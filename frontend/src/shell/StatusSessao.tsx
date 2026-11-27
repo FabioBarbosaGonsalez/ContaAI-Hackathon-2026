@@ -6,6 +6,7 @@ import { carregarSessao, criarEspaco } from '../sessao/acoes.ts';
 import { useSessao } from '../sessao/contexto.tsx';
 import { useConta, useEspaco, useModo } from '../sessao/ganchos.ts';
 import { BotaoDemonstracao } from './demonstracao.tsx';
+import { MenuDaConta } from './MenuDaConta.tsx';
 import { formatarPrazo } from './prazo.ts';
 
 /**
@@ -13,7 +14,7 @@ import { formatarPrazo } from './prazo.ts';
  * integra a API (fala do header e do token) e não é mostrado na tela.
  */
 export const DESCRICAO_ESPACO =
-  'Uma cópia própria dos dados fictícios. O que você mudar nela não afeta a demonstração compartilhada.';
+  'Uma cópia só sua dos dados fictícios, que não muda a demonstração dos outros.';
 
 /** A hora atual, atualizada a cada 30 s (o prazo é mostrado em minutos). */
 function useAgora(): number {
@@ -41,7 +42,8 @@ function mensagemDeErroAoCriar(erro: unknown): string {
 }
 
 interface PropsStatus {
-  /** Na folha do menu, a descrição do espaço aparece; na barra, fica só para leitor de tela. */
+  /** Na folha do menu, a descrição do espaço aparece (na barra, fica só para leitor de tela), e o menu da conta
+   *  aparece aberto. */
   descricaoVisivel?: boolean;
   /** Na folha do menu: fecha a folha quando um link leva a outra página. */
   aoNavegar?: () => void;
@@ -90,13 +92,8 @@ export function StatusSessao({ descricaoVisivel = false, aoNavegar }: PropsStatu
   } else if (conta.tipo === 'carregando') {
     conteudo = <span className="status__texto">Conferindo a sua conta…</span>;
   } else if (conta.tipo === 'conectada' && !conta.naDemo) {
-    // O nome da organização vem da API e vai como texto (o React escapa); nunca vira link nem atributo.
-    conteudo = (
-      <>
-        <span className="status__texto status__organizacao">{conta.conta.organizacao.nome}</span>
-        <BotaoDemonstracao className="botao-texto" {...(aoNavegar ? { aoEscolher: aoNavegar } : {})} />
-      </>
-    );
+    // A organização e o e-mail ficam no menu da conta, ao lado (MenuDaConta.tsx).
+    conteudo = <BotaoDemonstracao className="botao-texto" {...(aoNavegar ? { aoEscolher: aoNavegar } : {})} />;
   } else if (espaco.tipo === 'ativo') {
     conteudo = (
       <>
@@ -129,9 +126,20 @@ export function StatusSessao({ descricaoVisivel = false, aoNavegar }: PropsStatu
 
   return (
     <div className="status">
-      {/* role="status": quem usa leitor de tela ouve a troca de estado sem perder o foco. */}
-      <div className="status__linha" role="status">
-        {conteudo}
+      <div className="status__topo">
+        {/* role="status": quem usa leitor de tela ouve a troca de estado sem perder o foco. */}
+        <div className="status__linha" role="status">
+          {conteudo}
+        </div>
+        {/* Fora do role="status": o menu é um controle, e não um anúncio. Aparece também na demonstração, para
+            sair sem voltar à conta. */}
+        {conta.tipo === 'conectada' && (
+          <MenuDaConta
+            conta={conta.conta}
+            naFolha={descricaoVisivel}
+            {...(aoNavegar ? { aoNavegar } : {})}
+          />
+        )}
       </div>
       {modo.tipo === 'pronto' && modo.saude.modo === 'real' && !(conta.tipo === 'conectada' && !conta.naDemo) && (
         <p id={idDescricao} className={descricaoVisivel ? 'status__descricao' : 'so-leitor'}>

@@ -25,10 +25,17 @@ export function useCaminho(): string {
   return useSyncExternalStore(assinar, caminhoAtual);
 }
 
-/** Vai para outra página sem recarregar. */
-export function navegar(caminho: Caminho): void {
+/**
+ * Vai para outra página sem recarregar. `substituir` troca o endereço atual em vez de empilhar outro: usado quando
+ * a página aberta não serve a quem chegou (ex.: quem já entrou e abre /entrar), para o voltar não cair nela de novo.
+ */
+export function navegar(caminho: Caminho, { substituir = false } = {}): void {
   if (globalThis.location.pathname !== caminho) {
-    globalThis.history.pushState(null, '', caminho);
+    if (substituir) {
+      globalThis.history.replaceState(null, '', caminho);
+    } else {
+      globalThis.history.pushState(null, '', caminho);
+    }
   }
   globalThis.dispatchEvent(new Event(EVENTO));
   globalThis.scrollTo({ top: 0 });
@@ -38,12 +45,15 @@ type PropsLink = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'href'> & { para:
 
 /**
  * Link para uma página da tela. Clique comum navega sem recarregar; Ctrl, Shift, botão do meio etc.
- * seguem o comportamento normal do navegador (abrir em nova aba).
+ * seguem o comportamento normal do navegador (abrir em nova aba). Com `target="_blank"` (os termos, abertos do
+ * meio do cadastro sem perder o que foi digitado), o navegador abre a outra aba, sem `opener`.
  */
 export function Link({ para, onClick, children, ...resto }: PropsLink) {
+  const novaAba = resto.target === '_blank';
   const aoClicar = (evento: MouseEvent<HTMLAnchorElement>) => {
     onClick?.(evento);
     if (
+      novaAba ||
       evento.defaultPrevented ||
       evento.button !== 0 ||
       evento.metaKey ||
@@ -57,7 +67,7 @@ export function Link({ para, onClick, children, ...resto }: PropsLink) {
     navegar(para);
   };
   return (
-    <a {...resto} href={para} onClick={aoClicar}>
+    <a {...resto} rel={novaAba ? 'noopener noreferrer' : resto.rel} href={para} onClick={aoClicar}>
       {children}
     </a>
   );

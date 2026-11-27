@@ -340,6 +340,8 @@ export interface paths {
         /**
          * Entrar
          * @description Primeira etapa: e-mail e senha. Certos, o passe vai no cookie e falta o código (POST /sessoes/codigo).
+         *     Numa conta que ainda não confirmou o primeiro código, sai um segredo novo (`etapa: "ativacao"`) e o próximo
+         *     passo é POST /contas/ativar.
          */
         post: operations["entrar_sessoes_post"];
         /**
@@ -1288,6 +1290,36 @@ export interface components {
              */
             dataCenario: string;
         };
+        /**
+         * EntrarAtivacaoResposta
+         * @description Senha certa numa conta que ainda não confirmou o primeiro código: um segredo novo do segundo fator e o passe
+         *     da ativação no cookie. O próximo passo é POST /contas/ativar, como no cadastro. O segredo antigo deixa de
+         *     valer.
+         */
+        EntrarAtivacaoResposta: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            etapa: "ativacao";
+            /**
+             * Otpauth
+             * @description Endereço otpauth:// para o QR code do aplicativo autenticador.
+             */
+            otpauth: string;
+            /**
+             * Segredo
+             * @description O mesmo segredo, em base32, para digitar à mão no aplicativo.
+             */
+            segredo: string;
+            /**
+             * Expiraem
+             * Format: date-time
+             */
+            expiraEm: string;
+            /** Aviso */
+            aviso: string;
+        };
         /** EntrarRequisicao */
         EntrarRequisicao: {
             /**
@@ -1304,9 +1336,8 @@ export interface components {
          */
         EntrarResposta: {
             /**
-             * Etapa
-             * @default codigo
-             * @constant
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
              */
             etapa: "codigo";
             /**
@@ -3904,7 +3935,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemaValidacao"];
                 };
             };
-            /** @description Espera depois de falhas seguidas na conta, conta bloqueada (100 falhas) ou limite por IP (header Retry-After). */
+            /** @description Espera depois de falhas seguidas na conta ou limite por IP (header Retry-After), ou conta bloqueada depois de 100 falhas (/problemas/conta-bloqueada: só o administrador desbloqueia). */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -3943,7 +3974,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EntrarResposta"];
+                    "application/json": components["schemas"]["EntrarResposta"] | components["schemas"]["EntrarAtivacaoResposta"];
                 };
             };
             /** @description Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding). */
@@ -4000,7 +4031,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemaValidacao"];
                 };
             };
-            /** @description Limite de requisições por minuto atingido (header Retry-After). */
+            /** @description Espera depois de falhas seguidas na conta ou limite por IP (header Retry-After), ou conta bloqueada depois de 100 falhas (/problemas/conta-bloqueada: só o administrador desbloqueia). */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -4150,7 +4181,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemaValidacao"];
                 };
             };
-            /** @description Espera depois de falhas seguidas na conta, conta bloqueada (100 falhas) ou limite por IP (header Retry-After). */
+            /** @description Espera depois de falhas seguidas na conta ou limite por IP (header Retry-After), ou conta bloqueada depois de 100 falhas (/problemas/conta-bloqueada: só o administrador desbloqueia). */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -4363,7 +4394,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemaValidacao"];
                 };
             };
-            /** @description Espera depois de falhas seguidas, ou conta bloqueada (header Retry-After). */
+            /** @description Espera depois de falhas seguidas (header Retry-After), ou conta bloqueada (/problemas/conta-bloqueada). */
             429: {
                 headers: {
                     [name: string]: unknown;

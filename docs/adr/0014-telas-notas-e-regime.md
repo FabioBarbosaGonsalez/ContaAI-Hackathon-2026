@@ -46,7 +46,7 @@ O `GET /notas` entrou antes, num PR de backend separado (#19, revisão no ADR 00
   - o **caixa da empresa**, com o tributo de cada regime em duas barras e as contas: débito − crédito das compras = tributo líquido, e a diferença de caixa;
   - a **venda por item**, com a origem do crédito das compras;
   - o **preço de empate** com um concorrente do regime regular;
-  - as **premissas e simplificações**, sempre visíveis.
+  - as **premissas e simplificações**, sempre visíveis. *(Revisto em 2026-11-26, a pedido do usuário, para tirar o excesso de texto: o nome e o valor de cada premissa continuam à vista, e a fonte, as simplificações e a hipótese do empate abrem com um clique. Ver a revisão no fim.)*
 - **A tela não diz qual regime escolher** (plano, seção 10). O achado dá o crédito do cliente em cada regime, o custo no caixa e "Isso vale para as premissas abaixo." Um teste falha se o texto da página trouxer "opte", "recomend" ou "escolha o".
 - **Antes de 2027**, a tela explica que a comparação não existe (VSN-015) e não chama a API.
 - **Sem cliente empresa**, a tela diz que não há venda para comparar. Com dois ou mais, aparece um seletor.
@@ -90,3 +90,27 @@ Os números do plano, do inventário e do teste de referência (`test_regime_gol
 - **Itens sem par:** a tela mostra o motivo, mas não há rota para casar um item da nota com um do catálogo. Cadastrar o par fica para a C3 (catálogo editável).
 - **Notas de exemplo:** a banca precisa de um XML para importar. As notas fictícias estão em `data/demo/notas`. Oferecê-las para baixar na tela fica para a C2, junto da página inicial da demonstração.
 - **Recibo de uma nota antiga:** o `GET /notas` traz só o resumo. Rever o recibo inteiro de uma nota já importada exigiria uma rota nova.
+
+## Revisão de 2026-11-26: menos texto na tela (pedido do usuário)
+
+O usuário pediu menos poluição visual em todo o frontend, deixando escrito só o necessário e o que é boa prática.
+
+**O que continua à vista, porque um princípio exige:**
+- a frase de simulação da API, no subtítulo (P6);
+- o nome e o valor de cada premissa, como no Painel: as alíquotas aparecem como premissa, nunca como oficiais (P6 a P8);
+- o aviso "estimativa, não é parecer fiscal", no rodapé (P9).
+
+**O que mudou:**
+- **Catálogo:** as premissas usam a forma compacta do Painel, com a fonte atrás de "Fonte".
+- **Regime:**
+  - a frase principal ficou com o crédito em cada regime e a diferença no caixa. O valor da venda já está na régua, e a simulação, no subtítulo;
+  - as simplificações e a hipótese do empate saíram do bloco próprio e foram para "Simplificações do cálculo", fechado, dentro do bloco das premissas;
+  - o empate diz numa frase o que é o concorrente;
+  - a origem do crédito ("da nota" ou "estimado") aparece uma vez, no cabeçalho da coluna, quando é a mesma em todos os itens;
+  - "calculado pelo motor RR" virou "estimado", também nas Notas.
+- **Backend (texto da tela):** três frases da comparação mostravam nomes de campo da API (`diferencaPrecoCliente`, `diferencaCaixa` e `custoLiquidoAlvo`), e a descrição da cesta citava "do plano (seção 13)". Foram reescritas em português comum em `app/regime/comparar.py`, nos mocks, nas fixtures da tela e em `data/demo/cliente-b2b.json`. Um teste confere que nenhum desses nomes aparece na tela.
+- **Larguras:** entre 1024 e 1199 px, a tabela da venda e o empate ficam um embaixo do outro. A partir de 1200 px, o nome do item não quebra.
+
+**Verificação:** portão `inspect.mjs --app` com 0 FAIL e 0 WARN em 1440, 768 e 390 px no Regime, no Catálogo, no Painel, nas Notas, no Início e no Criar conta. Em 1100 px, o Regime tem um WARN `below-fold`, de tela empilhada.
+
+**Ficou como estava:** as fontes das premissas citam documentos internos (P6, ADR 0003, "plano, E3"). Elas vêm do backend e ficam atrás de "Fonte"; reescrevê-las mexe nos dados da demonstração e nos testes de referência, e fica para decidir.

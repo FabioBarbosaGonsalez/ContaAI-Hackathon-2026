@@ -32,8 +32,9 @@ Por isso entram três etapas de contas (C1 a C3) entre o 3b e o 3c. O 3c depende
 | `GET /notas` (antes do 3b) | PR #19, revisão no ADR 0008 |
 | 3b: Notas e Regime (e o Painel sem alerta) | PR #20, ADR 0014 |
 | C1: contas no backend | PR #21, ADR 0015 |
-| B0: aceite dos termos (antes das telas da C2) | revisão no ADR 0015 |
-| C2a: página inicial, rotas, a conta na tela, termos e privacidade | ADR 0016 |
+| B0: aceite dos termos (antes das telas da C2) | PR #22, revisão no ADR 0015 |
+| C2a: página inicial, rotas, a conta na tela, termos e privacidade | PR #23, ADR 0016 |
+| C2b: criar conta, entrar, o menu da conta e Sua conta | seção da C2b no ADR 0016 |
 
 ## A ordem
 
@@ -41,7 +42,7 @@ Por isso entram três etapas de contas (C1 a C3) entre o 3b e o 3c. O 3c depende
 |---|---|---|---|
 | 1 | **3b** (feito) | Telas de Notas e de Regime | `GET /notas` (feito) |
 | 2 | **C1** (feito) | Contas no backend | 3b |
-| 3 | **C2** (B0 e C2a feitos) | Telas de entrada | C1 |
+| 3 | **C2** (B0, C2a e C2b feitos) | Telas de entrada | C1 |
 | 4 | **C3** | Dados da própria empresa | C1 e C2 |
 | 5 | **3c** | Contador, seletor de empresa e chat | C1 a C3 |
 | 6 | **E6** | Hospedagem, HTTPS, testes de ponta a ponta, vídeo e pitch | todas |
@@ -180,12 +181,12 @@ O que mudou em relação a este mapa:
    - Lido em 2026-11-26, no pacote do npm:
      - o `LICENSE` é MIT, "Copyright (c) Project Nayuki" e "Copyright (c) 2023 Anthony Fu";
      - não tem dependências;
-     - o `dist` tem 84 KB;
+     - o `dist` tem 73.079 bytes, e o pacote inteiro, 79.278 (`npm view uqr@0.1.3 dist.unpackedSize`, conferido na C2b; o mapa dizia 84 KB);
      - o `encode()` devolve `data: boolean[][]`.
    - Fica fora:
      - o `renderSVG()`, que devolve texto e pediria `dangerouslySetInnerHTML`;
      - a `qrcode-generator` 2.0.4, porque o `package.json` diz MIT, mas o pacote não traz o arquivo de licença.
-   - **Não verificado:** o README e a data de publicação da 0.1.3.
+   - **Conferido na C2b (2026-11-26):** a 0.1.3 foi publicada em 2026-04-03 (`npm view uqr time`). O README documenta o `encode()` (`data`, `version` e `size`) e credita o algoritmo ao Project Nayuki. O `dist` não tem chamada de rede, `eval`, DOM nem `innerHTML`, e o `npm audit` dá 0 vulnerabilidades.
 4. **Quem responde pelos dados: "Equipe ContaAI", sem e-mail.**
    - A página mostra só "Equipe ContaAI": sem e-mail, sem nome e sem frase do tipo "contato a definir".
    - **Regra do usuário: o nome e o e-mail dos integrantes nunca vazam.** Eles não entram no repositório, que é público, nem no código, nos testes, nos mocks, nos logs, nos commits, nos PRs ou na página publicada.
@@ -229,9 +230,9 @@ O que mudou em relação a este mapa:
 | T10 | Verificação e documentação | Testes com fetch falso e TOTP calculado no teste. Portão `inspect.mjs --app` em 1440, 768 e 390 px. Chrome com o build: CSP, Trusted Types e o fluxo inteiro pelo DevTools Protocol. Teclado, leitor de tela e `autocomplete` (`username`, `new-password`, `current-password` e `one-time-code`). ADR 0016, este plano, o README e a varredura de inconsistências |
 
 **A conferir durante o código:**
-- o README e a data da `uqr` 0.1.3 (C2b);
-- se baixar os códigos como `.txt` por `blob:` passa pela CSP atual, no Chrome (C2b);
-- se os gerenciadores de senha funcionam com `form-action 'none'` (o envio é por `fetch`) (C2b);
+- ~~o README e a data da `uqr` 0.1.3~~: **conferidos na C2b** (decisão 3);
+- ~~se baixar os códigos como `.txt` por `blob:` passa pela CSP atual, no Chrome~~: **conferido na C2b, etapa 7** (o arquivo baixou inteiro, sem violação);
+- se os gerenciadores de senha funcionam com `form-action 'none'` (o envio é por `fetch`): **em parte, na C2b, etapa 6.** O envio não dá violação da CSP, e os campos têm `name` e `autocomplete`. O balão de salvar a senha não aparece no Chrome sem janela (headless): fica com o usuário, num Chrome comum (etapa 10);
 - ~~se o `credentials: 'omit'` da demonstração passa pela conferência de CSRF~~: **conferido na C2a**, no Chrome. O `POST /espacos` sem cookie, com a conta aberta, criou o espaço;
 - ~~a LGPD, art. 7º, 9º e 41, e o guia de cookies da ANPD~~: **lidos na C2a** (fontes no [ADR 0016](adr/0016-telas-de-entrada.md)).
 
@@ -260,6 +261,120 @@ O que mudou em relação a este mapa:
   - o provedor de hospedagem como operador;
   - as cópias de segurança e a exclusão "na hora";
   - o chat com IA real, que manda texto a terceiros e precisa entrar na privacidade antes (3c).
+
+**C2b em 10 etapas (validado pelo usuário em 2026-11-26):**
+
+| # | Etapa | O que entra |
+|---|---|---|
+| 1 | Conferências e dependência | README e data da `uqr` 0.1.3, licença no `node_modules`, `npm audit`, versão fixa |
+| 2 | Rotas e links | `/entrar` e `/criar-conta` (públicas) e `/conta` (no app, fora dos destinos). Links na página inicial, na barra pública e na faixa. No mock, a página diz que as contas não existem. Quem já entrou e abre Entrar ou Criar conta vai ao Painel, com o endereço trocado |
+| 3 | Peças de formulário | Campo com ajuda e erro ligados (aria-describedby), senha com "Mostrar", campos de código, aviso de falha que recebe o foco, contagem do passe e espera do 429 |
+| 4 | Ações da conta | Cadastrar, ativar, entrar, código, sair, sair de todos e excluir na `SessaoConta`. Segredo e códigos só na memória do componente |
+| 5 | QR code | SVG de elementos React a partir do `encode()`, fundo claro, segredo em grupos de 4 para digitar |
+| 6 | Criar conta, passo 1 | E-mail, senha, organização e o aceite dos termos; gerenciador de senhas com `form-action 'none'` no Chrome |
+| 7 | Criar conta, passos 2 e 3 | QR e primeiro código com a contagem; os 10 códigos com copiar, baixar (`blob:` no Chrome) e "guardei". A correção do achado abaixo foi adiantada para a etapa 4 |
+| 8 | Entrar | Duas etapas; código do aplicativo ou de recuperação; espera do 429; passe vencido volta ao começo; conta pendente (`etapa: "ativacao"`) vai ao passo do QR |
+| 9 | Menu da conta | Botão com o e-mail na barra (Sua conta e Sair) e a página `/conta` com os dados, os códigos restantes, os eventos e as ações |
+| 10 | Verificação e documentação | Testes, portão da skill, fluxo no Chrome, ADR 0016, plano, README, varredura; o QR lido num aplicativo autenticador de verdade, pelo usuário |
+
+**Etapa 5 feita (QR code):** `telas/QrCode.tsx` desenha um único `<path>` (um retângulo por trecho escuro de cada linha) a partir do `encode()`, com fundo branco e módulos pretos. A correção de erro é a M, que dá a versão 8 (49 módulos) para o endereço de um e-mail comum. Cada módulo tem 4 px inteiros, e o QR cresce com o endereço, até 157 módulos (628 px) no pior e-mail aceito: 254 caracteres acentuados, que o endereço triplica. Em tela estreita, o QR encolhe. A borda tem 4 módulos, o valor dos exemplos do Project Nayuki (lido em 2026-11-26); a página não diz que a norma exige 4, e a ISO/IEC 18004 **não foi lida**. O segredo aparece em grupos de 4, em linha, separados por margem e com `<wbr>` entre eles, para que o texto copiado saia inteiro. Os testes refazem a matriz a partir do desenho e a comparam com a do `encode()`.
+
+**Conferido no Chrome 158 (2026-11-26)**, com o componente real e o CSS da tela, por um roteiro no scratchpad da sessão (fora do repositório). O print do QR foi lido pelo jsQR 1.4.0 (Apache-2.0, só no rascunho, fora do projeto) em 4 e-mails (comum, acentuado, 254 caracteres e o pior caso), em densidade 1, 2 e 3, em 360 px e com alto contraste emulado (`forced-colors: active`, que pintou a página de preto e manteve o QR branco e preto). Todos foram lidos e deram o endereço exato. A conferência mudou duas coisas:
+- **o tamanho fixo de 224 px** deixava o e-mail longo com 2,64 px por módulo, e o print não era lido. Daí os 4 px por módulo;
+- **os grupos do segredo em flex** levavam uma quebra de linha entre cada grupo na cópia (`Ctrl+C`): o teste do jsdom passava porque o jsdom não tem layout. Com os grupos em linha, a seleção e a área de transferência dão o segredo exato. Numa tela de 200 px, o segredo quebra em 2 linhas sem partir nenhum grupo.
+
+**Ainda falta:** a leitura num aplicativo autenticador de verdade, pela câmera (etapa 10). O jsQR lê o print, não uma foto da tela.
+
+**Revisão da etapa 5 (2026-11-26):**
+- **CSP:** o QR e o segredo, servidos com os cabeçalhos de `cabecalhosDeSeguranca` (`csp.ts`) e o CSS como arquivo externo, não deram violação no Chrome 158. Um `<style>` embutido de controle foi barrado, o que prova que a política estava valendo. O QR foi lido igual;
+- **o endereço do QR** confere com o Key Uri Format do Google Authenticator (wiki lido em 2026-11-26; o repositório está arquivado desde 2021): o rótulo aceita o `:` como `%3A`, e o emissor do rótulo é igual ao do parâmetro `issuer`;
+- **achado, anterior a esta etapa (C1, backend):** a mesma página diz que o nome da conta não pode ter `:`, mas o padrão de e-mail do contrato (`[^@\s]{1,64}@...`) aceita, por exemplo, `a:b@x.com`. O `quote` do `totp.endereco` vira `%3A`, e um aplicativo pode separar o rótulo no lugar errado. **Resolvido na varredura de 2026-11-26 (decisão do usuário):** o padrão de e-mail recusa o `:` (`[^@\s:]`), no contrato e na tela (revisão da varredura no [ADR 0015](adr/0015-contas.md));
+- **licenças no build:** o build da tela saía sem nenhum aviso de copyright (o código minificado não leva os comentários), e a MIT pede o aviso nas cópias. Isso já valia para o React e passaria a valer para a `uqr` (Project Nayuki e Anthony Fu). Agora o `build.license` do Vite gera `licencas.md` com o que entra no build, e o `npm run seguranca` falha sem ele. A lista bate com a do [ADR 0012](adr/0012-fundacao-do-frontend.md) (React, React DOM, scheduler, openapi-fetch e as fontes Geist). A `uqr` entra sozinha quando o QR for montado (etapa 7). **Feito na etapa 10:** revisão da C2b no ADR 0012.
+
+**Etapas 6 e 7 feitas (Criar conta, 2026-11-26):**
+- **passo 1** (`telas/CriarConta.tsx`): e-mail (`username`), senha (`new-password`, com "Mostrar"), organização (`organization`) e a caixa do aceite, com a versão de `legal.ts`. Os termos e a privacidade abrem em outra aba (`target="_blank"` e `rel="noopener noreferrer"`; o `Link` passou a aceitar), sem perder o que foi digitado. A tela confere tudo antes de enviar, aponta o erro em cada campo e põe o foco no primeiro. O 409 mostra a frase da API e o caminho para Entrar; o 422 e o 429 mostram a frase da API, e o 429 segura o botão pelo `Retry-After`;
+- **passo 2** (`telas/SegundoFator.tsx`, `PassoDoQr`, que o Entrar vai usar na etapa 8): o QR, o segredo com "Copiar o segredo", o e-mail da conta e o primeiro código, com a contagem do passe. A contagem parte de quando a resposta chegou, com os 5 min do backend, e não do `expiraEm` contra o relógio do aparelho. Com o passe vencido, o QR e o segredo saem da tela e a página leva a Entrar (decisão 1);
+- **passo 3** (`CodigosDeRecuperacao`): os 10 códigos, "Copiar os códigos", "Baixar (.txt)" e "Guardei os códigos", que vai ao Painel sem deixar o cadastro no voltar. Fechar a aba neste passo pede confirmação;
+- **ao lado dos passos:** "Como a conta é protegida", com as regras de `legal.ts` e o que os termos já dizem (senha, segundo fator, recuperação e sessão);
+- **a tela conta os caracteres como o backend** (pontos de código): os campos não têm `maxLength`, porque o do HTML conta unidades UTF-16 e corta o texto colado sem avisar;
+- **achado e consertado no backend:** a organização só com espaços passava pelo contrato e nascia sem nome (revisão da etapa 6 no [ADR 0015](adr/0015-contas.md));
+- **verificação:** 392 testes da tela e 498 do backend (97%); o portão da skill em `/criar-conta` com 0 FAIL e 0 WARN em 1440, 768 e 390 px; o cadastro inteiro no Chrome 158, com o build, a CSP do cabeçalho e a API real, por um roteiro no scratchpad da sessão (o código TOTP calculado no roteiro): nenhuma violação da CSP, os cookies `__Host-` com `HttpOnly`, `Secure` e `SameSite=Strict`, o segredo copiado igual, o `.txt` com os 10 códigos e nada no endereço nem no armazenamento do navegador;
+- **ainda falta:** o QR lido pela câmera de um aplicativo autenticador de verdade e o balão do gerenciador de senhas, pelo usuário (etapa 10); a `uqr` entrou no build e no `licencas.md` (ADR 0012 atualizado na etapa 10).
+
+**Pedido do usuário (2026-11-26): medidor de força da senha e menos texto na tela**
+- **Medidor** (`telas/forcaDaSenha.tsx`): fraca com a barra em um terço e vermelha, média em dois terços e amarela, forte inteira e verde, com a palavra ao lado (a cor não é o único sinal).
+  - **Fonte:** o NIST SP 800-63B-4, §3.1.1.2 (lido em 2026-11-26), diz "Verifiers SHALL offer guidance to the subscriber to help the subscriber choose a strong password" e proíbe regra de composição. O medidor só orienta e não exige mistura de caracteres.
+  - **Estimativa:** zxcvbn-ts (`@zxcvbn-ts/core` 4.2.0 e `@zxcvbn-ts/language-common` 4.1.3, MIT), com versões de pelo menos duas semanas (a 4.3.0 do núcleo saiu em 2026-11-14). Ficou fora o `@zxcvbn-ts/language-pt-br`: o dicionário dele vem do OpenSubtitles (ODC-BY, que pede manter um aviso de atribuição) e de uma lista da Wikipédia sem licença declarada.
+  - **Limites:** sem o dicionário em português, a estimativa é generosa com palavras da nossa língua ("minhacasa" leva nota 3). Por isso 0 a 2 = fraca, 3 = média e só 4 = forte; abaixo de 8 caracteres, é fraca sempre. O e-mail, a organização e as palavras do produto pesam contra a senha, como no backend.
+  - **Cores:** tokens novos `--forca-fraca`, `--forca-media` (`#b58105`, 3,12:1 no fundo) e `--forca-forte`, com 3:1 conferido em `tokens.test.ts`.
+  - **Peso:** a biblioteca é baixada só quando a pessoa digita a senha: 33 KB do núcleo e 428 KB do dicionário (224 KB comprimido). O arquivo principal cresceu 4 KB.
+- **Menos texto:** regras e resultado na revisão de 2026-11-26 do [ADR 0014](adr/0014-telas-notas-e-regime.md). Palavras no conteúdo, medidas no Chrome antes e depois: Regime 775 → 522, Catálogo 542 → 366, Criar conta 191 → 121, Início 209 → 170 e Notas 107 → 82. Termos e privacidade ficaram inteiros: são o texto legal.
+- **Verificação:** 419 testes da tela e 498 do backend (52 de referência); o portão com 0 FAIL e 0 WARN nas seis telas que mudaram; o medidor e o cadastro inteiro no Chrome 158, sem violação da CSP.
+
+**Etapa 8 feita (Entrar, 2026-11-27):**
+- **página** (`telas/Entrar.tsx`): duas etapas, e-mail e senha, depois o código do aplicativo ou de recuperação, com a contagem do passe.
+  - Passe vencido: volta ao passo 1, com o e-mail e sem a senha, e diz por quê.
+  - Conta pendente (`etapa: "ativacao"`): vai ao QR e aos 10 códigos. O `PassoDoQr` ganhou `aoRecomecar`, para não mostrar um link para a própria página.
+  - Código de recuperação: a página mostra o código novo uma vez, com aviso ao fechar a aba.
+  - Ao lado, "Sem acesso?", com as regras de `legal.ts` (as mesmas dos termos).
+  - A página é curta: o título e o formulário ficam no meio da altura livre (o portão mediu 408 px vazios no pé, em 1440 px).
+- **o 429 da conta bloqueada (o ponto "a conferir" abaixo), resolvido:** tipo próprio `/problemas/conta-bloqueada` no backend, e a tela não mostra contagem para ele (revisão da etapa 8 no [ADR 0015](adr/0015-contas.md)). O e-mail sem conta recebe a mesma resposta, então o tipo não revela se o e-mail existe;
+- **achados no caminho, anteriores à etapa:**
+  - em `POST /sessoes`, a descrição do 429 no contrato só citava o limite por IP (o dicionário do limite apagava a da rota). Corrigido e exportado de novo;
+  - o `lint.mjs --app` da skill dava 8 FAIL das etapas 3 a 7: emojis em dados de teste (contam pontos de código) e o `nome@example.com` da frase do e-mail (domínio reservado para exemplos, RFC 2606). As linhas levam `taste-skill-ignore` com o motivo. Ficam 6 WARN: os 5 de antes e o `padStart` dos segundos da contagem ("4 min 05 s"), que é um relógio;
+  - um teste do aviso ao fechar a aba falhava às vezes com a máquina ocupada (o ouvinte entra num efeito): `waitFor` no Entrar e no Criar conta;
+- **verificação:**
+  - testes: tela 439 e backend 500, com lint, tsc, build, `npm run seguranca`, `contrato:checar`, ruff e mypy;
+  - portão da skill em `/entrar` e `/criar-conta`: 0 FAIL e 0 WARN em 1440, 768 e 390 px;
+  - fluxo inteiro no Chrome 158, com o build, a CSP do cabeçalho e a API real, por um roteiro no scratchpad da sessão: campos vazios, senha errada, código errado, código certo, código de recuperação (o novo é diferente, copiar dá o código exato, o usado não vale de novo), conta pendente (segredo novo, ativação e 10 códigos), espera do 429 ("Aguarde 30 s") e conta bloqueada (frase da API, sem contagem). Nenhuma violação da CSP e nenhuma exceção; só cookies `__Host-` com `HttpOnly`, `Secure` e `SameSite=Strict`; nada no endereço nem no armazenamento do navegador. O bloqueio foi marcado direto no banco de teste, porque 100 falhas reais levariam horas por causa da espera. A API de teste subiu com o limite por IP em 100 por minuto, para o roteiro caber; o limite em si tem teste no backend;
+- **falta, para a etapa 10:** o balão do gerenciador de senhas no Entrar (`current-password`), num Chrome comum, pelo usuário.
+
+**Etapa 9 feita (menu da conta e Sua conta, 2026-11-27):**
+- **menu na barra** (`shell/MenuDaConta.tsx`): um botão com o e-mail, cortado com reticências, que mostra e esconde a organização, "Sua conta" e "Sair".
+  - É um botão de mostrar e esconder (`aria-expanded`), e não um `role="menu"`: só um link e um botão. Esc fecha e devolve o foco; clicar fora ou levar o foco para fora também fecha.
+  - Aparece também na demonstração e nas páginas públicas, para sair de qualquer lugar. Na folha do celular, o conteúdo aparece aberto, com alvos de 44 px.
+  - Sair que falha diz que a sessão pode continuar aberta, e a conta segue na tela.
+- **"Minha conta" virou "Ir ao Painel"** (barra pública e página inicial): o link levava ao Painel, e o nome era quase igual ao da página "Sua conta", que leva a outro lugar;
+- **página Sua conta** (`telas/Conta.tsx`): só o que o `GET /conta` já trouxe, sem pedir nada além dele.
+  - Dados: e-mail, organização e papel, criada em, aceite dos termos e empresas.
+  - Segundo fator e códigos de recuperação, com o aviso de 3 ou menos (decisão 3).
+  - Avisos de segurança, com nome e momento no fuso do navegador (`instante`, em `dados/formatar.ts`).
+  - Sessão, com Sair e Sair de todos os aparelhos.
+  - Excluir a conta: a senha de novo e a caixa "Entendo que a exclusão não pode ser desfeita", com o botão vermelho (branco sobre `--negativo`, 5,78:1, em `tokens.test.ts`). Também mostra o 401 de senha errada, o 401 de sessão acabada, o 409 do dono com outros membros e o bloqueio sem contagem. A exclusão vem por último também no celular;
+- **privacidade:** "ver os seus dados" e "excluir a conta" apontam para "Sua conta", no menu da conta, que agora existe;
+- **achados:**
+  - **o aviso de poucos códigos (decisão 3) não aparece com o backend de hoje.** O código de recuperação usado é trocado por outro na hora (NIST §4.2, ADR 0015), então `codigosRecuperacaoRestantes` fica sempre em 10. O aviso está pronto e testado, para quando houver outro caminho que gaste os códigos sem troca. **Decisão do usuário (2026-11-27): o aviso fica;**
+  - o formulário de excluir tinha senha sem campo de usuário, e o Chrome recomendou um campo de usuário, que pode ser oculto, para o gerenciador de senhas. Entrou um campo oculto com o e-mail (`autocomplete="username"`), que não é enviado;
+  - "10 de 10" e as datas saíam na fonte mono, no meio da frase (classe `num`). Agora a `num` fica só nos CNPJs;
+- **portão:**
+  - `inspect.mjs --app` com 0 FAIL e 0 WARN em `/`, `/painel`, `/entrar` e `/criar-conta`;
+  - em `/conta`, 0 FAIL e 1 WARN (`hero-void`): o aviso de quem não entrou fica estreito e no centro, e o vazio simétrico é o descanso da tela. Os avisos curtos da porta passaram a ficar no meio da altura, como o Entrar (antes, 580 px vazios);
+  - o inspetor não leva cookie, então a visão de quem entrou foi conferida pelo roteiro do Chrome nas três larguras, sem rolagem lateral;
+  - `lint.mjs --app` com 0 FAIL e os 6 WARN de antes;
+- **verificação:**
+  - testes: tela 463 (22 novos em `suaConta.test.tsx`) e backend 500 (sem mudança), com lint, tsc, build, `npm run seguranca` e `contrato:checar`;
+  - no Chrome 158, com o build, a CSP e a API real: o menu (abre, Esc, foco, cores no painel claro), a folha do celular e a página nas três larguras;
+  - sair pelo menu e sair de todos: cookie apagado e `GET /conta` com 401;
+  - excluir com senha errada ("Senha incorreta.") e depois certa ("A conta foi excluída", e a entrada passa a dar 401);
+  - nenhuma violação da CSP e nada no endereço nem no armazenamento.
+
+**Etapa 10 feita (verificação e documentação, 2026-11-27):**
+- **testes:** tela 463 e backend 500 (97%), mais os 52 de referência, com lint, tsc, build, `npm run seguranca`, `contrato:checar`, ruff, mypy e `npm audit` (0 vulnerabilidades);
+- **teste instável:** um teste do Entrar falhava às vezes com a máquina ocupada (2 vezes em 8 rodadas). O foco no título do passo vem de um `useEffect`, e o teste conferia antes. As conferências de foco depois de uma resposta da API passaram a esperar (`waitFor`) no Entrar, no Criar conta e em Sua conta, e o `irAoCodigo` espera o passo 2 aparecer; 4 rodadas com carga em paralelo, todas com 463 de 463;
+- **no Chrome 158**, com o build, a CSP do cabeçalho e a API real, os três roteiros (criar conta, entrar e o menu com Sua conta) rodaram de novo sobre o build final: nenhuma violação da CSP, nenhum pedido fora da API, só cookies `__Host-` com `HttpOnly`, `Secure` e `SameSite=Strict`, nada no endereço nem no armazenamento;
+- **achado e consertado:** em 390 px, a barra pública rolava de lado com um e-mail longo, no passo "Guarde o código novo" do Entrar (já com a sessão, a barra mostra o menu). O botão do menu não encolhia, e "Ir ao Painel" quebrava em duas linhas. Agora a barra encolhe e o e-mail é cortado com reticências (`shell.css`); em 1440 px, nada muda. A etapa 9 tinha conferido as larguras no app, com um e-mail curto;
+- **portão da skill:** `inspect.mjs --app` com 0 FAIL e 0 WARN em nove telas e 1 WARN defensável em `/conta` (o mesmo da etapa 9); `lint.mjs --app` com 0 FAIL e os 6 WARN de antes. As telas de dados só passam com os motores de pé e as sementes no banco: com os motores fora do ar, o esqueleto de carregamento conta como vazio (`blank-gap`). Crítica em `.taste-skill/app/critica-c2b.md`;
+- **docs:** seção da C2b no [ADR 0016](adr/0016-telas-de-entrada.md); revisão da C2b no [ADR 0012](adr/0012-fundacao-do-frontend.md), com a `uqr`, o zxcvbn-ts e duas dependências deste que estavam fora dos docs (`fastest-levenshtein` 1.0.16 e `@zxcvbn-ts/dictionary-compression` 3.0.1, MIT, sem dependências próprias; nenhuma das cinco tem `fetch`, `eval` ou parecido); README;
+- **fica com o usuário:** o balão do gerenciador de senhas num Chrome comum (Criar conta e Entrar) e o QR lido pela câmera de um aplicativo autenticador de verdade.
+
+**Achado do mapa da C2b:** o passe da ativação dura 5 min, mas a conta pendente só some em 30 min (`servico.py`, `PASSE` e `PENDENTE`). Quem deixa o passe vencer no passo do QR recebe 409 ao se cadastrar de novo ("Entre com a senha e o código"), e o `entrar` só aceita conta ativa: a pessoa fica sem saída por até 25 min.
+
+**Decisões da C2b (2026-11-26):**
+1. **Entrar numa conta pendente, com a senha certa, dá um passe novo de ativação** e volta ao passo do QR (mudança no backend, neste PR). Exige a senha, então ninguém de fora assume o cadastro. **Feito na etapa 4:** o segredo é trocado, só o último passe vale e o cadastro pendente ganha mais 30 min (revisão da C2b no [ADR 0015](adr/0015-contas.md));
+2. menu curto na barra, mais a página `/conta` com os detalhes e as ações;
+3. o aviso de códigos de recuperação acabando aparece com 3 ou menos.
+
+**A conferir na C2b (resolvido na etapa 8):** o 429 da espera e o da conta bloqueada (100 falhas) chegam com o mesmo status, e o bloqueio manda `Retry-After` de 3600 s. A tela não deve mostrar "tente em 1 h" para uma conta que só o administrador desbloqueia (etapa 8).
 
 ## C3: dados da própria empresa
 

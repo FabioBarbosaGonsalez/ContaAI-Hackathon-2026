@@ -51,5 +51,5 @@ async def chat(
     async with http_interno(cfg.llm_timeout_s) as http:
         provedor = criar_provedor(cfg, http)
         return await responder_chat(
-            req, provedor, cfg, Ambiente(motores, da, req.contexto, repositorio=estado.repositorio)
+            req, provedor, cfg, Ambiente(motores, da, req.contexto, repositorio=estado.repositorio, cnpjs=estado.cnpjs)
         )

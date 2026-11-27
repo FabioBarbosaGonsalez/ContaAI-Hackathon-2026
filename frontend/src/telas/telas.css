@@ -41,7 +41,8 @@
 }
 
 .botao-principal:disabled,
-.botao-secundario:disabled {
+.botao-secundario:disabled,
+.botao-perigo:disabled {
   cursor: not-allowed;
   background: var(--acao-secundaria);
   color: #555555; /* 5,6:1 sobre #e5e5e5: desligado, mas legível (app-screens §8.1) */
@@ -129,18 +130,21 @@ h3 {
   color: var(--texto);
 }
 
-/* As premissas do Painel em três colunas: a linha inteira, sem vão sob as colunas mais curtas. */
-.painel__premissas .premissas--compacta {
+/* As premissas do Painel e do Catálogo em três colunas: a linha inteira, sem vão sob as colunas mais curtas. */
+.painel__premissas .premissas--compacta,
+.catalogo__premissas .premissas--compacta {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   column-gap: var(--respiro);
 }
 
-.painel__premissas .premissas--compacta .premissas__linha + .premissas__linha {
+.painel__premissas .premissas--compacta .premissas__linha + .premissas__linha,
+.catalogo__premissas .premissas--compacta .premissas__linha + .premissas__linha {
   border-top: 0;
 }
 
-.painel__premissas .premissas--compacta .premissas__linha {
+.painel__premissas .premissas--compacta .premissas__linha,
+.catalogo__premissas .premissas--compacta .premissas__linha {
   border-bottom: 1px solid var(--regua);
 }
 
@@ -752,6 +756,14 @@ h3 {
   align-self: start;
 }
 
+/* Em tela larga, o nome do item cabe numa linha (com a origem do crédito no cabeçalho, quando é uma só): a tabela
+   da venda fica da altura do cartão do empate, ao lado. */
+@media (min-width: 1200px) {
+  .regime__itens .tabela__nome {
+    white-space: nowrap;
+  }
+}
+
 .aviso-neutro {
   padding: 12px 16px;
   border-radius: var(--raio-cartao);
@@ -840,9 +852,16 @@ h3 {
   grid-column: span 4;
 }
 
-.regime__premissas,
-.regime__simplificacoes {
+.regime__premissas {
   grid-column: 1 / -1;
+}
+
+/* Entre 1024 e 1199px, o nome quebra e o empate fica estreito: os dois descem, um em cada linha. */
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .regime__itens,
+  .regime__empate {
+    grid-column: 1 / -1;
+  }
 }
 
 .regime__premissas .premissas--compacta {
@@ -881,6 +900,13 @@ h3 {
   display: flex;
   flex-direction: column;
   gap: var(--respiro);
+}
+
+/* O cartão da venda acompanha a altura do caixa, ao lado: as duas barras se espalham na altura que sobra, em vez
+   de deixar um vão no fim do cartão. */
+.regime__regua .regua {
+  flex: 1 1 auto;
+  justify-content: space-evenly;
 }
 
 .regua__lado {
@@ -1087,15 +1113,28 @@ h3 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px var(--respiro);
-  margin: 0;
+  margin: 12px 0 0;
   padding-left: 18px;
   color: var(--texto-suave);
+}
+
+/* As simplificações do Regime, fechadas: o resumo é um botão de texto, como o "Fonte" das premissas. */
+.simplificacoes__detalhe {
+  padding-top: 12px;
+  border-top: 1px solid var(--regua);
+}
+
+.simplificacoes__detalhe summary {
+  width: max-content;
+  font-weight: var(--peso-medio);
+  cursor: pointer;
 }
 
 /* Tablet: o lado e as premissas descem para baixo do bloco principal. */
 
 @media (max-width: 1023px) {
-  .painel__premissas .premissas--compacta {
+  .painel__premissas .premissas--compacta,
+  .catalogo__premissas .premissas--compacta {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -1121,6 +1160,7 @@ h3 {
   }
 
   .painel__premissas .premissas--compacta,
+  .catalogo__premissas .premissas--compacta,
   .regime__premissas .premissas--compacta,
   .recibo__dados,
   .simplificacoes {

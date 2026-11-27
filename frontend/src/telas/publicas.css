@@ -219,10 +219,21 @@
   max-width: 720px;
 }
 
-/* .vazio a pinta todo link de tinta: o botão principal mantém o texto branco. */
-.sem-empresa a.botao-principal {
+/* .vazio a pinta todo link de tinta: o botão principal mantém o texto branco, e os botões ficam sem sublinhado. */
+.vazio a.botao-principal {
   color: var(--acao-texto);
   text-decoration: none;
+}
+
+.vazio a.botao-secundario {
+  text-decoration: none;
+}
+
+/* Entrar e Criar conta, na página da conta de quem não entrou. */
+.porta__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco);
 }
 
 @media (max-width: 899px) {
@@ -249,11 +260,13 @@
   }
 
   .sem-empresa p:last-child,
-  .sem-empresa a.botao-principal {
+  .sem-empresa a.botao-principal,
+  .porta__acoes > a {
     width: 100%;
   }
 
-  .sem-empresa a.botao-principal {
+  .sem-empresa a.botao-principal,
+  .porta__acoes > a {
     justify-content: center;
     min-height: 44px;
   }
