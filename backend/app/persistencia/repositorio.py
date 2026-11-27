@@ -16,13 +16,14 @@ Datas (convenção do ADR 0003, revisada na E4):
 
 from __future__ import annotations
 
+import json
 import sqlite3
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from decimal import Decimal
-from typing import Literal
+from typing import Any, Literal
 
 from app.contrato import Alerta
 from app.dados_demo import Cenario, ClienteB2B, Empresa, ItemCatalogo
@@ -142,6 +143,124 @@ class Sessao:
     def apagar_empresa(self, cnpj: str) -> None:
         """Apaga a empresa e, em cascata, tudo o que é dela (itens, notas, custos, preços, alertas, clientes)."""
         self._c.execute("DELETE FROM empresas WHERE cnpj = ?", (cnpj,))
+
+    def exportar_empresa(self, cnpj: str) -> dict[str, Any]:
+        """Tudo o que o banco guarda da empresa, como está gravado (o arquivo dos dados da conta, LGPD art. 19, e
+        app.contrato.EmpresaExportada). Os documentos JSON saem sem transformação; nenhum texto vira SQL."""
+        c = self._c
+        empresa = c.execute("SELECT empresa_json, cenario_json FROM empresas WHERE cnpj = ?", (cnpj,)).fetchone()
+        return {
+            "empresa": json.loads(empresa["empresa_json"]) if empresa else None,
+            "cenario": json.loads(empresa["cenario_json"]) if empresa else None,
+            "itens": [
+                {
+                    "itemId": r["item_id"],
+                    "ncm": r["ncm"],
+                    "unidade": r["unidade"],
+                    "arquivadoEm": r["arquivado_em"],
+                    "item": json.loads(r["item_json"]),
+                }
+                for r in c.execute(
+                    "SELECT item_id, ncm, unidade, arquivado_em, item_json FROM itens WHERE cnpj = ? ORDER BY item_id",
+                    (cnpj,),
+                )
+            ],
+            "codigosFornecedor": [
+                {"cnpjFornecedor": r["cnpj_fornecedor"], "codigo": r["codigo"], "itemId": r["item_id"]}
+                for r in c.execute(
+                    "SELECT cnpj_fornecedor, codigo, item_id FROM codigos_fornecedor WHERE cnpj = ? "
+                    "ORDER BY cnpj_fornecedor, codigo",
+                    (cnpj,),
+                )
+            ],
+            "notas": [
+                {
+                    "id": r["id"],
+                    "cnpjEmitente": r["cnpj_emitente"],
+                    "serie": r["serie"],
+                    "numero": r["numero"],
+                    "dataEmissao": r["data_emissao"],
+                    "sha256": r["sha256"],
+                    "importadaEm": r["importada_em"],
+                    "recibo": json.loads(r["recibo_json"]),
+                }
+                for r in c.execute(
+                    "SELECT id, cnpj_emitente, serie, numero, data_emissao, sha256, importada_em, recibo_json "
+                    "FROM notas WHERE cnpj = ? ORDER BY id",
+                    (cnpj,),
+                )
+            ],
+            "custos": [
+                {
+                    "id": r["id"],
+                    "itemId": r["item_id"],
+                    "notaId": r["nota_id"],
+                    "data": r["data"],
+                    "quantidade": r["quantidade"],
+                    "custoUnitario": r["custo_unitario"],
+                    "creditoUnitario": r["credito_unitario"],
+                    "fonteCredito": r["fonte_credito"],
+                }
+                for r in c.execute(
+                    "SELECT id, item_id, nota_id, data, quantidade, custo_unitario, credito_unitario, fonte_credito "
+                    "FROM custos WHERE cnpj = ? ORDER BY id",
+                    (cnpj,),
+                )
+            ],
+            "precos": [
+                {
+                    "id": r["id"],
+                    "itemId": r["item_id"],
+                    "valorUnitario": r["valor_unitario"],
+                    "vigenteDesde": r["vigente_desde"],
+                    "origem": r["origem"],
+                    "alertaId": r["alerta_id"],
+                }
+                for r in c.execute(
+                    "SELECT id, item_id, valor_unitario, vigente_desde, origem, alerta_id FROM precos "
+                    "WHERE cnpj = ? ORDER BY id",
+                    (cnpj,),
+                )
+            ],
+            "alertas": [
+                {
+                    "id": r["id"],
+                    "itemId": r["item_id"],
+                    "notaId": r["nota_id"],
+                    "criadoEm": r["criado_em"],
+                    "aplicadoEm": r["aplicado_em"],
+                    "alerta": json.loads(r["alerta_json"]),
+                }
+                for r in c.execute(
+                    "SELECT id, item_id, nota_id, criado_em, aplicado_em, alerta_json FROM alertas "
+                    "WHERE cnpj = ? ORDER BY criado_em, id",
+                    (cnpj,),
+                )
+            ],
+            "classificacoes": [
+                {
+                    "id": r["id"],
+                    "itemId": r["item_id"],
+                    "cst": r["cst"],
+                    "cClassTrib": r["cclasstrib"],
+                    "fonte": r["fonte"],
+                    "vigenteDesde": r["vigente_desde"],
+                    "origem": r["origem"],
+                }
+                for r in c.execute(
+                    "SELECT id, item_id, cst, cclasstrib, fonte, vigente_desde, origem FROM classificacoes "
+                    "WHERE cnpj = ? ORDER BY id",
+                    (cnpj,),
+                )
+            ],
+            "clientesB2B": [
+                {"cnpjCliente": r["cnpj_cliente"], "cliente": json.loads(r["cliente_json"])}
+                for r in c.execute(
+                    "SELECT cnpj_cliente, cliente_json FROM clientes_b2b WHERE cnpj = ? ORDER BY cnpj_cliente",
+                    (cnpj,),
+                )
+            ],
+        }
 
     def empresas(self) -> list[EmpresaRegistro]:
         linhas = self._c.execute("SELECT empresa_json, cenario_json FROM empresas ORDER BY razao_social").fetchall()
@@ -272,6 +391,33 @@ class Sessao:
             "SELECT cliente_json FROM clientes_b2b WHERE cnpj = ? ORDER BY cnpj_cliente", (cnpj,)
         ).fetchall()
         return [ClienteB2B.model_validate_json(r["cliente_json"]) for r in linhas]
+
+    def cliente_b2b(self, cnpj: str, cnpj_cliente: str) -> ClienteB2B | None:
+        linha = self._c.execute(
+            "SELECT cliente_json FROM clientes_b2b WHERE cnpj = ? AND cnpj_cliente = ?", (cnpj, cnpj_cliente)
+        ).fetchone()
+        return None if linha is None else ClienteB2B.model_validate_json(linha["cliente_json"])
+
+    def contar_clientes_b2b(self, cnpj: str) -> int:
+        linha = self._c.execute("SELECT count(*) AS n FROM clientes_b2b WHERE cnpj = ?", (cnpj,)).fetchone()
+        return int(linha["n"])
+
+    def atualizar_cliente_b2b(self, cnpj: str, cliente: ClienteB2B) -> None:
+        """O CNPJ do cliente não muda: é a chave."""
+        self._c.execute(
+            "UPDATE clientes_b2b SET cliente_json = ? WHERE cnpj = ? AND cnpj_cliente = ?",
+            (cliente.model_dump_json(by_alias=True), cnpj, cliente.cliente.cnpj),
+        )
+
+    def apagar_cliente_b2b(self, cnpj: str, cnpj_cliente: str) -> bool:
+        """De vez: nenhuma outra tabela aponta para o cliente, e o ContaAI não guarda histórico de clientes."""
+        cursor = self._c.execute("DELETE FROM clientes_b2b WHERE cnpj = ? AND cnpj_cliente = ?", (cnpj, cnpj_cliente))
+        return cursor.rowcount == 1
+
+    def clientes_que_compram(self, cnpj: str, item_id: str) -> list[ClienteB2B]:
+        """Os clientes com o item na compra mensal. O JSON é lido em Python (sem json_each, que é do SQLite):
+        são até 50 clientes por empresa."""
+        return [c for c in self.clientes_b2b(cnpj) if any(i.itemId == item_id for i in c.compraMensal.itens)]
 
     # -- preços (lançamentos) ---------------------------------------------
 

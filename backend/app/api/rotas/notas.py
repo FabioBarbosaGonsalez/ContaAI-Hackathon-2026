@@ -26,7 +26,7 @@ from app.api.dependencias import (
     SessaoCookie,
     Token,
     abrir_estado,
-    exigir_token_fora_do_espaco,
+    exigir_permissao_para_mudar,
     marcar_mock,
     so_no_modo_real,
 )
@@ -72,7 +72,7 @@ async def nfe_importar(
         marcar_mock(response)
     else:
         estado = await asyncio.to_thread(abrir_estado, cfg, espaco, sessao)
-        exigir_token_fora_do_espaco(cfg, token, estado)
+        exigir_permissao_para_mudar(cfg, token, estado)
     if (arquivo.content_type or "").split(";")[0].strip().lower() not in TIPOS_XML:
         raise HTTPException(status_code=415, detail="Envie o arquivo XML da NF-e.")
     # Lê no máximo o limite + 1 byte: não depende de UploadFile.size nem carrega mais que isso em memória.
@@ -113,6 +113,7 @@ def listar_alertas(
     responses={
         **respostas.ESTADO,
         **respostas.SO_MODO_REAL,
+        **respostas.PAPEL,
         409: {"description": "Já aplicado, ou alerta sem preço sugerido."},
     },
 )
@@ -127,7 +128,7 @@ def aplicar_alerta(
     empresa fora do alcance de quem chama responde como alerta inexistente."""
     so_no_modo_real(cfg)
     estado = abrir_estado(cfg, espaco, sessao)
-    exigir_token_fora_do_espaco(cfg, token, estado)
+    exigir_permissao_para_mudar(cfg, token, estado)
     return consultas.aplicar(estado.repositorio, alerta_id, agora_utc(), estado.cnpjs)
 
 
@@ -135,6 +136,7 @@ ItemId = Annotated[str, Path(pattern=PADRAO_ID_ITEM, description="Id do item no 
 RESPOSTAS_TELA: respostas.Respostas = {
     **respostas.ESTADO,
     **respostas.SO_MODO_REAL,
+    **respostas.PAPEL,
     409: {"description": "O valor pedido já é o atual, ou o item mudou durante a conferência."},
 }
 
@@ -152,7 +154,7 @@ def aplicar_preco(
     usuário (P3). O preço é decisão dele: o backend só confere o formato e o teto de sanidade."""
     so_no_modo_real(cfg)
     estado = abrir_estado(cfg, espaco, sessao)
-    exigir_token_fora_do_espaco(cfg, token, estado)
+    exigir_permissao_para_mudar(cfg, token, estado)
     estado.exigir_empresa(req.cnpj)
     return consultas.aplicar_preco(estado.repositorio, req.cnpj, item_id, req.valorUnitario, agora_utc())
 
@@ -176,7 +178,7 @@ async def corrigir_classificacao(
     o CST é o da fundamentação oficial. Depois disso, catálogo, alertas e explicação usam a nova."""
     so_no_modo_real(cfg)
     estado = await asyncio.to_thread(abrir_estado, cfg, espaco, sessao)
-    exigir_token_fora_do_espaco(cfg, token, estado)
+    exigir_permissao_para_mudar(cfg, token, estado)
     estado.exigir_empresa(req.cnpj)
     lido = await asyncio.to_thread(consultas.item_da_empresa, estado.repositorio, req.cnpj, item_id)
     validas = await classificacoes_da_ncm(da, lido.item.ncm, lido.empresa.cenario.data)

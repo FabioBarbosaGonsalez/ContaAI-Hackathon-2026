@@ -71,6 +71,16 @@
               }
             }
           },
+          "403": {
+            "description": "Pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
             "content": {
@@ -81,8 +91,8 @@
               }
             }
           },
-          "403": {
-            "description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -182,6 +192,16 @@
               }
             }
           },
+          "403": {
+            "description": "Pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
             "content": {
@@ -192,8 +212,8 @@
               }
             }
           },
-          "403": {
-            "description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -246,6 +266,16 @@
           },
           "400": {
             "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -326,6 +356,16 @@
               }
             }
           },
+          "403": {
+            "description": "Pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
             "content": {
@@ -336,8 +376,8 @@
               }
             }
           },
-          "403": {
-            "description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -505,6 +545,16 @@
               }
             }
           },
+          "403": {
+            "description": "Na organização, papel sem permissão para mudar os dados da empresa (só o dono e o membro mudam); ou pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
           "409": {
             "description": "A mesma nota (emitente, série e número) já foi importada com outro conteúdo, ou o estado mudou durante a importação (/problemas/nota-recusada).",
             "content": {
@@ -555,8 +605,8 @@
               }
             }
           },
-          "403": {
-            "description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -694,6 +744,16 @@
                 }
               }
             }
+          },
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
           }
         }
       }
@@ -804,6 +864,16 @@
               }
             }
           },
+          "403": {
+            "description": "Na organização, papel sem permissão para mudar os dados da empresa (só o dono e o membro mudam); ou pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
           "409": {
             "description": "Já aplicado, ou alerta sem preço sugerido.",
             "content": {
@@ -834,8 +904,8 @@
               }
             }
           },
-          "403": {
-            "description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -985,6 +1055,16 @@
               }
             }
           },
+          "403": {
+            "description": "Na organização, papel sem permissão para mudar os dados da empresa (só o dono e o membro mudam); ou pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
           "409": {
             "description": "O valor pedido já é o atual, ou o item mudou durante a conferência.",
             "content": {
@@ -1015,8 +1095,8 @@
               }
             }
           },
-          "403": {
-            "description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1166,6 +1246,16 @@
               }
             }
           },
+          "403": {
+            "description": "Na organização, papel sem permissão para mudar os dados da empresa (só o dono e o membro mudam); ou pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
           "409": {
             "description": "O valor pedido já é o atual, ou o item mudou durante a conferência.",
             "content": {
@@ -1223,8 +1313,8 @@
               }
             }
           },
-          "403": {
-            "description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1357,6 +1447,16 @@
                 }
               }
             }
+          },
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
           }
         }
       }
@@ -1476,6 +1576,16 @@
                 }
               }
             }
+          },
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
           }
         }
       }
@@ -1542,6 +1652,16 @@
           },
           "400": {
             "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1631,6 +1751,16 @@
           },
           "400": {
             "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1741,6 +1871,16 @@
                 }
               }
             }
+          },
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
           }
         }
       }
@@ -1823,6 +1963,16 @@
           },
           "400": {
             "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1923,8 +2073,8 @@
               }
             }
           },
-          "403": {
-            "description": "Só o dono da organização cadastra e configura a empresa.",
+          "404": {
+            "description": "Empresa que a conta não alcança (a mesma resposta de uma que não existe).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1933,8 +2083,8 @@
               }
             }
           },
-          "404": {
-            "description": "Empresa que a conta não alcança (a mesma resposta de uma que não existe).",
+          "403": {
+            "description": "Só o dono da organização cadastra e configura a empresa; ou pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1955,6 +2105,16 @@
           },
           "400": {
             "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2049,16 +2209,6 @@
               }
             }
           },
-          "403": {
-            "description": "Só o dono da organização cadastra e configura a empresa.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problema"
-                }
-              }
-            }
-          },
           "404": {
             "description": "Empresa que a conta não alcança (a mesma resposta de uma que não existe).",
             "content": {
@@ -2081,6 +2231,16 @@
           },
           "400": {
             "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2193,8 +2353,8 @@
               }
             }
           },
-          "403": {
-            "description": "Só o dono da organização cadastra e configura a empresa.",
+          "404": {
+            "description": "Empresa que a conta não alcança (a mesma resposta de uma que não existe).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2203,8 +2363,8 @@
               }
             }
           },
-          "404": {
-            "description": "Empresa que a conta não alcança (a mesma resposta de uma que não existe).",
+          "403": {
+            "description": "Só o dono da organização cadastra e configura a empresa; ou pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2225,6 +2385,175 @@
           },
           "400": {
             "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "411": {
+            "description": "Corpo sem Content-Length (corpo em pedaços não é aceito).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo maior que o limite.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/empresas/{cnpj}/excluir": {
+      "post": {
+        "tags": [
+          "empresa"
+        ],
+        "summary": "Excluir Empresa",
+        "description": "Exclui a empresa de vez, sem excluir a conta: o catálogo, as notas, os custos, os preços, os alertas e os\nclientes dela saem juntos, e o contador deixa de alcançá-la. Só o dono, com a senha de novo e o CNPJ digitado\npara confirmar. O ContaAI não guarda o XML das notas: guarde-as antes (o arquivo fiscal é seu).",
+        "operationId": "excluir_empresa_empresas__cnpj__excluir_post",
+        "parameters": [
+          {
+            "name": "cnpj",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-Z]{12}[0-9]{2}$",
+              "description": "CNPJ da empresa da conta.",
+              "title": "Cnpj"
+            },
+            "description": "CNPJ da empresa da conta."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmpresaExcluirRequisicao"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "501": {
+            "description": "Rota que só funciona no modo real (CONTAAI_MODO=real).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Espera depois de falhas seguidas da senha ou limite por IP (header Retry-After), ou conta bloqueada (/problemas/conta-bloqueada).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, sessão encerrada ou expirada, ou senha incorreta.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Empresa que a conta não alcança (a mesma resposta de uma que não existe).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Só o dono da organização exclui a empresa; ou pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "O CNPJ digitado para confirmar não é o da empresa, ou entrada fora do contrato.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaValidacao"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "411": {
+            "description": "Corpo sem Content-Length (corpo em pedaços não é aceito).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo maior que o limite.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2372,6 +2701,16 @@
               }
             }
           },
+          "403": {
+            "description": "Na organização, papel sem permissão para mudar os dados da empresa (só o dono e o membro mudam); ou pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
           "409": {
             "description": "Código do fornecedor já em outro item, limite de itens, ou nada a mudar.",
             "content": {
@@ -2392,8 +2731,8 @@
               }
             }
           },
-          "403": {
-            "description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2573,6 +2912,16 @@
               }
             }
           },
+          "403": {
+            "description": "Na organização, papel sem permissão para mudar os dados da empresa (só o dono e o membro mudam); ou pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
           "409": {
             "description": "Código do fornecedor já em outro item, limite de itens, ou nada a mudar.",
             "content": {
@@ -2592,6 +2941,36 @@
                 }
               }
             }
+          },
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "411": {
+            "description": "Corpo sem Content-Length (corpo em pedaços não é aceito).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo maior que o limite.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
           }
         }
       }
@@ -2602,7 +2981,7 @@
           "empresa"
         ],
         "summary": "Arquivar Item",
-        "description": "Tira o item do catálogo. O histórico dele (custos, preços, classificações e alertas) fica; os alertas abertos\ndele saem das listas, e uma nota nova com o código do fornecedor dele vira item sem par.",
+        "description": "Tira o item do catálogo. O histórico dele (custos, preços, classificações e alertas) fica; os alertas abertos\ndele saem das listas, e uma nota nova com o código do fornecedor dele vira item sem par. Um item na compra mensal\nde um cliente B2B não sai (409): a venda do cliente ficaria sem o item.",
         "operationId": "arquivar_item_catalogo__item_id__arquivar_post",
         "parameters": [
           {
@@ -2674,8 +3053,195 @@
               }
             }
           },
+          "401": {
+            "description": "Token da demo ausente ou errado (header X-ContaAI-Token).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Empresa ou alerta não encontrado, ou espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por minuto atingido (header Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Rota que só funciona no modo real (CONTAAI_MODO=real).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Na organização, papel sem permissão para mudar os dados da empresa (só o dono e o membro mudam); ou pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "O item está na compra mensal de clientes B2B (/problemas/item-em-uso, com a lista em `clientes`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ProblemaItemEmUso"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Problema"
+                    }
+                  ],
+                  "title": "Response 409 Arquivar Item Catalogo  Item Id  Arquivar Post"
+                }
+              }
+            }
+          },
           "422": {
-            "description": "NCM fora dos dados abertos, NCM com Imposto Seletivo, classificação que não vale para a NCM, CNPJ do fornecedor com dígito errado (na empresa da conta), ou entrada fora do contrato.",
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaValidacao"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "411": {
+            "description": "Corpo sem Content-Length (corpo em pedaços não é aceito).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo maior que o limite.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clientes": {
+      "post": {
+        "tags": [
+          "empresa"
+        ],
+        "summary": "Criar Cliente",
+        "description": "Um cliente empresa do regime regular e a compra mensal dele, com itens do catálogo da empresa. É a venda que a\ncomparação de regimes usa (GET /catalogo, `clientesB2B`).",
+        "operationId": "criar_cliente_clientes_post",
+        "parameters": [
+          {
+            "name": "X-ContaAI-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Contaai-Token"
+            }
+          },
+          {
+            "name": "X-ContaAI-Espaco",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{32}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada.",
+              "title": "X-Contaai-Espaco"
+            },
+            "description": "Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClienteNovoRequisicao"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClienteResposta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Cliente do Simples Nacional, CNPJ do cliente com dígito errado (na empresa da conta), cliente igual à empresa, município fora da UF, item da compra fora do catálogo, ou entrada fora do contrato.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2744,8 +3310,18 @@
               }
             }
           },
+          "403": {
+            "description": "Na organização, papel sem permissão para mudar os dados da empresa (só o dono e o membro mudam); ou pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
           "409": {
-            "description": "Código do fornecedor já em outro item, limite de itens, ou nada a mudar.",
+            "description": "Cliente já cadastrado, limite de clientes, ou nada a mudar.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2764,8 +3340,400 @@
               }
             }
           },
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "411": {
+            "description": "Corpo sem Content-Length (corpo em pedaços não é aceito).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo maior que o limite.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clientes/{cnpj_cliente}": {
+      "patch": {
+        "tags": [
+          "empresa"
+        ],
+        "summary": "Alterar Cliente",
+        "description": "Muda a razão social, o local (UF e município juntos) ou a compra mensal do cliente.",
+        "operationId": "alterar_cliente_clientes__cnpj_cliente__patch",
+        "parameters": [
+          {
+            "name": "cnpj_cliente",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-Z]{12}[0-9]{2}$",
+              "description": "CNPJ do cliente B2B.",
+              "title": "Cnpj Cliente"
+            },
+            "description": "CNPJ do cliente B2B."
+          },
+          {
+            "name": "X-ContaAI-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Contaai-Token"
+            }
+          },
+          {
+            "name": "X-ContaAI-Espaco",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{32}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada.",
+              "title": "X-Contaai-Espaco"
+            },
+            "description": "Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClienteAlteracaoRequisicao"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClienteResposta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Cliente do Simples Nacional, CNPJ do cliente com dígito errado (na empresa da conta), cliente igual à empresa, município fora da UF, item da compra fora do catálogo, ou entrada fora do contrato.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaValidacao"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "O motor devolveu uma resposta que o ContaAI não reconhece.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaMotor"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Motor indisponível.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaMotor"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token da demo ausente ou errado (header X-ContaAI-Token).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Empresa ou alerta não encontrado, ou espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por minuto atingido (header Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Rota que só funciona no modo real (CONTAAI_MODO=real).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
           "403": {
-            "description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "description": "Na organização, papel sem permissão para mudar os dados da empresa (só o dono e o membro mudam); ou pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Cliente já cadastrado, limite de clientes, ou nada a mudar.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "411": {
+            "description": "Corpo sem Content-Length (corpo em pedaços não é aceito).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo maior que o limite.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clientes/{cnpj_cliente}/excluir": {
+      "post": {
+        "tags": [
+          "empresa"
+        ],
+        "summary": "Excluir Cliente",
+        "description": "Exclui o cliente de vez: o ContaAI não guarda histórico de clientes.",
+        "operationId": "excluir_cliente_clientes__cnpj_cliente__excluir_post",
+        "parameters": [
+          {
+            "name": "cnpj_cliente",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-Z]{12}[0-9]{2}$",
+              "description": "CNPJ do cliente B2B.",
+              "title": "Cnpj Cliente"
+            },
+            "description": "CNPJ do cliente B2B."
+          },
+          {
+            "name": "X-ContaAI-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Contaai-Token"
+            }
+          },
+          {
+            "name": "X-ContaAI-Espaco",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{32}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada.",
+              "title": "X-Contaai-Espaco"
+            },
+            "description": "Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClienteExcluirRequisicao"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClienteExcluidoResposta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token da demo ausente ou errado (header X-ContaAI-Token).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Empresa ou alerta não encontrado, ou espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por minuto atingido (header Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Rota que só funciona no modo real (CONTAAI_MODO=real).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Na organização, papel sem permissão para mudar os dados da empresa (só o dono e o membro mudam); ou pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaValidacao"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2873,6 +3841,16 @@
               }
             }
           },
+          "403": {
+            "description": "Pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
             "content": {
@@ -2883,8 +3861,8 @@
               }
             }
           },
-          "403": {
-            "description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2988,6 +3966,16 @@
                 }
               }
             }
+          },
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
           }
         }
       }
@@ -3061,6 +4049,16 @@
               }
             }
           },
+          "403": {
+            "description": "Pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
             "content": {
@@ -3071,8 +4069,8 @@
               }
             }
           },
-          "403": {
-            "description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -3173,6 +4171,16 @@
               }
             }
           },
+          "403": {
+            "description": "Pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
             "content": {
@@ -3183,8 +4191,8 @@
               }
             }
           },
-          "403": {
-            "description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -3300,6 +4308,16 @@
               }
             }
           },
+          "403": {
+            "description": "Pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
             "content": {
@@ -3310,8 +4328,8 @@
               }
             }
           },
-          "403": {
-            "description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -3383,8 +4401,28 @@
               }
             }
           },
+          "403": {
+            "description": "Pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -3465,6 +4503,16 @@
               }
             }
           },
+          "403": {
+            "description": "Pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
             "content": {
@@ -3475,8 +4523,8 @@
               }
             }
           },
-          "403": {
-            "description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -3566,6 +4614,16 @@
                 }
               }
             }
+          },
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
           }
         }
       }
@@ -3612,8 +4670,28 @@
               }
             }
           },
+          "403": {
+            "description": "Pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -3697,6 +4775,16 @@
               }
             }
           },
+          "403": {
+            "description": "Pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
             "content": {
@@ -3707,8 +4795,130 @@
               }
             }
           },
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "411": {
+            "description": "Corpo sem Content-Length (corpo em pedaços não é aceito).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo maior que o limite.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/conta/dados": {
+      "post": {
+        "tags": [
+          "contas"
+        ],
+        "summary": "Baixar Dados",
+        "description": "O arquivo com os dados da conta e das empresas das organizações dela (LGPD, arts. 18 II e V e 19), com a\nsenha de novo. Vai como anexo (Content-Disposition) e sem cache. Não leva a senha, o segredo do segundo fator\nnem nenhum hash; os outros integrantes da organização não aparecem. Só com a conta: a demonstração e os\nespaços de avaliação não têm dado pessoal.",
+        "operationId": "baixar_dados_conta_dados_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContaDadosRequisicao"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContaDadosResposta"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Rota que só funciona no modo real (CONTAAI_MODO=real).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, sessão encerrada ou expirada, ou senha incorreta.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Espera depois de falhas seguidas (header Retry-After), ou conta bloqueada (/problemas/conta-bloqueada).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaValidacao"
+                }
+              }
+            }
+          },
           "403": {
-            "description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "description": "Pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -3840,6 +5050,16 @@
           },
           "400": {
             "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -3995,6 +5215,16 @@
                 }
               }
             }
+          },
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
           }
         }
       }
@@ -4085,6 +5315,16 @@
               }
             }
           },
+          "403": {
+            "description": "Pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
             "content": {
@@ -4095,8 +5335,8 @@
               }
             }
           },
-          "403": {
-            "description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -4217,6 +5457,16 @@
           },
           "400": {
             "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -4359,6 +5609,16 @@
               }
             }
           },
+          "403": {
+            "description": "Pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
             "content": {
@@ -4369,8 +5629,8 @@
               }
             }
           },
-          "403": {
-            "description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -4535,6 +5795,16 @@
               }
             }
           },
+          "403": {
+            "description": "Com a sessão de uma conta: os dados da organização não são trocados pelas sementes; ou pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
             "content": {
@@ -4545,8 +5815,8 @@
               }
             }
           },
-          "403": {
-            "description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -4599,6 +5869,16 @@
           },
           "400": {
             "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -4663,6 +5943,16 @@
           },
           "400": {
             "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -4952,6 +6242,55 @@
           "criadoEm"
         ],
         "title": "Alerta"
+      },
+      "AlertaExportado": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "itemId": {
+            "type": "string",
+            "title": "Itemid"
+          },
+          "notaId": {
+            "type": "integer",
+            "title": "Notaid"
+          },
+          "criadoEm": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Criadoem"
+          },
+          "aplicadoEm": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aplicadoem"
+          },
+          "alerta": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Alerta"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "itemId",
+          "notaId",
+          "criadoEm",
+          "aplicadoEm",
+          "alerta"
+        ],
+        "title": "AlertaExportado"
       },
       "AlertasResposta": {
         "properties": {
@@ -5945,6 +7284,127 @@
         ],
         "title": "ClassificacaoCandidata"
       },
+      "ClassificacaoExportada": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "itemId": {
+            "type": "string",
+            "title": "Itemid"
+          },
+          "cst": {
+            "type": "string",
+            "title": "Cst"
+          },
+          "cClassTrib": {
+            "type": "string",
+            "title": "Cclasstrib"
+          },
+          "fonte": {
+            "type": "string",
+            "title": "Fonte"
+          },
+          "vigenteDesde": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Vigentedesde"
+          },
+          "origem": {
+            "type": "string",
+            "const": "tela",
+            "title": "Origem"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "itemId",
+          "cst",
+          "cClassTrib",
+          "fonte",
+          "vigenteDesde",
+          "origem"
+        ],
+        "title": "ClassificacaoExportada"
+      },
+      "ClienteAlteracaoRequisicao": {
+        "properties": {
+          "cnpj": {
+            "type": "string",
+            "pattern": "^[0-9A-Z]{12}[0-9]{2}$",
+            "title": "Cnpj",
+            "description": "A empresa que vende."
+          },
+          "razaoSocial": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 150,
+                "minLength": 1,
+                "description": "Razão social da empresa."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Razaosocial"
+          },
+          "uf": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[A-Z]{2}$",
+                "description": "Sigla da UF."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uf"
+          },
+          "municipio": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 9999999.0,
+                "minimum": 1000000.0,
+                "description": "Código IBGE do município (7 dígitos)."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Municipio"
+          },
+          "compraMensal": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ItemDaCompraMensal"
+                },
+                "type": "array",
+                "maxItems": 200,
+                "minItems": 1,
+                "description": "O que o cliente compra num mês; cada item entra uma vez."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Compramensal"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cnpj"
+        ],
+        "title": "ClienteAlteracaoRequisicao",
+        "description": "Só os campos enviados mudam. O CNPJ do cliente não muda: outro CNPJ é outro cliente."
+      },
       "ClienteB2B": {
         "properties": {
           "nome": {
@@ -6014,6 +7474,187 @@
         "title": "ClienteB2BEstado",
         "description": "Um cliente empresa e a compra mensal dele: a venda que a decisão de regime compara (E3, ADR 0011)."
       },
+      "ClienteExcluidoResposta": {
+        "properties": {
+          "cnpjCliente": {
+            "type": "string",
+            "title": "Cnpjcliente"
+          },
+          "excluidoEm": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Excluidoem"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cnpjCliente",
+          "excluidoEm"
+        ],
+        "title": "ClienteExcluidoResposta",
+        "description": "O cliente saiu de vez: o ContaAI não guarda histórico de clientes."
+      },
+      "ClienteExcluirRequisicao": {
+        "properties": {
+          "cnpj": {
+            "type": "string",
+            "pattern": "^[0-9A-Z]{12}[0-9]{2}$",
+            "title": "Cnpj",
+            "description": "A empresa que vende."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cnpj"
+        ],
+        "title": "ClienteExcluirRequisicao"
+      },
+      "ClienteExportado": {
+        "properties": {
+          "cnpjCliente": {
+            "type": "string",
+            "title": "Cnpjcliente"
+          },
+          "cliente": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Cliente",
+            "description": "Com a razão social do cliente, que pode ser dado pessoal."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cnpjCliente",
+          "cliente"
+        ],
+        "title": "ClienteExportado"
+      },
+      "ClienteNovoRequisicao": {
+        "properties": {
+          "cnpj": {
+            "type": "string",
+            "pattern": "^[0-9A-Z]{12}[0-9]{2}$",
+            "title": "Cnpj",
+            "description": "A empresa que vende."
+          },
+          "cnpjCliente": {
+            "type": "string",
+            "pattern": "^[0-9A-Z]{12}[0-9]{2}$",
+            "title": "Cnpjcliente",
+            "description": "14 posições, sem pontos, barra nem traço: as 12 primeiras com dígitos ou letras maiúsculas (CNPJ alfanumérico, IN RFB 2.229/2024) e as 2 últimas com os dígitos verificadores."
+          },
+          "razaoSocial": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 1,
+            "title": "Razaosocial",
+            "description": "Razão social da empresa."
+          },
+          "regime": {
+            "type": "string",
+            "enum": [
+              "regime_regular",
+              "simples_nacional"
+            ],
+            "title": "Regime"
+          },
+          "uf": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$",
+            "title": "Uf",
+            "description": "Sigla da UF."
+          },
+          "municipio": {
+            "type": "integer",
+            "maximum": 9999999.0,
+            "minimum": 1000000.0,
+            "title": "Municipio",
+            "description": "Código IBGE do município (7 dígitos)."
+          },
+          "compraMensal": {
+            "items": {
+              "$ref": "#/components/schemas/ItemDaCompraMensal"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Compramensal",
+            "description": "O que o cliente compra num mês; cada item entra uma vez."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cnpj",
+          "cnpjCliente",
+          "razaoSocial",
+          "regime",
+          "uf",
+          "municipio",
+          "compraMensal"
+        ],
+        "title": "ClienteNovoRequisicao",
+        "description": "Um cliente empresa da empresa `cnpj`. A comparação de regimes é feita na venda a um cliente do regime\nregular: um cliente do Simples Nacional é recusado (422)."
+      },
+      "ClienteQueCompra": {
+        "properties": {
+          "cnpj": {
+            "type": "string",
+            "title": "Cnpj"
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cnpj",
+          "nome"
+        ],
+        "title": "ClienteQueCompra"
+      },
+      "ClienteResposta": {
+        "properties": {
+          "cliente": {
+            "$ref": "#/components/schemas/ClienteB2BEstado"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cliente"
+        ],
+        "title": "ClienteResposta"
+      },
+      "CodigoFornecedorExportado": {
+        "properties": {
+          "cnpjFornecedor": {
+            "type": "string",
+            "title": "Cnpjfornecedor"
+          },
+          "codigo": {
+            "type": "string",
+            "title": "Codigo"
+          },
+          "itemId": {
+            "type": "string",
+            "title": "Itemid"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cnpjFornecedor",
+          "codigo",
+          "itemId"
+        ],
+        "title": "CodigoFornecedorExportado"
+      },
       "CodigoRequisicao": {
         "properties": {
           "codigo": {
@@ -6029,6 +7670,72 @@
           "codigo"
         ],
         "title": "CodigoRequisicao"
+      },
+      "ContaDadosRequisicao": {
+        "properties": {
+          "senha": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Senha"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "senha"
+        ],
+        "title": "ContaDadosRequisicao",
+        "description": "O arquivo leva tudo o que a conta guarda: a senha de novo, como na exclusão da conta."
+      },
+      "ContaDadosResposta": {
+        "properties": {
+          "formato": {
+            "type": "string",
+            "const": "contaai-dados-1",
+            "title": "Formato",
+            "description": "Versão do formato deste arquivo."
+          },
+          "geradoEm": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Geradoem"
+          },
+          "conta": {
+            "$ref": "#/components/schemas/DadosDaPessoa"
+          },
+          "organizacoes": {
+            "items": {
+              "$ref": "#/components/schemas/OrganizacaoExportada"
+            },
+            "type": "array",
+            "title": "Organizacoes"
+          },
+          "naoIncluido": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Naoincluido",
+            "description": "O que o ContaAI guarda e não vai no arquivo, e por quê."
+          },
+          "aviso": {
+            "type": "string",
+            "title": "Aviso"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "formato",
+          "geradoEm",
+          "conta",
+          "organizacoes",
+          "naoIncluido",
+          "aviso"
+        ],
+        "title": "ContaDadosResposta",
+        "description": "A cópia dos dados (LGPD, art. 19, I e §3º): em formato simplificado, na hora, e num formato que permite\nusar de novo (JSON). Não leva a senha, o segredo do segundo fator nem nenhum hash de senha, token ou código."
       },
       "ContaResposta": {
         "properties": {
@@ -6225,6 +7932,162 @@
           "vigenteDesde"
         ],
         "title": "CorrigirClassificacaoResposta"
+      },
+      "CustoExportado": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "itemId": {
+            "type": "string",
+            "title": "Itemid"
+          },
+          "notaId": {
+            "type": "integer",
+            "title": "Notaid"
+          },
+          "data": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Data"
+          },
+          "quantidade": {
+            "type": "string",
+            "title": "Quantidade"
+          },
+          "custoUnitario": {
+            "type": "string",
+            "title": "Custounitario"
+          },
+          "creditoUnitario": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Creditounitario"
+          },
+          "fonteCredito": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "nfe",
+                  "motor"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fontecredito"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "itemId",
+          "notaId",
+          "data",
+          "quantidade",
+          "custoUnitario",
+          "creditoUnitario",
+          "fonteCredito"
+        ],
+        "title": "CustoExportado"
+      },
+      "DadosDaPessoa": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "criadaEm": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Criadaem"
+          },
+          "situacao": {
+            "type": "string",
+            "enum": [
+              "pendente",
+              "ativa"
+            ],
+            "title": "Situacao"
+          },
+          "termos": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TermosDaConta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "segundoFatorConfirmadoEm": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Segundofatorconfirmadoem"
+          },
+          "codigosRecuperacaoRestantes": {
+            "type": "integer",
+            "title": "Codigosrecuperacaorestantes",
+            "description": "Só a quantidade: os códigos não ficam guardados."
+          },
+          "tentativas": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TentativasExportadas"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Falhas seguidas de entrada, se houver."
+          },
+          "eventos": {
+            "items": {
+              "$ref": "#/components/schemas/EventoSeguranca"
+            },
+            "type": "array",
+            "title": "Eventos",
+            "description": "Todos, os mais recentes primeiro."
+          },
+          "sessoes": {
+            "items": {
+              "$ref": "#/components/schemas/SessaoExportada"
+            },
+            "type": "array",
+            "title": "Sessoes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "email",
+          "criadaEm",
+          "situacao",
+          "termos",
+          "segundoFatorConfirmadoEm",
+          "codigosRecuperacaoRestantes",
+          "tentativas",
+          "eventos",
+          "sessoes"
+        ],
+        "title": "DadosDaPessoa"
       },
       "Emitente": {
         "properties": {
@@ -6453,6 +8316,142 @@
         "type": "object",
         "title": "EmpresaConfiguracaoRequisicao",
         "description": "Só os campos enviados mudam. O CNPJ não muda: outro CNPJ é outra empresa. `premissasDas: null` volta aos\nvalores da simulação; `cargaAtualPct: null` apaga a carga informada."
+      },
+      "EmpresaExcluirRequisicao": {
+        "properties": {
+          "senha": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Senha"
+          },
+          "cnpjConfirmacao": {
+            "type": "string",
+            "pattern": "^[0-9A-Z]{12}[0-9]{2}$",
+            "title": "Cnpjconfirmacao",
+            "description": "O CNPJ da empresa, digitado de novo (o mesmo do caminho)."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "senha",
+          "cnpjConfirmacao"
+        ],
+        "title": "EmpresaExcluirRequisicao",
+        "description": "Excluir a empresa é definitivo: a senha de novo e o CNPJ digitado para confirmar."
+      },
+      "EmpresaExportada": {
+        "properties": {
+          "cnpj": {
+            "type": "string",
+            "title": "Cnpj"
+          },
+          "acessoDesde": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Acessodesde"
+          },
+          "empresa": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Empresa"
+          },
+          "cenario": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cenario"
+          },
+          "itens": {
+            "items": {
+              "$ref": "#/components/schemas/ItemExportado"
+            },
+            "type": "array",
+            "title": "Itens",
+            "description": "Inclusive os arquivados."
+          },
+          "codigosFornecedor": {
+            "items": {
+              "$ref": "#/components/schemas/CodigoFornecedorExportado"
+            },
+            "type": "array",
+            "title": "Codigosfornecedor"
+          },
+          "notas": {
+            "items": {
+              "$ref": "#/components/schemas/NotaExportada"
+            },
+            "type": "array",
+            "title": "Notas"
+          },
+          "custos": {
+            "items": {
+              "$ref": "#/components/schemas/CustoExportado"
+            },
+            "type": "array",
+            "title": "Custos"
+          },
+          "precos": {
+            "items": {
+              "$ref": "#/components/schemas/PrecoExportado"
+            },
+            "type": "array",
+            "title": "Precos"
+          },
+          "alertas": {
+            "items": {
+              "$ref": "#/components/schemas/AlertaExportado"
+            },
+            "type": "array",
+            "title": "Alertas"
+          },
+          "classificacoes": {
+            "items": {
+              "$ref": "#/components/schemas/ClassificacaoExportada"
+            },
+            "type": "array",
+            "title": "Classificacoes"
+          },
+          "clientesB2B": {
+            "items": {
+              "$ref": "#/components/schemas/ClienteExportado"
+            },
+            "type": "array",
+            "title": "Clientesb2B"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cnpj",
+          "acessoDesde",
+          "empresa",
+          "cenario",
+          "itens",
+          "codigosFornecedor",
+          "notas",
+          "custos",
+          "precos",
+          "alertas",
+          "classificacoes",
+          "clientesB2B"
+        ],
+        "title": "EmpresaExportada",
+        "description": "Uma empresa da organização. `empresa` vazio: o acesso ficou sem a empresa no banco (uma falha no meio de\numa exclusão); o recadastro aceita esse caso."
       },
       "EmpresaNoPainel": {
         "properties": {
@@ -7597,6 +9596,37 @@
         ],
         "title": "ItemCompraMensal"
       },
+      "ItemDaCompraMensal": {
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{0,63}$",
+            "title": "Itemid",
+            "description": "Id de um item do catálogo da empresa."
+          },
+          "quantidade": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1000000000.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Quantidade",
+            "description": "Quantidade por mês, na unidade do item."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "itemId",
+          "quantidade"
+        ],
+        "title": "ItemDaCompraMensal"
+      },
       "ItemEntrada": {
         "properties": {
           "id": {
@@ -7735,6 +9765,49 @@
           "valorUnitario"
         ],
         "title": "ItemEntrada"
+      },
+      "ItemExportado": {
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "title": "Itemid"
+          },
+          "ncm": {
+            "type": "string",
+            "title": "Ncm"
+          },
+          "unidade": {
+            "type": "string",
+            "title": "Unidade"
+          },
+          "arquivadoEm": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arquivadoem"
+          },
+          "item": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Item"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "itemId",
+          "ncm",
+          "unidade",
+          "arquivadoEm",
+          "item"
+        ],
+        "title": "ItemExportado"
       },
       "ItemNotaCasado": {
         "properties": {
@@ -8296,6 +10369,59 @@
         ],
         "title": "NfeImportarResposta"
       },
+      "NotaExportada": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "cnpjEmitente": {
+            "type": "string",
+            "title": "Cnpjemitente"
+          },
+          "serie": {
+            "type": "string",
+            "title": "Serie"
+          },
+          "numero": {
+            "type": "string",
+            "title": "Numero"
+          },
+          "dataEmissao": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Dataemissao"
+          },
+          "sha256": {
+            "type": "string",
+            "title": "Sha256"
+          },
+          "importadaEm": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Importadaem"
+          },
+          "recibo": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Recibo"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "cnpjEmitente",
+          "serie",
+          "numero",
+          "dataEmissao",
+          "sha256",
+          "importadaEm",
+          "recibo"
+        ],
+        "title": "NotaExportada",
+        "description": "A nota importada: o ContaAI não guarda o XML, só o resumo dele (sha256) e o recibo da importação."
+      },
       "NotaImportada": {
         "properties": {
           "nota": {
@@ -8502,6 +10628,55 @@
           "papel"
         ],
         "title": "OrganizacaoDaConta"
+      },
+      "OrganizacaoExportada": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "criadaEm": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Criadaem"
+          },
+          "papel": {
+            "type": "string",
+            "enum": [
+              "dono",
+              "membro"
+            ],
+            "title": "Papel"
+          },
+          "desde": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Desde"
+          },
+          "empresas": {
+            "items": {
+              "$ref": "#/components/schemas/EmpresaExportada"
+            },
+            "type": "array",
+            "title": "Empresas"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "nome",
+          "criadaEm",
+          "papel",
+          "desde",
+          "empresas"
+        ],
+        "title": "OrganizacaoExportada",
+        "description": "Uma organização da pessoa, com as empresas dela. Os outros integrantes não aparecem (nem o e-mail deles)."
       },
       "OrigemAlerta": {
         "properties": {
@@ -8767,6 +10942,58 @@
           "metodo"
         ],
         "title": "PrecoAlvoResposta"
+      },
+      "PrecoExportado": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "itemId": {
+            "type": "string",
+            "title": "Itemid"
+          },
+          "valorUnitario": {
+            "type": "string",
+            "title": "Valorunitario"
+          },
+          "vigenteDesde": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Vigentedesde"
+          },
+          "origem": {
+            "type": "string",
+            "enum": [
+              "semente",
+              "alerta",
+              "tela"
+            ],
+            "title": "Origem"
+          },
+          "alertaId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alertaid"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "itemId",
+          "valorUnitario",
+          "vigenteDesde",
+          "origem",
+          "alertaId"
+        ],
+        "title": "PrecoExportado"
       },
       "Premissa": {
         "properties": {
@@ -9131,6 +11358,54 @@
         ],
         "title": "ProblemaCalculo",
         "description": "422 /problemas/calculo-recusado: o cálculo pedido não tem resposta (margem impossível, item que o\nmotor não calcula, preço-alvo que não converge). Traz os erros do motor quando eles explicam a recusa."
+      },
+      "ProblemaItemEmUso": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "description": "URI do tipo do problema (relativa à API).",
+            "default": "about:blank"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "Resumo do tipo do problema; não muda entre ocorrências."
+          },
+          "status": {
+            "type": "integer",
+            "title": "Status",
+            "description": "O mesmo código HTTP da resposta."
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail",
+            "description": "Explicação desta ocorrência, para a pessoa ler."
+          },
+          "clientes": {
+            "items": {
+              "$ref": "#/components/schemas/ClienteQueCompra"
+            },
+            "type": "array",
+            "title": "Clientes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title",
+          "status",
+          "clientes"
+        ],
+        "title": "ProblemaItemEmUso",
+        "description": "409 /problemas/item-em-uso: o item está na compra mensal de clientes B2B e não pode sair do catálogo (C3-B,\nADR 0017). `clientes` diz quais, para a tela levar a pessoa até eles."
       },
       "ProblemaMotor": {
         "properties": {
@@ -9563,6 +11838,71 @@
           "conta"
         ],
         "title": "SegundaEtapaResposta"
+      },
+      "SessaoExportada": {
+        "properties": {
+          "criadaEm": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Criadaem"
+          },
+          "ultimoUso": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Ultimouso"
+          },
+          "expiraEm": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expiraem"
+          },
+          "atual": {
+            "type": "boolean",
+            "title": "Atual",
+            "description": "A sessão que pediu o arquivo."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "criadaEm",
+          "ultimoUso",
+          "expiraEm",
+          "atual"
+        ],
+        "title": "SessaoExportada"
+      },
+      "TentativasExportadas": {
+        "properties": {
+          "falhasSeguidas": {
+            "type": "integer",
+            "title": "Falhasseguidas"
+          },
+          "esperaAte": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Esperaate"
+          },
+          "bloqueada": {
+            "type": "boolean",
+            "title": "Bloqueada"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "falhasSeguidas",
+          "esperaAte",
+          "bloqueada"
+        ],
+        "title": "TentativasExportadas"
       },
       "TermosDaConta": {
         "properties": {

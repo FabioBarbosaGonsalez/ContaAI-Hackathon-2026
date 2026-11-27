@@ -36,7 +36,8 @@ Por isso entram três etapas de contas (C1 a C3) entre o 3b e o 3c. O 3c depende
 | C2a: página inicial, rotas, a conta na tela, termos e privacidade | PR #23, ADR 0016 |
 | C2b: criar conta, entrar, o menu da conta e Sua conta | PR #24, seção da C2b no ADR 0016 |
 | C2c: notas de exemplo e o fechamento da C2 | PR #25, seção da C2c no ADR 0016 |
-| C3-B, etapas 1 a 5: CNPJ alfanumérico, migração 0003, referências, empresa da conta e catálogo editável | ADR 0017 |
+| C3-B, etapas 1 a 5: CNPJ alfanumérico, migração 0003, referências, empresa da conta e catálogo editável | PR #26, ADR 0017 |
+| C3-B, etapas 6 a 10: clientes B2B editáveis, o arquivo dos dados, excluir a empresa, os bancos órfãos, os logs sem dado pessoal, os papéis, o erro 500 com os cabeçalhos e o inventário do mock | PR #27, seções das etapas 6 a 10 no ADR 0017 |
 
 ## A ordem
 
@@ -456,11 +457,11 @@ Achados do mapa:
 | 3 | Migração 0003: CNPJ com letras e item arquivado | feita |
 | 4 | Empresa: `POST /empresas`, `GET` e `PATCH /empresas/{cnpj}` e as referências | feita |
 | 5 | Catálogo editável: criar, alterar e arquivar o item | feita |
-| 6 | Clientes B2B: criar, alterar e excluir, com o CNPJ validado | a fazer |
-| 7 | Exclusão e dados (LGPD): `GET /conta/dados`, limpeza dos bancos órfãos ao subir, logs sem dado pessoal e excluir a empresa sem excluir a conta | a fazer |
-| 8 | Papéis: só o dono cadastra, configura e exclui a empresa; dono e membro editam o catálogo e os clientes | feita nas rotas da empresa e do catálogo; falta a exclusão (etapa 7) |
-| 9 | Proteções: limites, o erro 500 com os cabeçalhos de segurança ([ADR 0009](adr/0009-camada-http-e-erros.md)) | limites feitos; falta o 500 |
-| 10 | Contrato, mock e documentação | contrato e documentação das etapas 1 a 5 feitos; fecha no fim |
+| 6 | Clientes B2B: criar, alterar e excluir, com o CNPJ validado | feita |
+| 7 | Exclusão e dados (LGPD): `POST /conta/dados` (com a senha), limpeza dos bancos órfãos ao subir, logs sem dado pessoal e excluir a empresa sem excluir a conta | feita |
+| 8 | Papéis: só o dono cadastra, configura e exclui a empresa; dono e membro editam o catálogo e os clientes | feita (a regra do dono já existia; a conferência achou a edição sem papel, sem teste de membro e o contrato do 403) |
+| 9 | Proteções: limites, o erro 500 com os cabeçalhos de segurança ([ADR 0009](adr/0009-camada-http-e-erros.md)) | feita (o 500, a telemetria do FastAPI desligada e o `/saude` no limite) |
+| 10 | Contrato, mock e documentação | feita (o inventário do mock, a varredura e a C3-B conferida de novo no modo real) |
 
 **Feito nas etapas 1 a 5** ([ADR 0017](adr/0017-empresa-propria.md)):
 - **Conferências:**
@@ -485,11 +486,163 @@ Achados do mapa:
   - o guarda de SQL pegou uma f-string na linha seguinte ao `execute(`.
 - **Saída da C3 no backend:** conferida no modo real com os motores oficiais. A conta nova cadastra a empresa, cria o item, importa as notas e vê o alerta, e a demonstração não muda.
 
+**Etapa 6, em 10 passos** (seção da etapa 6 no [ADR 0017](adr/0017-empresa-propria.md)):
+
+| # | Passo | Situação |
+|---|---|---|
+| 6.1 | Conferências: a tabela `clientes_b2b` já tem o CNPJ oficial (0003); a comparação de regimes só aceita cliente do regime regular; o município vem do motor RR | feito |
+| 6.2 | Contrato: `ClienteNovoRequisicao`, `ClienteAlteracaoRequisicao`, `ClienteExcluirRequisicao`, as respostas e `ProblemaItemEmUso` | feito |
+| 6.3 | Repositório: ler, contar, regravar e apagar o cliente, e achar quem compra um item | feito |
+| 6.4 | Serviço: as regras do cliente (regime, dígito, a própria empresa, município, itens do catálogo, repetido e limite de 50) | feito |
+| 6.5 | Rotas: `POST /clientes`, `PATCH /clientes/{cnpj_cliente}` e `POST /clientes/{cnpj_cliente}/excluir` | feito |
+| 6.6 | A trava: arquivar o item da compra de um cliente responde `409 /problemas/item-em-uso` | feito |
+| 6.7 | Segurança: limite por IP e de corpo, CSRF, outra conta (404), token da demonstração e erros sem eco | feito |
+| 6.8 | Testes (`test_clientes_b2b.py`, 38) | feito |
+| 6.9 | OpenAPI reexportado, tipos da tela e as listas de rotas da tela | feito |
+| 6.10 | Modo real com os motores oficiais, documentação e varredura | feito |
+
+**Feito na etapa 6:**
+- **Decisões do usuário:**
+  - o 409 com a lista dos clientes;
+  - até 50 clientes por empresa;
+  - só o regime regular, e o Simples recebe 422;
+  - o cliente é excluído de vez;
+  - a razão social entra nos dados da conta para baixar (etapa 7).
+- **Achados:**
+  - arquivar o item da compra de um cliente deixava a comparação de regimes dele sem venda. A trava resolve, inclusive no biscoito do Mercado Bom Preço nos espaços;
+  - `/clientes` precisava entrar na lista das rotas com limite por IP;
+  - o OpenAPI listava as recusas dos middlewares (403, 411 e 413) só no POST, e o PATCH passa pelas mesmas defesas.
+- **Saída conferida no modo real:** a conta cadastra o cliente com CNPJ alfanumérico, a comparação de regimes com a compra dele responde nos motores oficiais, arquivar o item dá 409, e a demonstração não muda.
+
+**Etapa 7, em 10 passos** (exclusão e dados, LGPD):
+
+| # | Passo | Situação |
+|---|---|---|
+| 7.1 | Conferências: o art. 19 da LGPD (prazo e formato do acesso aos dados) e o inventário das tabelas do `contas.db` e do banco da organização, para decidir o que vai no JSON | feito |
+| 7.2 | Contrato: `ContaDadosRequisicao` (a senha), `ContaDadosResposta` e `EmpresaExcluirRequisicao` (a senha e o CNPJ digitado) | feito |
+| 7.3 | `POST /conta/dados`: o JSON para baixar, com a senha de novo | feito |
+| 7.4 | `POST /empresas/{cnpj}/excluir` (204, só o dono): excluir a empresa sem excluir a conta | feito |
+| 7.5 | Conserto: a exclusão da conta apaga o banco de todas as organizações em que a pessoa era a única integrante | feito |
+| 7.6 | Limpeza ao subir: os bancos de organização que não existem mais | feito |
+| 7.7 | Logs sem dado pessoal: o log de acesso nosso no lugar do do uvicorn, e o erro 500 sem a mensagem da exceção | feito |
+| 7.8 | Papéis e segurança: só o dono exclui a empresa (fecha a etapa 8), CSRF, limites, token da demonstração, erros sem eco e o OpenAPI | feito |
+| 7.9 | Testes, OpenAPI reexportado, tipos da tela, `rotas.ts` e a frase dos registros técnicos na Privacidade | feito |
+| 7.10 | Modo real com os motores oficiais, documentação e varredura | feito |
+
+**Decisões do usuário (2026-11-27):**
+1. O log de acesso do uvicorn sai. O nosso grava o método, a rota-modelo (`/empresas/{cnpj}`, nunca o CNPJ), o status e a duração, sem o IP. A Privacidade deixa de dizer que o log grava o IP.
+2. Baixar os dados pede a senha de novo (`POST /conta/dados`), como a exclusão da conta: o arquivo leva tudo.
+3. Excluir a empresa pede a senha e o CNPJ digitado para confirmar.
+4. O membro também baixa os dados das empresas da organização (ele já lê e edita o catálogo e os clientes). Cada pessoa recebe só os próprios dados de conta, nunca o e-mail de outro integrante.
+5. As etapas 6 a 10 vão num PR só, como o #26 anunciou.
+
+**Achados no mapa (no código, antes de começar):**
+- **Bancos órfãos na exclusão da conta:** `Contas.excluir` devolve só a organização da sessão. Se a pessoa for a única integrante de outras organizações, os bancos delas ficam no disco. Hoje isso não acontece, porque ainda não há convites; com a 3c, passa a acontecer.
+- **Pendentes vencidos:** `_limpar` apaga a pessoa e a organização, mas não o arquivo. Como o pendente não tem sessão, o arquivo não deve existir, e a limpeza ao subir cobre o caso.
+- **Log de acesso:** o do uvicorn grava o IP e o CNPJ que está na URL (`/empresas/{cnpj}`, `/clientes/{cnpj_cliente}`). Isso contradiz a decisão 4 da exclusão ("os logs não guardam dado pessoal").
+- **Erro 500:** o `log.exception` grava a mensagem da exceção, que pode trazer um valor enviado.
+
+**Como fica:**
+- **`POST /conta/dados`:**
+  - só no modo real e com sessão; a demonstração e os espaços são recusados;
+  - `Content-Disposition: attachment` e `Cache-Control: no-store`;
+  - **vai no arquivo:** a conta (e-mail, criação, termos aceitos), a organização e o papel, todos os eventos de segurança, as sessões (início, último uso e vencimento) e os códigos de recuperação restantes (só a quantidade);
+  - **de cada empresa:** a empresa e o cenário, o catálogo (inclusive os itens arquivados), os códigos de fornecedor, as notas (chave, sha256 e recibo), os custos, os preços, os alertas, as classificações e os clientes B2B, com a razão social;
+  - **não vai:** a senha, o segredo do TOTP e nenhum hash (de token, de código ou de senha).
+- **`POST /empresas/{cnpj}/excluir`:**
+  - a ordem: primeiro a empresa sai do banco da organização (tudo dela vai em cascata), depois o acesso sai do `contas.db`;
+  - uma falha no meio deixa só um acesso sobrando, e o recadastro já aceita isso (`ON CONFLICT DO NOTHING`);
+  - CNPJ digitado diferente: 422. Senha errada conta como falha de entrada (a mesma espera da exclusão da conta);
+  - membro: 403. Outra conta: 404.
+- **Limpeza ao subir:** no `ciclo_de_vida`, apaga `organizacoes/<id>.db` (e o `-wal` e o `-shm`) quando o id não existe em `organizacoes`. Um nome fora do padrão fica no disco e só aparece no log, pelo nome do arquivo.
+- **Saída:** no modo real, com os motores oficiais, a conta cria a empresa, o cliente e uma nota, baixa o JSON, exclui a empresa, exclui a conta e, ao subir de novo, o banco órfão some. A demonstração não muda.
+
+**Feito na etapa 7** (seção da etapa 7 no [ADR 0017](adr/0017-empresa-propria.md)):
+- **LGPD, art. 19, lido no Planalto:** o acesso "em formato simplificado, imediatamente" (I) e a cópia integral "em formato que permita a sua utilização subsequente" (§3º). O JSON gerado na hora atende aos dois.
+- **Acréscimo ao que vai no arquivo:** as falhas seguidas de entrada, que são um dado da pessoa e não estavam na lista.
+- **Achados no código:**
+  - arquivar um item tira o código do fornecedor dele (a nota nova vira item sem par): o arquivo leva só os códigos que existem;
+  - no FastAPI 0.165, as rotas incluídas ficam dentro de um `_IncludedRouter`, e `matches` não devolve a rota. O log de acesso lê `scope["route"]` depois do roteamento e compara com os modelos só nas recusas dos middlewares;
+  - o Starlette relança a exceção depois do 500, e o uvicorn grava a pilha com a mensagem: o filtro vale para o log dele também;
+  - sem handler, o logger `contaai` só mostrava WARNING ou mais: o log de acesso, em INFO, não apareceria.
+- **Para o deploy (E6):** o log de acesso do proxy também sem o IP e sem o caminho com o CNPJ (em aberto no `docs/seguranca.md`).
+
+**Etapa 8, em 10 passos** (papéis; seção da etapa 8 no [ADR 0017](adr/0017-empresa-propria.md)):
+
+| # | Passo | Situação |
+|---|---|---|
+| 8.1 | Conferências: o inventário das rotas que mudam o estado e o que cada papel faz nelas | feito |
+| 8.2 | As listas de papéis numa fonte só: `PAPEIS_QUE_EDITAM` (dono e membro) e `PAPEIS_QUE_ADMINISTRAM` (dono), com o que não está nelas recusado | feito |
+| 8.3 | A edição confere o papel: `exigir_permissao_para_mudar` (token na demonstração, papel na organização) nas 10 rotas de edição | feito |
+| 8.4 | A empresa usa a mesma regra: cadastrar, configurar e excluir pelo `exigir_papel`, com o 403 antes da empresa e da senha | feito |
+| 8.5 | Contrato: sem o 403 no `GET /empresas/{cnpj}`; o 403 do papel somado ao do CSRF; o 403 do CSRF no DELETE das sessões; o 403 da restauração com a sessão | feito |
+| 8.6 | Testes (`test_papeis.py`, 8): o membro de verdade, a matriz, o papel a cada pedido, a lista vazia, o inventário e o contrato | feito |
+| 8.7 | Conferência no negativo: sem a checagem do papel, o teste falha | feito |
+| 8.8 | OpenAPI reexportado e tipos da tela gerados de novo | feito |
+| 8.9 | Modo real com os motores oficiais: o membro edita, não administra, e o log grava o 403 sem dado pessoal | feito |
+| 8.10 | Documentação e varredura | feito |
+
+**Achados na etapa 8:**
+- **a edição não conferia o papel.** Hoje só há o dono e o membro, e os dois editam; o contador do 3c editaria sem ninguém decidir, contra a decisão 3 ("o contador só sugere");
+- **nenhum teste tinha um membro de verdade:** os testes rebaixavam a própria dona;
+- **o contrato:** o `GET /empresas/{cnpj}` declarava um 403 que nunca acontece; o 403 do dono escondia o do CSRF; o `DELETE /sessoes` e o `DELETE /sessoes/atual` não declaravam o 403 do CSRF; o 403 da restauração com a sessão não aparecia.
+
+**Para o 3c (da etapa 8):**
+- o contador entra nas listas de papéis só onde a decisão 3 deixa;
+- tirar alguém da organização também apaga as sessões dele nela (hoje a sessão só deixa de valer, com 401).
+
+**Etapa 9, em 10 passos** (proteções; seção da etapa 9 no [ADR 0017](adr/0017-empresa-propria.md)):
+
+| # | Passo | Situação |
+|---|---|---|
+| 9.1 | Conferências: o 500 reproduzido (sem os cabeçalhos e sem o CORS), o código do Starlette 1.10 e do FastAPI 0.165, e o inventário dos limites | feito |
+| 9.2 | `ErroNaoTratado`: o 500 da rota por dentro de todos os middlewares, sem passar a exceção ao servidor | feito |
+| 9.3 | O 500 de um middleware, no dos cabeçalhos de segurança | feito |
+| 9.4 | A frase do 500 sem "avise a equipe" (não há contato publicado) | feito |
+| 9.5 | A telemetria do FastAPI desligada no código | feito |
+| 9.6 | O `GET /saude` no limite por IP, e o inventário das rotas sem limite com o motivo | feito |
+| 9.7 | O 500 no contrato de toda rota, o OpenAPI reexportado e os tipos da tela | feito |
+| 9.8 | Testes (`test_erro_interno.py`, 8), os três testes antigos que dependiam do comportamento velho e o negativo | feito |
+| 9.9 | No uvicorn real: o 500 com os cabeçalhos e o CORS, o 429 do `/saude` e o log sem dado pessoal | feito |
+| 9.10 | Documentação e varredura | feito |
+
+**Achados na etapa 9:**
+- **o 500 saía sem os cabeçalhos de segurança, sem o `no-store` e sem o CORS:** reproduzido antes do conserto;
+- **a telemetria do FastAPI 0.165** (OpenTelemetry) fica por fora dos nossos middlewares e, pela documentação dela, grava as mensagens das exceções e o corpo lido. Hoje não liga (não há SDK nem exportador instalado); agora fica desligada no código;
+- **o `GET /saude` consulta os dois motores e não tinha limite por IP,** contra a regra do ADR 0006. Um teste antigo o usava como exemplo de rota livre, sem motivo registrado;
+- **a frase do 500 dizia "avise a equipe",** e o ContaAI não publica um contato (decisão 4 da C2);
+- **um teste antigo (`test_problemas.py`) removia a rota de teste pelo caminho,** e no FastAPI 0.165 o `include_router` a embrulha num `_IncludedRouter`: a rota `/_teste/explode` ficava no app até o fim da bateria.
+
+**Etapa 10, em 10 passos** (contrato, mock e documentação; seção da etapa 10 no [ADR 0017](adr/0017-empresa-propria.md)):
+
+| # | Passo | Situação |
+|---|---|---|
+| 10.1 | Conferências: o OpenAPI e os tipos da tela contra o código, e o que cada rota faz no modo mock | feito |
+| 10.2 | O inventário do mock (`test_modo_mock.py`, 32): servida pelo mock, fixa ou só do modo real, sem rota de fora | feito |
+| 10.3 | O 501 de cada rota do modo real com um pedido válido, sem cookie e sem o marcador | feito |
+| 10.4 | Conferência no negativo: sem o `so_no_modo_real`, o teste falha | feito |
+| 10.5 | O mock num uvicorn de verdade: o 501 com os cabeçalhos e o CORS, e nenhum banco criado | feito |
+| 10.6 | A bateria completa: backend, golden, ruff, format, mypy, `pip-audit`; tela, lint, tipos, build, `npm run seguranca`, `contrato:checar` e `npm audit` | feito |
+| 10.7 | Os roteiros do modo real das etapas 1 a 9 de novo, no código final, com os motores oficiais | feito |
+| 10.8 | A varredura do projeto inteiro atrás de inconsistências | feito |
+| 10.9 | A documentação: README, `backend/README.md`, `docs/seguranca.md`, ADR 0017 e este plano | feito |
+| 10.10 | Nome e e-mail do time fora do diff, o commit e o PR das etapas 6 a 10 | feito |
+
+**Achados na etapa 10:**
+- **o README dizia que, no modo mock, todas as rotas respondem com mocks:** as que gravam, as das contas e as da empresa própria respondem 501;
+- **o 501 das rotas novas no mock** estava em testes avulsos, e cinco rotas não tinham nenhum;
+- **os dois README e o cabeçalho do ADR 0017 paravam na etapa 6,** e a tabela do `backend/README.md` não tinha `app/contas/`, `app/cnpj.py`, `app/cadastro.py`, `app/dados_da_conta.py` nem `app/api/registro.py`;
+- **o "Onde estamos" deste plano** não tinha as etapas 8 a 10.
+
 **Para a C3a e a C3b:**
 - o cliente da tela mandar o cookie da sessão para `/empresas` e `/referencias/`;
+- a tela de Sua conta: baixar os dados (`POST /conta/dados`, com a senha) e salvar o arquivo com o nome do `Content-Disposition`;
+- a tela de configurações: excluir a empresa, com a senha e o CNPJ digitado, e o aviso de guardar as notas. `POST /empresas/{cnpj}/excluir` entra nas rotas de entrada da tela (o 401 dela é a senha), o que pede mudar a regra de `rotas.test.ts` (hoje só aceita rotas da conta);
+- a Privacidade, na seção dos direitos: baixar os dados e excluir a empresa, quando a tela delas existir;
 - as notas de exemplo saírem fora da demonstração;
 - o formulário converter o CNPJ para maiúsculas.
 - cadastrar o par de um item sem par a partir da nota (ficou do 3b), agora que o catálogo é editável.
+- a tela de clientes: criar, alterar e excluir, e o 409 do item em uso levando aos clientes da lista.
 
 **Saída:** uma conta nova cadastra a empresa, importa uma nota e vê o alerta, sem tocar nos dados da demo.
 
@@ -538,7 +691,6 @@ Achados do mapa:
 ## O que segue aberto fora da ordem
 
 - **ESLint 10:** quando o `eslint-plugin-jsx-a11y` aceitar a versão ([ADR 0012](adr/0012-fundacao-do-frontend.md)).
-- **Erro 500 sem os cabeçalhos de segurança** ([ADR 0009](adr/0009-camada-http-e-erros.md)).
 - **Esgotar os espaços de avaliação** na demo pública ([ADR 0010](adr/0010-espacos-de-avaliacao.md)).
 - **Respostas dos contadores** (E0-08): dependem do time.
 - **Fora do escopo:** a linha do tempo 2026 × 2027 e a exportação (decisão D3 da E5).

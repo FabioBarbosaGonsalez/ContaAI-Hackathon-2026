@@ -155,4 +155,4 @@ Ao todo: 389 testes do CI (antes, 317), 52 golden (antes, 50), cobertura de 96% 
 - **Na fundação do frontend** (resolvido no [ADR 0012](0012-fundacao-do-frontend.md)):
   - a CSP da tela e o Trusted Types: conferidos no Chrome, funcionam com o React;
   - as regras de exibição de texto em `docs/seguranca.md`, com lint, teste e checagem no CI.
-- O erro 500 segue sem os cabeçalhos de segurança ([ADR 0009](0009-camada-http-e-erros.md)). Na bateria nova, nenhuma rota chegou a 500.
+- O erro 500 segue sem os cabeçalhos de segurança ([ADR 0009](0009-camada-http-e-erros.md)). Na bateria nova, nenhuma rota chegou a 500. (Resolvido na etapa 9 da C3-B, [ADR 0017](0017-empresa-propria.md).)

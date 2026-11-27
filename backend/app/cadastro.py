@@ -1,4 +1,5 @@
-"""Empresa própria (C3-B, ADR 0017): referências oficiais, cadastro, configurações e catálogo editável.
+"""Empresa própria (C3-B, ADR 0017): referências oficiais, cadastro, configurações, catálogo e clientes B2B
+editáveis.
 
 Tudo o que é dado oficial vem dos motores, na versão fixada (P5), e nunca da tela:
 - UF e município (código do IBGE e nome): dados abertos do motor RR;
@@ -23,11 +24,17 @@ from app.contrato import (
     AtividadeDaEmpresa,
     AtividadeSimples,
     AtividadesResposta,
+    ClienteAlteracaoRequisicao,
+    ClienteExcluidoResposta,
+    ClienteNovoRequisicao,
+    ClienteQueCompra,
+    ClienteResposta,
     EmpresaCadastroRequisicao,
     EmpresaConfiguracaoRequisicao,
     EmpresaResposta,
     ItemAlteracaoRequisicao,
     ItemArquivadoResposta,
+    ItemDaCompraMensal,
     ItemNovoRequisicao,
     ItemResposta,
     MunicipioReferencia,
@@ -36,7 +43,8 @@ from app.contrato import (
     UfsResposta,
 )
 from app.dados_demo import AtividadeSimples as AtividadeDoCadastro
-from app.dados_demo import Cenario, Empresa, ItemCatalogo, carregar_distribuidora
+from app.dados_demo import Cenario, Cliente, ClienteB2B, CompraMensal, Empresa, ItemCatalogo, carregar_distribuidora
+from app.dados_demo import ItemCompraMensal as ItemDaCompraGravado
 from app.motores.dados_abertos import DA, ROTA_ATIVIDADES_SN, DadosAbertos
 from app.nfe.consultas import (
     Conflito,
@@ -44,13 +52,15 @@ from app.nfe.consultas import (
     _empresa,
     _item_estado,
     cenario_empresa,
+    cliente_estado,
     resumo_empresa,
 )
-from app.persistencia.repositorio import EmpresaRegistro, Repositorio
+from app.persistencia.repositorio import EmpresaRegistro, Repositorio, Sessao
 
 # Tetos de produto, não regra fiscal: só evitam que uma conta cresça sem limite no disco do servidor.
 EMPRESAS_POR_ORGANIZACAO = 10
 ITENS_POR_EMPRESA = 500
+CLIENTES_POR_EMPRESA = 50
 TP_DOC_NFE = "55"
 ANEXOS = ("I", "II", "III", "IV", "V")
 MENSAGEM_CNPJ = "CNPJ inválido: confira os dígitos verificadores."
@@ -65,6 +75,17 @@ class Recusado(Exception):
     def __init__(self, mensagem: str) -> None:
         super().__init__(mensagem)
         self.mensagem = mensagem
+
+
+class ItemEmUso(Conflito):
+    """O item está na compra mensal de clientes B2B (409 /problemas/item-em-uso). Sem esta trava, a venda desses
+    clientes apontaria para um item fora do catálogo e a comparação de regimes deles ficaria sem venda."""
+
+    def __init__(self, clientes: list[ClienteQueCompra]) -> None:
+        super().__init__(
+            "O item está na compra mensal de clientes desta empresa. Tire-o da compra deles antes de arquivar."
+        )
+        self.clientes = clientes
 
 
 @dataclass(frozen=True)
@@ -202,6 +223,17 @@ def cadastrar_empresa(
             s.apagar_empresa(empresa.cnpj)
         raise
     return resposta_da_empresa(EmpresaRegistro(empresa, cenario), aviso)
+
+
+def excluir_empresa(repo: Repositorio, contas: Contas, organizacao_id: str, cnpj: str) -> None:
+    """De vez, sem excluir a conta (C3-B, etapa 7). Primeiro a empresa sai do banco da organização, e tudo dela vai
+    junto em cascata (itens, códigos de fornecedor, notas, custos, preços, alertas, classificações e clientes); depois
+    sai o acesso no banco das contas, e o contador deixa de alcançá-la. Os dois bancos não têm transação em comum: uma
+    falha no meio deixa só o acesso, sem dado nenhum, e o recadastro aceita esse caso (Contas.vincular_empresa). Um
+    acesso que já tinha sobrado assim também sai por aqui."""
+    with repo.escrita() as s:
+        s.apagar_empresa(cnpj)
+    contas.desvincular_empresa(organizacao_id, cnpj)
 
 
 def ler_empresa(repo: Repositorio, cnpj: str, aviso: str) -> EmpresaResposta:
@@ -359,8 +391,108 @@ def alterar_item(repo: Repositorio, item_id: str, req: ItemAlteracaoRequisicao, 
 
 
 def arquivar_item(repo: Repositorio, cnpj: str, item_id: str, agora: datetime) -> ItemArquivadoResposta:
+    """Confere os clientes na mesma transação de escrita (BEGIN IMMEDIATE) que arquiva: um cliente gravado ao mesmo
+    tempo não escapa da trava."""
     with repo.escrita() as s:
         _empresa(s, cnpj)
-        if not s.arquivar_item(cnpj, item_id, agora):
+        if s.item(cnpj, item_id) is None:
             raise NaoEncontrado("Item não encontrado no catálogo desta empresa.")
+        compram = s.clientes_que_compram(cnpj, item_id)
+        if compram:
+            raise ItemEmUso([ClienteQueCompra(cnpj=c.cliente.cnpj, nome=c.cliente.razaoSocial) for c in compram])
+        s.arquivar_item(cnpj, item_id, agora)
     return ItemArquivadoResposta(itemId=item_id, arquivadoEm=agora)
+
+
+# -- clientes B2B -----------------------------------------------------------------------------------------
+
+# Texto fixo, montado pelo backend: a descrição da compra das sementes (data/demo) deixa de valer quando a pessoa
+# muda a compra.
+DESCRICAO_DA_COMPRA = "Compra mensal informada no cadastro do cliente."
+AVISO_CLIENTE_DEMO = "Dados fictícios de demonstração (P10): empresa, CNPJ e quantidades não são reais."
+AVISO_CLIENTE_DA_CONTA = "Cliente cadastrado pela empresa da conta."
+MENSAGEM_CLIENTE_DO_SIMPLES = (
+    "O ContaAI compara os regimes na venda a um cliente do regime regular. Clientes do Simples Nacional ainda não "
+    "entram."
+)
+
+
+def _conferir_compra(s: Sessao, cnpj: str, compra: list[ItemDaCompraMensal]) -> CompraMensal:
+    """Cada item precisa estar no catálogo da empresa (sem os arquivados)."""
+    if any(s.item(cnpj, i.itemId) is None for i in compra):
+        raise Recusado("A compra mensal tem um item que não está no catálogo desta empresa.")
+    return CompraMensal(
+        descricao=DESCRICAO_DA_COMPRA,
+        itens=[ItemDaCompraGravado(itemId=i.itemId, quantidade=i.quantidade) for i in compra],
+    )
+
+
+async def criar_cliente(
+    da: DadosAbertos, repo: Repositorio, req: ClienteNovoRequisicao, na_empresa_propria: bool
+) -> ClienteResposta:
+    """O dígito do CNPJ do cliente é exigido só na empresa da conta, como o do fornecedor (ADR 0017). A consulta do
+    município ao motor fica fora da transação."""
+    if req.regime != "regime_regular":
+        raise Recusado(MENSAGEM_CLIENTE_DO_SIMPLES)
+    if na_empresa_propria and not cnpj_valido(req.cnpjCliente):
+        raise Recusado("CNPJ do cliente inválido: confira os dígitos verificadores.")
+    if req.cnpjCliente == req.cnpj:
+        raise Recusado("O cliente não pode ser a própria empresa.")
+    await _local(da, req.uf, req.municipio)
+    with repo.escrita() as s:
+        _empresa(s, req.cnpj)
+        if s.cliente_b2b(req.cnpj, req.cnpjCliente) is not None:
+            raise Conflito("Este cliente já está cadastrado nesta empresa.")
+        if s.contar_clientes_b2b(req.cnpj) >= CLIENTES_POR_EMPRESA:
+            raise Conflito(f"A empresa já tem {CLIENTES_POR_EMPRESA} clientes, o limite por empresa.")
+        cliente = ClienteB2B(
+            aviso=AVISO_CLIENTE_DA_CONTA if na_empresa_propria else AVISO_CLIENTE_DEMO,
+            cliente=Cliente(
+                razaoSocial=req.razaoSocial,
+                cnpj=req.cnpjCliente,
+                regime="regime_regular",
+                uf=req.uf,
+                municipio=req.municipio,
+            ),
+            compraMensal=_conferir_compra(s, req.cnpj, req.compraMensal),
+        )
+        s.inserir_cliente_b2b(req.cnpj, cliente)
+    return ClienteResposta(cliente=cliente_estado(cliente))
+
+
+async def alterar_cliente(
+    da: DadosAbertos, repo: Repositorio, cnpj_cliente: str, req: ClienteAlteracaoRequisicao
+) -> ClienteResposta:
+    """Só o que veio muda. A mesma compra mensal reenviada guarda a descrição que já tinha."""
+    enviados = req.model_fields_set - {"cnpj"}
+    if req.uf is not None and req.municipio is not None:
+        await _local(da, req.uf, req.municipio)
+    with repo.escrita() as s:
+        _empresa(s, req.cnpj)
+        atual = s.cliente_b2b(req.cnpj, cnpj_cliente)
+        if atual is None:
+            raise NaoEncontrado("Cliente não encontrado nesta empresa.")
+        dados = atual.cliente.model_copy(
+            update={campo: getattr(req, campo) for campo in enviados & {"razaoSocial", "uf", "municipio"}}
+        )
+        compra = atual.compraMensal
+        if req.compraMensal is not None:
+            nova = _conferir_compra(s, req.cnpj, req.compraMensal)
+            if nova.itens != atual.compraMensal.itens:
+                compra = nova
+        novo = ClienteB2B.model_validate(
+            atual.model_copy(update={"cliente": dados, "compraMensal": compra}).model_dump(by_alias=True)
+        )
+        if novo == atual:
+            raise Conflito("Nada mudou: o cliente já tem estes valores.")
+        s.atualizar_cliente_b2b(req.cnpj, novo)
+    return ClienteResposta(cliente=cliente_estado(novo))
+
+
+def excluir_cliente(repo: Repositorio, cnpj: str, cnpj_cliente: str, agora: datetime) -> ClienteExcluidoResposta:
+    """De vez, sem histórico (decisão da etapa 6)."""
+    with repo.escrita() as s:
+        _empresa(s, cnpj)
+        if not s.apagar_cliente_b2b(cnpj, cnpj_cliente):
+            raise NaoEncontrado("Cliente não encontrado nesta empresa.")
+    return ClienteExcluidoResposta(cnpjCliente=cnpj_cliente, excluidoEm=agora)

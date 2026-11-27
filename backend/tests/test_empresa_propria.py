@@ -11,6 +11,7 @@ from fastapi.testclient import TestClient
 
 from app import cadastro
 from app.api import dependencias, middlewares
+from app.api.problemas import FRASE_ERRO_INTERNO
 from app.api.rotas import contas as rotas_contas
 from app.cnpj import digitos_verificadores
 from app.config import Configuracao, configuracao
@@ -246,8 +247,8 @@ def test_falha_ao_dar_o_acesso_desfaz_a_empresa(real, monkeypatch: pytest.Monkey
 
     original = Contas.vincular_empresa
     monkeypatch.setattr(Contas, "vincular_empresa", falhar)
-    with pytest.raises(RuntimeError, match="indisponível"):  # o TestClient repassa a exceção do servidor (500)
-        c.post("/empresas", json=corpo_empresa())
+    r = c.post("/empresas", json=corpo_empresa())  # o 500 tratado (C3-B, etapa 9), sem a mensagem da exceção
+    assert r.status_code == 500 and r.json()["detail"] == FRASE_ERRO_INTERNO
     monkeypatch.setattr(Contas, "vincular_empresa", original)  # undo() desfaria também o relógio de teste
     cadastrar(c)  # sem sobra do primeiro: entra de novo
 

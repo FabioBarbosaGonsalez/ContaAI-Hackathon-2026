@@ -33,6 +33,13 @@ TOKEN: Respostas = {401: {"description": "Token da demo ausente ou errado (heade
 LIMITE: Respostas = {429: {"description": "Limite de requisições por minuto atingido (header Retry-After)."}}
 SO_MODO_REAL: Respostas = {501: {"description": "Rota que só funciona no modo real (CONTAAI_MODO=real)."}}
 
+PAPEL: Respostas = {
+    403: {
+        "description": "Na organização, papel sem permissão para mudar os dados da empresa (só o dono e o membro "
+        "mudam)."
+    },
+}
+
 ESPACO: Respostas = {
     404: {"description": "Espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente)."},
 }
@@ -49,6 +56,7 @@ ESTADO: Respostas = {
 NFE: Respostas = {
     **MOTOR,
     **ESTADO,
+    **PAPEL,
     409: {
         "description": "A mesma nota (emitente, série e número) já foi importada com outro conteúdo, ou o estado "
         "mudou durante a importação (/problemas/nota-recusada)."

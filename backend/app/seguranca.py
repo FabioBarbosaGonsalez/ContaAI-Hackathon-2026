@@ -18,6 +18,9 @@ from pydantic import SecretStr
 
 JANELA_S = 60.0
 MAX_IPS = 10_000
+# Métodos que mudam o estado: passam pela defesa contra CSRF (app.api.middlewares) e o OpenAPI declara o 403 dela
+# (app.api.problemas.ajustar_openapi).
+METODOS_INSEGUROS = ("POST", "PUT", "PATCH", "DELETE")
 
 
 class LimitadorPorIp:

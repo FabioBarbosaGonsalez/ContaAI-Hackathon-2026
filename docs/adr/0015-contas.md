@@ -120,7 +120,7 @@ O CORS continua sem credenciais (`allow_credentials=False`): o cookie só anda n
 ### 8. Excluir a conta (S7)
 
 - **`POST /conta/excluir` com a senha de novo** (em vez do `DELETE /conta` do plano): pedir a senha protege contra uma sessão roubada, e o corpo de um DELETE é mal suportado.
-- **Apaga a pessoa, as sessões, os passes, o segundo fator, os códigos e as tentativas.** Se ela era a única integrante, apaga também a organização e o arquivo de estado dela.
+- **Apaga a pessoa, as sessões, os passes, o segundo fator, os códigos e as tentativas.** Se ela era a única integrante, apaga também a organização e o arquivo de estado dela. Desde a etapa 7 da C3-B, isso vale para todas as organizações em que ela era a única, e não só para a da sessão ([ADR 0017](0017-empresa-propria.md)).
 - **A única dona de uma organização com outros membros** recebe 409 e precisa passar a posse antes. Não há obrigação legal de guardar esses dados na C1 (LGPD, art. 16 I). Os convites de membros vêm no 3c.
 
 ### 9. Mesma origem (S8)

@@ -85,8 +85,9 @@ export function antesDaComparacao(catalogo: Catalogo): boolean {
  * de fora: o backend o refaz sobre o custo e responde `fonteCredito: 'motor'`, com a hipótese impressa.
  * Mandar esse crédito faria a comparação dizer que ele foi lido da nota (ADR 0014).
  *
- * Devolve null se algum item da venda não estiver no catálogo (o backend não deixa isso acontecer nas
- * sementes, mas a tela não inventa um item).
+ * Devolve null se algum item da venda não estiver no catálogo. O backend não deixa isso acontecer: confere as
+ * sementes, só aceita cliente com itens do catálogo e não arquiva o item da compra de um cliente (409,
+ * ADR 0017). Mesmo assim, a tela não inventa um item.
  */
 export function pedidoDeRegime(catalogo: Catalogo, cliente: ClienteB2B): PedidoDeRegime | null {
   const itens: ItemCarrinho[] = [];

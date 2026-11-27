@@ -123,8 +123,10 @@ export function Privacidade() {
             <>
               <p>
                 O banco de dados da conta não guarda o endereço IP. O limite de pedidos por IP fica só na memória do
-                servidor e some quando ele reinicia. O servidor da API pode registrar, em log técnico, o IP, a hora e o
-                endereço de cada pedido.
+                servidor e some quando ele reinicia. O log técnico da API registra, de cada pedido, só o tipo, a rota sem
+                os dados dela (por exemplo, <code>/empresas/{'{cnpj}'}</code>, nunca o CNPJ), o resultado e quanto tempo
+                levou: sem o IP e sem dado pessoal. Um erro inesperado entra no log só com o tipo e o lugar do código
+                onde aconteceu, sem a mensagem.
               </p>
             </>
           ),

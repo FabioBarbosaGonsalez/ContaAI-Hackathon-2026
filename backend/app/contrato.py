@@ -20,7 +20,7 @@ import re
 from datetime import date, datetime
 from decimal import Decimal
 from enum import StrEnum
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
 
@@ -983,6 +983,18 @@ class ProblemaCalculo(Problema):
     erros: list[ErroMotor] = []
 
 
+class ClienteQueCompra(_Modelo):
+    cnpj: str
+    nome: str
+
+
+class ProblemaItemEmUso(Problema):
+    """409 /problemas/item-em-uso: o item está na compra mensal de clientes B2B e não pode sair do catálogo (C3-B,
+    ADR 0017). `clientes` diz quais, para a tela levar a pessoa até eles."""
+
+    clientes: list[ClienteQueCompra]
+
+
 class TipoProblema(_Modelo):
     """Descrição de um tipo de problema (GET /problemas/{nome}), como pede a RFC 9457 para tipos novos."""
 
@@ -1384,3 +1396,239 @@ class ItemArquivadoResposta(_Modelo):
 
     itemId: str
     arquivadoEm: datetime
+
+
+# Clientes B2B (C3-B, etapa 6): os clientes empresa e a compra mensal de cada um, a venda que a comparação de regimes
+# usa (ClienteB2BEstado). A compra mensal cabe numa comparação: o mesmo teto de itens do POST /regime/comparar.
+
+RegimeDoCliente = Literal["regime_regular", "simples_nacional"]
+QuantidadeDaCompra = Annotated[
+    Decimal, Field(gt=0, le=TETO_ENTRADA, decimal_places=4, description="Quantidade por mês, na unidade do item.")
+]
+
+
+class ItemDaCompraMensal(_Modelo):
+    itemId: str = Field(pattern=PADRAO_ID_ITEM, description="Id de um item do catálogo da empresa.")
+    quantidade: QuantidadeDaCompra
+
+
+def _itens_sem_repeticao(compra: list[ItemDaCompraMensal]) -> list[ItemDaCompraMensal]:
+    ids = [i.itemId for i in compra]
+    if len(set(ids)) != len(ids):
+        raise ValueError("Cada item entra uma vez na compra mensal.")
+    return compra
+
+
+CompraMensalEntrada = Annotated[
+    list[ItemDaCompraMensal],
+    Field(min_length=1, max_length=200, description="O que o cliente compra num mês; cada item entra uma vez."),
+    AfterValidator(_itens_sem_repeticao),
+]
+
+
+class ClienteNovoRequisicao(_Modelo):
+    """Um cliente empresa da empresa `cnpj`. A comparação de regimes é feita na venda a um cliente do regime
+    regular: um cliente do Simples Nacional é recusado (422)."""
+
+    cnpj: CnpjEmpresa = Field(description="A empresa que vende.")
+    cnpjCliente: CnpjEmpresa
+    razaoSocial: RazaoSocial
+    regime: RegimeDoCliente
+    uf: Uf
+    municipio: Municipio
+    compraMensal: CompraMensalEntrada
+
+
+class ClienteAlteracaoRequisicao(_Modelo):
+    """Só os campos enviados mudam. O CNPJ do cliente não muda: outro CNPJ é outro cliente."""
+
+    cnpj: CnpjEmpresa = Field(description="A empresa que vende.")
+    razaoSocial: RazaoSocial | None = None
+    uf: Uf | None = None
+    municipio: Municipio | None = None
+    compraMensal: CompraMensalEntrada | None = None
+
+    @model_validator(mode="after")
+    def conferir(self) -> ClienteAlteracaoRequisicao:
+        enviados = self.model_fields_set - {"cnpj"}
+        if not enviados:
+            raise ValueError("Envie ao menos um campo para mudar.")
+        if ("uf" in enviados) != ("municipio" in enviados):
+            raise ValueError("Envie a UF e o município juntos.")
+        if any(getattr(self, campo) is None for campo in enviados):
+            raise ValueError("Os campos enviados não aceitam null.")
+        return self
+
+
+class ClienteExcluirRequisicao(_Modelo):
+    cnpj: CnpjEmpresa = Field(description="A empresa que vende.")
+
+
+class ClienteResposta(_Modelo):
+    cliente: ClienteB2BEstado
+
+
+class ClienteExcluidoResposta(_Modelo):
+    """O cliente saiu de vez: o ContaAI não guarda histórico de clientes."""
+
+    cnpjCliente: str
+    excluidoEm: datetime
+
+
+# ---------------------------------------------------------------------------
+# Dados e exclusão (C3-B, etapa 7; LGPD, arts. 18 II, V e VI, e 19): o arquivo com os dados da conta e das empresas
+# da organização, e excluir a empresa sem excluir a conta.
+
+DocumentoGravado = dict[str, Any]
+"""Um documento JSON como está gravado no banco (empresa, cenário, item, cliente, alerta ou recibo), sem
+transformação: o arquivo é a cópia do que o ContaAI guarda."""
+
+
+class ContaDadosRequisicao(_Modelo):
+    """O arquivo leva tudo o que a conta guarda: a senha de novo, como na exclusão da conta."""
+
+    senha: SenhaEntrada
+
+
+class EmpresaExcluirRequisicao(_Modelo):
+    """Excluir a empresa é definitivo: a senha de novo e o CNPJ digitado para confirmar."""
+
+    senha: SenhaEntrada
+    cnpjConfirmacao: CnpjEmpresa = Field(description="O CNPJ da empresa, digitado de novo (o mesmo do caminho).")
+
+
+class SessaoExportada(_Modelo):
+    criadaEm: datetime
+    ultimoUso: datetime
+    expiraEm: datetime
+    atual: bool = Field(description="A sessão que pediu o arquivo.")
+
+
+class TentativasExportadas(_Modelo):
+    falhasSeguidas: int
+    esperaAte: datetime | None
+    bloqueada: bool
+
+
+class DadosDaPessoa(_Modelo):
+    email: str
+    criadaEm: datetime
+    situacao: Literal["pendente", "ativa"]
+    termos: TermosDaConta | None
+    segundoFatorConfirmadoEm: datetime | None
+    codigosRecuperacaoRestantes: int = Field(description="Só a quantidade: os códigos não ficam guardados.")
+    tentativas: TentativasExportadas | None = Field(description="Falhas seguidas de entrada, se houver.")
+    eventos: list[EventoSeguranca] = Field(description="Todos, os mais recentes primeiro.")
+    sessoes: list[SessaoExportada]
+
+
+class ItemExportado(_Modelo):
+    itemId: str
+    ncm: str
+    unidade: str
+    arquivadoEm: datetime | None
+    item: DocumentoGravado
+
+
+class CodigoFornecedorExportado(_Modelo):
+    cnpjFornecedor: str
+    codigo: str
+    itemId: str
+
+
+class NotaExportada(_Modelo):
+    """A nota importada: o ContaAI não guarda o XML, só o resumo dele (sha256) e o recibo da importação."""
+
+    id: int
+    cnpjEmitente: str
+    serie: str
+    numero: str
+    dataEmissao: datetime
+    sha256: str
+    importadaEm: datetime
+    recibo: DocumentoGravado
+
+
+class CustoExportado(_Modelo):
+    id: int
+    itemId: str
+    notaId: int
+    data: datetime
+    quantidade: Decimal
+    custoUnitario: Decimal
+    creditoUnitario: Decimal | None
+    fonteCredito: Literal["nfe", "motor"] | None
+
+
+class PrecoExportado(_Modelo):
+    id: int
+    itemId: str
+    valorUnitario: Decimal
+    vigenteDesde: datetime
+    origem: Literal["semente", "alerta", "tela"]
+    alertaId: str | None
+
+
+class AlertaExportado(_Modelo):
+    id: str
+    itemId: str
+    notaId: int
+    criadoEm: datetime
+    aplicadoEm: datetime | None
+    alerta: DocumentoGravado
+
+
+class ClassificacaoExportada(_Modelo):
+    id: int
+    itemId: str
+    cst: str
+    cClassTrib: str
+    fonte: str
+    vigenteDesde: datetime
+    origem: Literal["tela"]
+
+
+class ClienteExportado(_Modelo):
+    cnpjCliente: str
+    cliente: DocumentoGravado = Field(description="Com a razão social do cliente, que pode ser dado pessoal.")
+
+
+class EmpresaExportada(_Modelo):
+    """Uma empresa da organização. `empresa` vazio: o acesso ficou sem a empresa no banco (uma falha no meio de
+    uma exclusão); o recadastro aceita esse caso."""
+
+    cnpj: str
+    acessoDesde: datetime
+    empresa: DocumentoGravado | None
+    cenario: DocumentoGravado | None
+    itens: list[ItemExportado] = Field(description="Inclusive os arquivados.")
+    codigosFornecedor: list[CodigoFornecedorExportado]
+    notas: list[NotaExportada]
+    custos: list[CustoExportado]
+    precos: list[PrecoExportado]
+    alertas: list[AlertaExportado]
+    classificacoes: list[ClassificacaoExportada]
+    clientesB2B: list[ClienteExportado]
+
+
+class OrganizacaoExportada(_Modelo):
+    """Uma organização da pessoa, com as empresas dela. Os outros integrantes não aparecem (nem o e-mail deles)."""
+
+    id: str
+    nome: str
+    criadaEm: datetime
+    papel: Literal["dono", "membro"]
+    desde: datetime
+    empresas: list[EmpresaExportada]
+
+
+class ContaDadosResposta(_Modelo):
+    """A cópia dos dados (LGPD, art. 19, I e §3º): em formato simplificado, na hora, e num formato que permite
+    usar de novo (JSON). Não leva a senha, o segredo do segundo fator nem nenhum hash de senha, token ou código."""
+
+    formato: Literal["contaai-dados-1"] = Field(description="Versão do formato deste arquivo.")
+    geradoEm: datetime
+    conta: DadosDaPessoa
+    organizacoes: list[OrganizacaoExportada]
+    naoIncluido: list[str] = Field(description="O que o ContaAI guarda e não vai no arquivo, e por quê.")
+    aviso: str

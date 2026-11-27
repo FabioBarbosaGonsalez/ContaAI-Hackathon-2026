@@ -71,12 +71,14 @@ Regras conferidas no texto da RFC 9457 (rfc-editor.org/rfc/rfc9457, seções 3, 
 - Nomes das extensões: `campos`, `erros` e `motor` seguem a recomendação da RFC (letra inicial, só letras, dígitos e `_`, 3 ou mais caracteres). Quem consome deve ignorar extensão desconhecida.
 - **Segurança** (RFC 9457, seção 5, sobre não expor detalhes de implementação):
   - O erro não tratado vai para o log do servidor. O cliente recebe só "Erro interno", sem pilha nem mensagem da exceção.
+  - Desde a etapa 7 da C3-B, o log também fica sem a mensagem da exceção (ela pode repetir um valor enviado): só o tipo e onde aconteceu ([ADR 0017](0017-empresa-propria.md)).
   - A validação devolve o local e a mensagem de cada campo, mas não o valor enviado (`input`) nem o contexto interno (`ctx`) do Pydantic.
   - As falhas dos motores e do provedor continuam sem URL, host ou corpo de terceiros.
 - **OpenAPI:**
   - O `app.openapi` passa por `ajustar_openapi`. Toda resposta 4xx/5xx é documentada em `application/problem+json`, e todo 422 aceita `ProblemaValidacao` além do modelo da rota.
   - O `HTTPValidationError` do FastAPI sai do contrato.
   - O ajuste é idempotente, e um teste confere isso.
+  - Desde a etapa 8 da C3-B, todo método que muda o estado (`METODOS_INSEGUROS`, em `app/seguranca.py`) declara o 403 do CSRF. Quando a rota tem um 403 próprio (o papel na organização), as duas razões ficam na mesma descrição ([ADR 0017](0017-empresa-propria.md)).
 
 ### Achado corrigido junto: CORS por dentro dos limites
 
@@ -95,7 +97,8 @@ Um teste confere que o 429 sai com o cabeçalho CORS.
   - `FalhaMotorResposta` virou `ProblemaMotor` e `RecusaCalculo` virou `ProblemaCalculo`, ambos com `type`, `title` e `status` a mais.
   - O erro de validação trocou a lista em `detail` por um texto em `detail` mais a lista `campos`.
   - `detail` continua sendo um texto em todos os erros, então quem já lia `detail` segue lendo.
-- **O 500 continua sem os cabeçalhos de segurança e de CORS.** Ele é montado pelo `ServerErrorMiddleware` do Starlette, que fica por fora de todos. O corpo não traz nada interno, e o caso só acontece em erro não previsto.
+- **O 500 ficava sem os cabeçalhos de segurança e de CORS.** Ele era montado pelo `ServerErrorMiddleware` do Starlette, que fica por fora de todos. O corpo não trazia nada interno, e o caso só acontecia em erro não previsto.
+  - **Resolvido na etapa 9 da C3-B** ([ADR 0017](0017-empresa-propria.md)). O erro de uma rota vira 500 por dentro de todos os middlewares (`ErroNaoTratado`) e o de um middleware, no dos cabeçalhos. O 500 também está no contrato de toda rota.
 - Os testes do CI passaram de 265 para 287 (`tests/test_problemas.py` e asserções de tipo nos testes de recusa). Os 50 golden passam contra os motores reais.
 
 ## Revisão na E5: mensagens de validação em português
