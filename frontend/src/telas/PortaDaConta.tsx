@@ -6,7 +6,8 @@
 // - Entrar e Criar conta são para quem não entrou. Quem já entrou e abre uma delas vai ao Painel da conta, com o
 //   endereço trocado (o voltar não cai de novo na página). A exceção é `fluxoAberto`: a página acabou de entrar
 //   ou de criar a conta e ainda mostra algo que só aparece uma vez (os códigos de recuperação).
-// - Sua conta é para quem entrou. Quem não entrou vê o caminho para entrar ou criar a conta.
+// - Sua conta e o cadastro da empresa (C3a) são para quem entrou. Quem não entrou vê o caminho para entrar ou criar
+//   a conta.
 
 import { useEffect, type ReactNode } from 'react';
 import { carregarSessao } from '../sessao/acoes.ts';
@@ -21,6 +22,8 @@ interface PropsPorta {
   exige: 'visitante' | 'conta';
   /** Só em `visitante`: a página acabou de abrir a sessão e ainda mostra algo; não vai ao Painel sozinha. */
   fluxoAberto?: boolean;
+  /** Só em `conta`: o que a página faz, na frase para quem não entrou (ex.: "ver a sua conta"). */
+  paraQue?: string;
   children: ReactNode;
 }
 
@@ -32,7 +35,7 @@ function Espera({ texto }: { texto: string }) {
   );
 }
 
-export function PortaDaConta({ exige, fluxoAberto = false, children }: PropsPorta) {
+export function PortaDaConta({ exige, fluxoAberto = false, paraQue = 'ver a sua conta', children }: PropsPorta) {
   const sessao = useSessao();
   const modo = useModo();
   const conta = useConta();
@@ -103,9 +106,7 @@ export function PortaDaConta({ exige, fluxoAberto = false, children }: PropsPort
   return (
     <div className="vazio porta__curta">
       <p>
-        {conta.tipo === 'encerrada'
-          ? 'Sua sessão terminou. Entre de novo para ver a sua conta.'
-          : 'Entre para ver a sua conta.'}
+        {conta.tipo === 'encerrada' ? `Sua sessão terminou. Entre de novo para ${paraQue}.` : `Entre para ${paraQue}.`}
       </p>
       <p className="porta__acoes">
         <Link para="/entrar" className="botao-principal">

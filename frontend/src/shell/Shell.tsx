@@ -5,20 +5,22 @@
 //   fica com a marca e um botão de menu, e os destinos vão para uma folha de tela cheia;
 // - nas páginas públicas (C2, ADR 0016): só a marca, Entrar e o caminho para a demonstração, sem os destinos do
 //   app. Quem entrou vê o caminho ao Painel e o menu da conta (C2b, etapa 9);
-// - a página da conta (C2b) usa a barra do app, sem marcar nenhum destino.
+// - a página da conta (C2b) e o cadastro da empresa (C3a) usam a barra do app, sem marcar nenhum destino.
 
 import { useRef, type ReactNode } from 'react';
 import './shell.css';
+import { useEmpresaDaTela } from '../dados/empresa.ts';
 import { useConta, useContasLigadas } from '../sessao/ganchos.ts';
 import { BarreiraDeErro } from './BarreiraDeErro.tsx';
 import { AvisoDemonstracao, BotaoDemonstracao, BotaoMinhaConta } from './demonstracao.tsx';
 import { Marca } from './Marca.tsx';
 import { MenuDaConta } from './MenuDaConta.tsx';
 import { Link, useCaminho } from './navegacao.tsx';
+import { CadastroDaEmpresa } from '../telas/CadastroDaEmpresa.tsx';
 import { Conta } from '../telas/Conta.tsx';
-import { NaoEncontrada, PAGINAS, PAGINAS_PUBLICAS, SemEmpresa } from './paginas.tsx';
+import { NaoEncontrada, PAGINAS, PAGINAS_PUBLICAS, PrimeiraVez } from './paginas.tsx';
 import { Rodape } from './Rodape.tsx';
-import { ROTAS, ehPaginaDaConta, rotaDe, rotaPublicaDe } from './rotas.ts';
+import { ROTAS, ehPaginaDaConta, ehPaginaDoCadastro, rotaDe, rotaPublicaDe } from './rotas.ts';
 import { StatusSessao } from './StatusSessao.tsx';
 
 function Destinos({ atual, aoEscolher }: { atual: string | null; aoEscolher?: () => void }) {
@@ -149,7 +151,7 @@ function ShellDoApp({ caminho, atual, children }: { caminho: string; atual: stri
 
 export function Shell() {
   const caminho = useCaminho();
-  const conta = useConta();
+  const empresa = useEmpresaDaTela();
 
   const publica = rotaPublicaDe(caminho);
   if (publica !== null) {
@@ -161,22 +163,21 @@ export function Shell() {
     );
   }
 
-  if (ehPaginaDaConta(caminho)) {
+  if (ehPaginaDaConta(caminho) || ehPaginaDoCadastro(caminho)) {
     return (
       <ShellDoApp caminho={caminho} atual={null}>
-        <Conta />
+        {ehPaginaDaConta(caminho) ? <Conta /> : <CadastroDaEmpresa />}
       </ShellDoApp>
     );
   }
 
   const rota = rotaDe(caminho);
-  // Na conta, as páginas do app dão lugar ao estado vazio: a organização ainda não tem empresa (C3).
-  const naConta = conta.tipo === 'conectada' && !conta.naDemo;
+  // Na conta sem empresa, as páginas do app dão lugar à primeira vez, que leva ao cadastro (C3a).
   let pagina: ReactNode;
   if (rota === null) {
     pagina = <NaoEncontrada />;
-  } else if (naConta) {
-    pagina = <SemEmpresa titulo={rota.nome} />;
+  } else if (empresa.tipo === 'sem-empresa') {
+    pagina = <PrimeiraVez titulo={rota.nome} dono={empresa.papel === 'dono'} />;
   } else {
     const PaginaAtual = PAGINAS[rota.caminho];
     pagina = <PaginaAtual />;

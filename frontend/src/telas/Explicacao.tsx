@@ -5,7 +5,7 @@
 
 import { useEffect, useRef } from 'react';
 import { chamar } from '../api/cliente.ts';
-import { CNPJ_DEMONSTRACAO, useOrigemDosDados } from '../dados/empresa.ts';
+import { useCnpjDaTela, useOrigemDosDados } from '../dados/empresa.ts';
 import { porcentagem } from '../dados/formatar.ts';
 import { estadoEmPalavras, NOME_REGIME, type Explicacao as DadosExplicacao, type Regime } from '../dados/pedidos.ts';
 import { useRecurso } from '../dados/recurso.ts';
@@ -92,16 +92,18 @@ function Conteudo({ dados }: { dados: DadosExplicacao }) {
 export function Explicacao({ pedido, aoFechar }: { pedido: PedidoDeExplicacao | null; aoFechar: () => void }) {
   const { api } = useSessao();
   const origem = useOrigemDosDados();
+  const cnpj = useCnpjDaTela();
   const ref = useRef<HTMLDialogElement>(null);
 
-  const chave = pedido && origem ? `explicar:${pedido.itemId}:${pedido.regime}:${origem}` : null;
+  const chave =
+    pedido && origem && cnpj !== null ? `explicar:${pedido.itemId}:${pedido.regime}:${cnpj}:${origem}` : null;
   const recurso = useRecurso(chave, (sinal) => {
-    if (!pedido) {
+    if (!pedido || cnpj === null) {
       return Promise.reject(new Error('sem item'));
     }
     return chamar(
       api.GET('/explicar/{item_id}', {
-        params: { path: { item_id: pedido.itemId }, query: { regime: pedido.regime, cnpj: CNPJ_DEMONSTRACAO } },
+        params: { path: { item_id: pedido.itemId }, query: { regime: pedido.regime, cnpj } },
         signal: sinal,
       }),
     );

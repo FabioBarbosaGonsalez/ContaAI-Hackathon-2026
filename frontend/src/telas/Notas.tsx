@@ -13,7 +13,14 @@ import { useId, useRef, useState, type ChangeEvent } from 'react';
 import { chamar } from '../api/cliente.ts';
 import { ErroApi } from '../api/problema.ts';
 import { ACEITA_NOTA, conferirArquivoDaNota } from '../api/upload.ts';
-import { importarNota, useAlertasAbertos, useCatalogo, useGravacao, useNotas } from '../dados/empresa.ts';
+import {
+  importarNota,
+  useAlertasAbertos,
+  useCatalogo,
+  useEmpresaDaTela,
+  useGravacao,
+  useNotas,
+} from '../dados/empresa.ts';
 import {
   cnpj as formatarCnpj,
   dataDoDocumento,
@@ -332,12 +339,16 @@ function Recibo({ recibo, catalogo, abertos, aoAplicado }: PropsRecibo) {
  * As notas fictícias de data/demo/notas para baixar (C2c). Aparecem também na demonstração compartilhada e no
  * modo mock, onde ninguém importa: a pessoa baixa a nota e cria um espaço para importar. O link é um arquivo da
  * mesma origem com `download` (ArquivoParaBaixar confere o endereço), sem blob: nem script.
+ *
+ * Na empresa da conta, não aparecem (C3, decisão 3): as notas são da Serra Azul, e a API recusa, com 422, a nota de
+ * outro destinatário.
  */
 function NotasDeExemplo() {
   const idTitulo = useId();
   const idDescricao = useId();
+  const empresa = useEmpresaDaTela();
   const notas = notasDeExemplo();
-  if (notas.length === 0) {
+  if (notas.length === 0 || empresa.tipo !== 'demonstracao') {
     return null;
   }
   return (

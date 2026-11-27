@@ -4,7 +4,8 @@
 // O cliente só manda cada header às rotas que o declaram:
 // - o id do espaço não vai a rotas que não precisam dele;
 // - o token não vai a nenhuma rota fora destas;
-// - o cookie da sessão da conta só vai às rotas da conta e, na conta, às rotas de dados (ADR 0015 e ADR 0016).
+// - o cookie da sessão da conta só vai às rotas da conta, às da empresa da conta e, na conta, às rotas de dados
+//   (ADR 0015, ADR 0016 e ADR 0018).
 
 /** Chave no formato "MÉTODO /caminho", com o caminho como está no contrato. */
 type Metodo = 'GET' | 'POST' | 'PATCH' | 'DELETE';
@@ -66,8 +67,21 @@ export const ROTAS_DA_CONTA: ReadonlySet<ChaveRota> = new Set<ChaveRota>([
 ]);
 
 /**
- * Rotas da conta em que o 401 quer dizer "e-mail, senha ou código incorretos", e não "a sessão acabou". Quem
- * chamou mostra a frase da API; a sessão da tela não muda.
+ * As rotas da empresa da conta (`/empresas`, ADR 0017). Elas só existem com a sessão: a API lê a organização no
+ * cookie e não aceita o header do espaço. Por isso sempre levam o cookie, também quando a pessoa está vendo a
+ * demonstração (sem ele, o cadastro receberia 401 com a sessão aberta, ADR 0018).
+ */
+export const ROTAS_DA_EMPRESA: ReadonlySet<ChaveRota> = new Set<ChaveRota>([
+  'POST /empresas',
+  'GET /empresas/{cnpj}',
+  'PATCH /empresas/{cnpj}',
+  'POST /empresas/{cnpj}/excluir',
+]);
+
+/**
+ * Rotas com o cookie em que o 401 quer dizer "e-mail, senha ou código incorretos", e não "a sessão acabou". Quem
+ * chamou mostra a frase da API; a sessão da tela não muda. Excluir a empresa pede a senha de novo (ADR 0017,
+ * etapa 7).
  */
 export const ROTAS_DE_ENTRADA: ReadonlySet<ChaveRota> = new Set<ChaveRota>([
   'POST /contas/ativar',
@@ -75,6 +89,7 @@ export const ROTAS_DE_ENTRADA: ReadonlySet<ChaveRota> = new Set<ChaveRota>([
   'POST /sessoes/codigo',
   'POST /conta/excluir',
   'POST /conta/dados',
+  'POST /empresas/{cnpj}/excluir',
 ]);
 
 export function chaveDaRota(metodo: string, caminho: string): ChaveRota {

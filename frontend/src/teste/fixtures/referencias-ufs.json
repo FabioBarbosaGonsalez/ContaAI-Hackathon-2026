@@ -1,0 +1,140 @@
+{
+  "ufs": [
+    {
+      "sigla": "AC",
+      "nome": "ACRE",
+      "codigo": 12
+    },
+    {
+      "sigla": "AL",
+      "nome": "ALAGOAS",
+      "codigo": 27
+    },
+    {
+      "sigla": "AM",
+      "nome": "AMAZONAS",
+      "codigo": 13
+    },
+    {
+      "sigla": "AP",
+      "nome": "AMAPÁ",
+      "codigo": 16
+    },
+    {
+      "sigla": "BA",
+      "nome": "BAHIA",
+      "codigo": 29
+    },
+    {
+      "sigla": "CE",
+      "nome": "CEARÁ",
+      "codigo": 23
+    },
+    {
+      "sigla": "DF",
+      "nome": "DISTRITO FEDERAL",
+      "codigo": 53
+    },
+    {
+      "sigla": "ES",
+      "nome": "ESPÍRITO SANTO",
+      "codigo": 32
+    },
+    {
+      "sigla": "GO",
+      "nome": "GOIÁS",
+      "codigo": 52
+    },
+    {
+      "sigla": "MA",
+      "nome": "MARANHÃO",
+      "codigo": 21
+    },
+    {
+      "sigla": "MG",
+      "nome": "MINAS GERAIS",
+      "codigo": 31
+    },
+    {
+      "sigla": "MS",
+      "nome": "MATO GROSSO DO SUL",
+      "codigo": 50
+    },
+    {
+      "sigla": "MT",
+      "nome": "MATO GROSSO",
+      "codigo": 51
+    },
+    {
+      "sigla": "PA",
+      "nome": "PARÁ",
+      "codigo": 15
+    },
+    {
+      "sigla": "PB",
+      "nome": "PARAÍBA",
+      "codigo": 25
+    },
+    {
+      "sigla": "PE",
+      "nome": "PERNAMBUCO",
+      "codigo": 26
+    },
+    {
+      "sigla": "PI",
+      "nome": "PIAUÍ",
+      "codigo": 22
+    },
+    {
+      "sigla": "PR",
+      "nome": "PARANÁ",
+      "codigo": 41
+    },
+    {
+      "sigla": "RJ",
+      "nome": "RIO DE JANEIRO",
+      "codigo": 33
+    },
+    {
+      "sigla": "RN",
+      "nome": "RIO GRANDE DO NORTE",
+      "codigo": 24
+    },
+    {
+      "sigla": "RO",
+      "nome": "RONDÔNIA",
+      "codigo": 11
+    },
+    {
+      "sigla": "RR",
+      "nome": "RORAIMA",
+      "codigo": 14
+    },
+    {
+      "sigla": "RS",
+      "nome": "RIO GRANDE DO SUL",
+      "codigo": 43
+    },
+    {
+      "sigla": "SC",
+      "nome": "SANTA CATARINA",
+      "codigo": 42
+    },
+    {
+      "sigla": "SE",
+      "nome": "SERGIPE",
+      "codigo": 28
+    },
+    {
+      "sigla": "SP",
+      "nome": "SÃO PAULO",
+      "codigo": 35
+    },
+    {
+      "sigla": "TO",
+      "nome": "TOCANTINS",
+      "codigo": 17
+    }
+  ],
+  "fonte": "Dados abertos do motor RR 1.7.2 (GET /calculadora/dados-abertos/ufs)."
+}

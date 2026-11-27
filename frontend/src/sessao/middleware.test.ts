@@ -240,6 +240,45 @@ describe('middlewareDaSessao e a conta (ADR 0016)', () => {
     expect(conta.obter().tipo).toBe('conectada');
   });
 
+  it('as rotas da empresa da conta levam o cookie mesmo com a conta vendo a demonstração, sem o espaço (ADR 0018)', async () => {
+    const { cliente, espaco, token, conta, pedidos } = montar();
+    espaco.ativar({ id: ID, expiraEm: Date.now() + 60_000 });
+    token.definir('token-da-demo');
+    await conectar(conta);
+    conta.verDemonstracao();
+    await semFalha(chamar(cliente.GET('/empresas/{cnpj}', { params: { path: { cnpj: CNPJ } } })));
+    await semFalha(chamar(cliente.GET('/referencias/ufs')));
+    expect(pedidos.map((p) => p.credentials)).toEqual(['same-origin', 'omit']);
+    expect(pedidos[0]?.headers.get(CABECALHO_ESPACO)).toBeNull();
+    expect(pedidos[0]?.headers.get(CABECALHO_TOKEN)).toBeNull();
+  });
+
+  it('401 no cadastro da empresa encerra a sessão; ao excluir a empresa, o 401 é a senha e não encerra', async () => {
+    const recusa = () => json({ title: 'x', status: 401, detail: 'Entre com a sua conta.' }, 401);
+    const cadastro = montar(recusa);
+    await conectar(cadastro.conta);
+    await semFalha(
+      chamar(
+        cadastro.cliente.POST('/empresas', {
+          body: { cnpj: '12ABC34501DE35', razaoSocial: 'X', regimeAtual: 'simples_tradicional', uf: 'SP', municipio: 3550308, cAtivSN: '01' }, // taste-skill-ignore: código oficial da atividade do Simples (cAtivSN), não é numeração
+        }),
+      ),
+    );
+    expect(cadastro.conta.obter().tipo).toBe('encerrada');
+
+    const exclusao = montar(recusa);
+    await conectar(exclusao.conta);
+    await semFalha(
+      chamar(
+        exclusao.cliente.POST('/empresas/{cnpj}/excluir', {
+          params: { path: { cnpj: '12ABC34501DE35' } },
+          body: { senha: 'errada', cnpjConfirmacao: '12ABC34501DE35' },
+        }),
+      ),
+    );
+    expect(exclusao.conta.obter().tipo).toBe('conectada');
+  });
+
   it('401 de um pedido sem cookie (na demonstração) não mexe na conta', async () => {
     const { cliente, conta } = montar(() => json({ title: 'x', status: 401, detail: 'Token' }, 401));
     await conectar(conta);

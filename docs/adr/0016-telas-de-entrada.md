@@ -69,7 +69,7 @@ Decisões do usuário (plano v2.1, C2): a página inicial em `/` e o Painel em `
 
 ### 4. A conta sem empresa
 
-Na conta, as páginas do app dão lugar a um estado vazio com o título da página: "A sua organização ainda não tem empresa cadastrada, e o cadastro da empresa ainda não está disponível", com o botão "Explorar a demonstração". A origem dos dados é `null` na conta: nenhum pedido com o CNPJ da demonstração vai ao banco da organização. A C3 troca este estado pelo cadastro.
+Na conta, as páginas do app dão lugar a um estado vazio com o título da página: "A sua organização ainda não tem empresa cadastrada, e o cadastro da empresa ainda não está disponível", com o botão "Explorar a demonstração". A origem dos dados é `null` na conta: nenhum pedido com o CNPJ da demonstração vai ao banco da organização. A C3 troca este estado pelo cadastro (feito na C3a: a primeira vez e `/empresa/nova`, [ADR 0018](0018-telas-da-empresa-propria.md)).
 
 ### 5. Página inicial
 

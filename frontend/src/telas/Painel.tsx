@@ -6,14 +6,17 @@
 // 2. a última nota de compra e as pendências de cadastro (a carne com a NCM que não combina);
 // 3. a margem de cada item contra o alvo, e as premissas da simulação.
 //
+// A empresa nova, sem itens (C3a, ADR 0018): não há margem nem cálculo (o carrinho pede pelo menos um item). O Painel
+// diz isso no lugar das margens e mostra a empresa cadastrada e a última nota.
+//
 // Um fato, uma variável: a margem do alerta e a da linha do item saem do mesmo cálculo do backend
 // (test_tela.py::test_a_tela_refaz_a_margem_do_alerta_so_com_o_catalogo).
 
 import { useId, useState } from 'react';
 import { chamar } from '../api/cliente.ts';
 import { ErroApi } from '../api/problema.ts';
-import { useAlertasAbertos, useCalculo, useCatalogo, useGravacao } from '../dados/empresa.ts';
-import { dataDoDocumento, inteiro, noMeioDaFrase, porcentagem, reais } from '../dados/formatar.ts';
+import { catalogoVazio, useAlertasAbertos, useCalculo, useCatalogo, useGravacao, useNotas } from '../dados/empresa.ts';
+import { cnpj, dataDoDocumento, inteiro, noMeioDaFrase, porcentagem, reais } from '../dados/formatar.ts';
 import {
   abaixoDoAlvo,
   estadoEmPalavras,
@@ -30,6 +33,7 @@ import { Pagina } from '../shell/Pagina.tsx';
 import { Bloco, BotaoGravar, Carregando, escalaDeMargens, FalhaNoBloco, ListaDePremissas, MargemContraAlvo } from './comum.tsx';
 import { CorrigirClassificacao, type PedidoDeCorrecao } from './Dialogos.tsx';
 import { Explicacao, type PedidoDeExplicacao } from './Explicacao.tsx';
+import './empresa.css';
 import './telas.css';
 
 function frasePrincipal(a: Alerta): string {
@@ -176,14 +180,47 @@ function BlocoAlerta(props: {
   );
 }
 
+/**
+ * A última nota de compra. O catálogo diz qual nota deu o custo atual dos itens. Sem nenhum custo de nota (a empresa
+ * nova, ou uma nota em que nenhum item casou), a lista das notas (GET /notas) diz se alguma já foi importada: sem
+ * ela, o bloco diria "nenhuma nota" depois de uma nota toda sem par (achado na C3a).
+ */
 function BlocoNota({ catalogo }: { catalogo: Catalogo | undefined }) {
   const nota = catalogo ? ultimaNota(catalogo) : null;
+  const notas = useNotas(catalogo !== undefined && nota === null);
+  const daLista = notas.dados?.notas[0];
+  let semCusto;
+  if (notas.erro !== undefined && notas.dados === undefined) {
+    semCusto = <FalhaNoBloco erro={notas.erro} aoTentar={notas.recarregar} />;
+  } else if (notas.dados === undefined) {
+    semCusto = <Carregando linhas={2} />;
+  } else if (daLista === undefined) {
+    semCusto = <p className="texto-suave">Nenhuma nota importada ainda.</p>;
+  } else {
+    semCusto = (
+      <p>
+        Nota <span className="num">{daLista.nota.numero}</span>, de{' '}
+        <span className="num">{dataDoDocumento(daLista.nota.dataEmissao)}</span>:{' '}
+        {daLista.itensCasados === 0 ? (
+          <>
+            nenhum item casou com o catálogo (<span className="num">{inteiro(daLista.itensSemPar)}</span> sem par).
+          </>
+        ) : (
+          <>
+            <span className="num">{inteiro(daLista.itensCasados)}</span>{' '}
+            {daLista.itensCasados === 1 ? 'item casado' : 'itens casados'} e{' '}
+            <span className="num">{inteiro(daLista.itensSemPar)}</span> sem par.
+          </>
+        )}
+      </p>
+    );
+  }
   return (
     <Bloco titulo="Última nota de compra" className="painel__metade" extra={<Link para="/notas">Importar nota</Link>}>
       {catalogo === undefined ? (
         <Carregando linhas={2} />
       ) : nota === null ? (
-        <p className="texto-suave">Nenhuma nota importada ainda.</p>
+        semCusto
       ) : (
         <p>
           Nota <span className="num">{nota.numero ?? '—'}</span>, de{' '}
@@ -324,6 +361,41 @@ function BlocoMargens({ catalogo, calculo, semAlerta }: PropsMargens) {
   );
 }
 
+/** A empresa cadastrada, sem itens no catálogo: os dados do cadastro, como a API os devolve. */
+function PainelSemItens({ catalogo }: { catalogo: Catalogo }) {
+  const { empresa } = catalogo;
+  return (
+    <div className="grade">
+      <Bloco titulo="Margem de cada item contra o alvo" className="painel__margens painel__margens--inteira">
+        <div className="margens__achado">
+          <p className="achado achado--linha">Nenhum item no catálogo ainda.</p>
+          <p className="texto-suave">
+            A margem de cada item contra o alvo e os alertas das notas de compra aparecem aqui quando o catálogo tiver
+            itens.
+          </p>
+        </div>
+      </Bloco>
+      <Bloco titulo="A empresa" className="painel__metade">
+        <dl className="empresa__dados">
+          <dt>Razão social</dt>
+          <dd>{empresa.razaoSocial}</dd>
+          <dt>CNPJ</dt>
+          <dd className="num">{cnpj(empresa.cnpj)}</dd>
+          <dt>Regime</dt>
+          <dd>{NOME_REGIME[empresa.regimeAtual]}</dd>
+          <dt>Município</dt>
+          <dd>
+            {empresa.municipioNome} · {empresa.uf}
+          </dd>
+          <dt>Cenário</dt>
+          <dd>{catalogo.cenario.descricao}</dd>
+        </dl>
+      </Bloco>
+      <BlocoNota catalogo={catalogo} />
+    </div>
+  );
+}
+
 export function Painel() {
   const catalogo = useCatalogo();
   const calculo = useCalculo(catalogo.dados, catalogo.dados?.empresa.regimeAtual ?? null);
@@ -346,6 +418,14 @@ export function Painel() {
     return (
       <Pagina titulo="Painel">
         <FalhaNoBloco erro={catalogo.erro} aoTentar={catalogo.recarregar} />
+      </Pagina>
+    );
+  }
+  if (catalogo.dados !== undefined && catalogoVazio(catalogo.dados)) {
+    // Sem cálculo, a frase de simulação é a descrição do cenário da empresa (como no Regime antes da resposta).
+    return (
+      <Pagina titulo="Painel" subtitulo={`${catalogo.dados.empresa.razaoSocial} · ${catalogo.dados.cenario.descricao}`}>
+        <PainelSemItens catalogo={catalogo.dados} />
       </Pagina>
     );
   }

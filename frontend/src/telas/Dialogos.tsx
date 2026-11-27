@@ -6,7 +6,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode, type SubmitEvent } from 'react';
 import { chamar } from '../api/cliente.ts';
 import { ErroApi } from '../api/problema.ts';
-import { CNPJ_DEMONSTRACAO, useGravacao } from '../dados/empresa.ts';
+import { useCnpjDaTela, useGravacao } from '../dados/empresa.ts';
 import { ncm as formatarNcm, porcentagem, reais } from '../dados/formatar.ts';
 import type { Candidata, Catalogo, ErroMotor, ItemCatalogo } from '../dados/pedidos.ts';
 import { useRecurso } from '../dados/recurso.ts';
@@ -118,7 +118,7 @@ export function CorrigirClassificacao({ pedido, catalogo, aoFechar, aoGravar }: 
       await chamar(
         api.POST('/catalogo/{item_id}/classificacao', {
           params: { path: { item_id: item.id } },
-          body: { cnpj: CNPJ_DEMONSTRACAO, cClassTrib: escolhida },
+          body: { cnpj: catalogo.empresa.cnpj, cClassTrib: escolhida },
         }),
       );
       aoGravar();
@@ -194,6 +194,7 @@ export function lerPreco(texto: string): string | null {
 export function AlterarPreco({ item, aoFechar, aoGravar }: PropsPreco) {
   const { api } = useSessao();
   const gravacao = useGravacao();
+  const cnpj = useCnpjDaTela();
   const idCampo = useId();
   const idAjuda = useId();
   const [falha, setFalha] = useState<string | null>(null);
@@ -212,13 +213,16 @@ export function AlterarPreco({ item, aoFechar, aoGravar }: PropsPreco) {
       setFalha('Informe o preço em reais, com até 2 casas (ex.: 3,99).');
       return;
     }
+    if (cnpj === null) {
+      return; // sem empresa na tela, o diálogo nem abre (o catálogo não carrega)
+    }
     setGravando(true);
     setFalha(null);
     try {
       await chamar(
         api.POST('/catalogo/{item_id}/preco', {
           params: { path: { item_id: item.id } },
-          body: { cnpj: CNPJ_DEMONSTRACAO, valorUnitario: valor },
+          body: { cnpj, valorUnitario: valor },
         }),
       );
       aoGravar();

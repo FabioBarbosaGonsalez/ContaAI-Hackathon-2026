@@ -147,11 +147,24 @@ describe('termos de uso e privacidade', () => {
   });
 });
 
+describe('a privacidade com a empresa da conta (C3a)', () => {
+  it('diz o que fica guardado da empresa, que o XML não é guardado e o que vai às calculadoras', async () => {
+    await montar('/privacidade');
+    const texto = document.body.textContent;
+    expect(texto).toMatch(/Quando você cadastra a empresa, ficam guardados também/u);
+    expect(texto).toMatch(/o CNPJ, a razão social, o regime no Simples, a UF, o município e a atividade/u);
+    expect(texto).toMatch(/O arquivo XML não é guardado/u);
+    expect(texto).toMatch(/nunca o CNPJ, a razão social ou um dado pessoal/u);
+    expect(texto).toMatch(/A empresa e os dados dela: enquanto a organização existir/u);
+  });
+});
+
 describe('conta conectada (C2a)', () => {
-  it('nas páginas do app, a conta sem empresa mostra o estado vazio e não pede o CNPJ da demonstração', async () => {
+  it('nas páginas do app, a conta sem empresa mostra a primeira vez e não pede o CNPJ da demonstração (C3a)', async () => {
     const sessao = await montar('/painel', { conta: CONTA_DE_TESTE });
     expect(screen.getByRole('heading', { level: 1, name: 'Painel' })).toBeDefined();
-    expect(screen.getByText(/Sua organização ainda não tem empresa/u)).toBeDefined();
+    expect(screen.getByRole('heading', { level: 2, name: 'Cadastre a empresa para começar' })).toBeDefined();
+    expect(principal().getByRole('link', { name: 'Cadastrar a empresa' }).getAttribute('href')).toBe('/empresa/nova');
     expect(screen.queryByText(TEXTO_DEMONSTRACAO)).toBeNull();
     expect(within(screen.getByRole('banner')).getByText(CONTA_DE_TESTE.organizacao.nome)).toBeDefined();
     expect(rotasPedidas(sessao.pedidos)).toEqual(['/saude', '/conta']);
@@ -168,7 +181,7 @@ describe('conta conectada (C2a)', () => {
 
     fireEvent.click(screen.getByRole('link', { name: 'Voltar à minha conta' }));
     expect(sessao.conta.naConta()).toBe(true);
-    expect(screen.getByText(/Sua organização ainda não tem empresa/u)).toBeDefined();
+    expect(screen.getByRole('heading', { level: 2, name: 'Cadastre a empresa para começar' })).toBeDefined();
   });
 
   it('na página inicial, quem tem conta também vê o caminho ao Painel (e não "Minha conta", que lembra "Sua conta")', async () => {

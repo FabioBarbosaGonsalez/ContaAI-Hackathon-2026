@@ -38,6 +38,7 @@ Por isso entram três etapas de contas (C1 a C3) entre o 3b e o 3c. O 3c depende
 | C2c: notas de exemplo e o fechamento da C2 | PR #25, seção da C2c no ADR 0016 |
 | C3-B, etapas 1 a 5: CNPJ alfanumérico, migração 0003, referências, empresa da conta e catálogo editável | PR #26, ADR 0017 |
 | C3-B, etapas 6 a 10: clientes B2B editáveis, o arquivo dos dados, excluir a empresa, os bancos órfãos, os logs sem dado pessoal, os papéis, o erro 500 com os cabeçalhos e o inventário do mock | PR #27, seções das etapas 6 a 10 no ADR 0017 |
+| C3a: a primeira vez, o cadastro da empresa e as telas com a empresa da conta | PR da C3a, ADR 0018 |
 
 ## A ordem
 
@@ -634,17 +635,67 @@ Achados do mapa:
 - **os dois README e o cabeçalho do ADR 0017 paravam na etapa 6,** e a tabela do `backend/README.md` não tinha `app/contas/`, `app/cnpj.py`, `app/cadastro.py`, `app/dados_da_conta.py` nem `app/api/registro.py`;
 - **o "Onde estamos" deste plano** não tinha as etapas 8 a 10.
 
-**Para a C3a e a C3b:**
-- o cliente da tela mandar o cookie da sessão para `/empresas` e `/referencias/`;
+**Para a C3a e a C3b** (os itens feitos na C3a estão marcados):
+- feito na C3a: o cliente da tela manda o cookie da sessão para `/empresas` (sempre) e para `/referencias/` (na conta, como as outras rotas de dados; a rota é pública);
 - a tela de Sua conta: baixar os dados (`POST /conta/dados`, com a senha) e salvar o arquivo com o nome do `Content-Disposition`;
-- a tela de configurações: excluir a empresa, com a senha e o CNPJ digitado, e o aviso de guardar as notas. `POST /empresas/{cnpj}/excluir` entra nas rotas de entrada da tela (o 401 dela é a senha), o que pede mudar a regra de `rotas.test.ts` (hoje só aceita rotas da conta);
-- a Privacidade, na seção dos direitos: baixar os dados e excluir a empresa, quando a tela delas existir;
-- as notas de exemplo saírem fora da demonstração;
-- o formulário converter o CNPJ para maiúsculas.
-- cadastrar o par de um item sem par a partir da nota (ficou do 3b), agora que o catálogo é editável.
+- a tela de configurações: excluir a empresa, com a senha e o CNPJ digitado, e o aviso de guardar as notas. Feito na C3a: `POST /empresas/{cnpj}/excluir` já está nas rotas de entrada, e a regra de `rotas.test.ts` aceita as rotas que sempre levam o cookie;
+- a Privacidade, na seção dos direitos: baixar os dados e excluir a empresa, quando a tela delas existir. Feito na C3a: o que a empresa guarda e o que vai às calculadoras;
+- feito na C3a: as notas de exemplo saem fora da demonstração;
+- feito na C3a: o formulário converte o CNPJ para maiúsculas e tira a pontuação;
+- cadastrar o par de um item sem par a partir da nota (ficou do 3b), agora que o catálogo é editável;
 - a tela de clientes: criar, alterar e excluir, e o 409 do item em uso levando aos clientes da lista.
 
 **Saída:** uma conta nova cadastra a empresa, importa uma nota e vê o alerta, sem tocar nos dados da demo.
+
+### C3a: a primeira vez e o cadastro da empresa, em 10 etapas
+
+| # | Etapa | Situação |
+|---|---|---|
+| 1 | Conferências: o contrato de `/empresas` e `/referencias/`, a ordem das empresas no `GET /conta`, o que vai aos motores e o carrinho com o catálogo vazio | feita |
+| 2 | A empresa da tela: o CNPJ da demonstração ou o da conta numa fonte só, sem o CNPJ fixo nos pedidos, nos diálogos e na explicação | feita |
+| 3 | As rotas `/empresas` sempre com o cookie da sessão, e `POST /empresas/{cnpj}/excluir` nas rotas de entrada | feita |
+| 4 | As regras do formulário: o CNPJ (maiúsculas, sem a pontuação, o formato do contrato e os dígitos do Serpro) e a razão social | feita |
+| 5 | `SessaoConta.cadastrarEmpresa`: o `POST /empresas`, e a conta passa a ter a empresa | feita |
+| 6 | A primeira vez: a conta sem empresa leva ao cadastro (dono), ou diz quem cadastra (membro) | feita |
+| 7 | A página "Cadastrar a empresa" (`/empresa/nova`): CNPJ, razão social, regime, UF, município e atividade, com as listas dos motores | feita |
+| 8 | As telas com a empresa nova: o catálogo vazio sem cálculo, as notas de exemplo só na demonstração e nos espaços | feita |
+| 9 | A Privacidade com os dados da empresa, os testes, o portão da skill e o fluxo no Chrome | feita |
+| 10 | Documentação, varredura, commit e PR, e os servidores abertos | feita |
+
+**Achados no mapa (no código, antes de começar):**
+- **o CNPJ fixo:** `useCatalogo`, `useAlertasAbertos`, `useNotas`, a explicação e os diálogos de preço e de classificação pedem sempre o CNPJ da Serra Azul;
+- **o catálogo vazio:** o `POST /carrinho/calcular` exige pelo menos um item (`minItems: 1`). A empresa recém-cadastrada não tem itens, e a tela pediria um cálculo que volta 422;
+- **o cookie:** quem tem conta e está vendo a demonstração manda os pedidos sem o cookie. Um `POST /empresas` dali receberia 401, e a tela não saberia que a sessão continua aberta;
+- **as notas de exemplo** aparecem na conta, e a API recusa a nota de outro destinatário (422);
+- **a Privacidade** lista só os dados da conta. Com o cadastro, a empresa e o que ela grava (notas, custos, preços e alertas) passam a ficar guardados.
+
+**Conferido no código e nos motores:**
+- o `GET /conta` devolve as empresas em ordem de CNPJ (`ORDER BY cnpj`). Até o seletor do 3c, a tela abre a primeira;
+- os motores recebem os itens, a data, a UF, o município e a atividade, nunca o CNPJ nem a razão social (`app/motores/requisicoes.py`);
+- as referências, no motor RR 1.7.2 e no SN 1.0.2: 27 UFs (sem o "EX"), 646 municípios em SP e 4 atividades (01 e 02 no anexo I, 03 e 04 no anexo II);
+- a definição do híbrido que a tela usa é a do [ADR 0003](adr/0003-contrato-da-api.md): no tradicional, a CBS e o IBS ficam dentro do DAS; no híbrido, são cobrados por fora (LC 214/2025, art. 41, §3º).
+
+**Como fica:**
+- **uma empresa por conta, até o seletor do 3c:** sem o seletor, uma segunda empresa ficaria invisível. Com uma empresa, a página do cadastro leva ao Painel. O limite do backend (10) continua valendo;
+- **o dígito do CNPJ** é conferido também na tela, pelo cálculo do Serpro, com o exemplo do manual no teste. O backend confere de novo;
+- **depois do cadastro,** a tela vai ao Painel da empresa nova. Os itens e os clientes entram pela C3b; até lá, o Catálogo e o Painel dizem que o catálogo está vazio, sem prometer data;
+- **o membro** (que só existe com os convites do 3c) vê que só o dono cadastra a empresa.
+
+**Feito na C3a** ([ADR 0018](adr/0018-telas-da-empresa-propria.md)):
+- **a empresa da tela** numa fonte só (`useEmpresaDaTela`): o CNPJ, a origem dos dados (`conta:<organização>`) e a gravação na conta (dono e membro);
+- **o cookie:** `ROTAS_DA_EMPRESA` sempre o leva, e o 401 da exclusão da empresa é a senha;
+- **a primeira vez** no lugar do estado vazio da C2, e **a página `/empresa/nova`**, com as listas dos motores e a fonte impressa. O CNPJ é conferido na tela pelo cálculo do Serpro, e a conta passa a ter a empresa pela resposta do 201;
+- **as telas com a empresa nova:** o Painel e o Catálogo sem itens não pedem cálculo, e as notas de exemplo só aparecem na demonstração;
+- **a Privacidade:** o que a empresa guarda (sem o XML), o que vai às calculadoras e por quanto tempo.
+
+**Achados na C3a:**
+- **o Painel dizia "Nenhuma nota importada ainda" depois de uma nota toda sem par** (vinha do 3a). Agora, sem custo de nota no catálogo, ele pede a lista das notas;
+- **o tempo limite do cliente** podia se perder nos testes: no Node 24.21, depois de uma coleta de lixo, o abort não chegava à cópia da `Request` (5 de 5 rodadas no rascunho; o Chrome 158 não perde). A promessa agora termina pelo próprio sinal;
+- **os erros do formulário** ficavam vermelhos depois de corrigidos, até o próximo envio.
+
+**Saída da C3a, conferida no Chrome com a API real:** a conta nova cadastra a empresa pela tela, vê o Painel, o Catálogo, o Regime e as Notas dela, importa uma nota (sem itens, tudo fica sem par), e a demonstração não muda. Ver o alerta depende dos itens, que entram pela C3b.
+
+**Para decidir (usuário):** os termos de uso não falam do cadastro da empresa. Uma regra como "cadastre só a empresa que você representa" muda os termos e pede uma versão nova e um novo aceite.
 
 ## 3c: contador, seletor de empresa e chat
 

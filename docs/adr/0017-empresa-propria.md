@@ -119,7 +119,7 @@ O usuário decidiu antes do código (plano v2.1, C3):
   - o carrinho sai com as premissas da empresa;
   - a demonstração não muda.
 - **Testes:** backend com 586 testes no CI (eram 500) e 54 golden (eram 52), com 97% de cobertura; na tela, 491.
-- **A tela ainda não usa as rotas novas** (C3a e C3b):
+- **A tela ainda não usa as rotas novas** (C3a e C3b; a C3a, com o cadastro da empresa e o cookie nas rotas `/empresas`, está no [ADR 0018](0018-telas-da-empresa-propria.md)):
   - o cliente da tela ainda não manda o cookie da sessão para `/empresas` nem para `/referencias/`;
   - as notas de exemplo ainda aparecem fora da demonstração.
 - **Fica para as etapas 7 a 10 da C3-B:** a exclusão e os dados para baixar (LGPD), a limpeza dos bancos órfãos ao subir, a exclusão da empresa sem excluir a conta e o erro 500 sem os cabeçalhos de segurança ([ADR 0009](0009-camada-http-e-erros.md)).

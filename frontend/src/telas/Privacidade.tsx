@@ -7,8 +7,10 @@
 //   consentimento não é a base adequada para os estritamente necessários (p. 20), e a política de cookies pode
 //   ser uma seção da política de privacidade, com finalidade, retenção e compartilhamento (p. 28-29).
 //
-// Cada dado guardado vem das migrações de backend/app/contas/migracoes; os prazos, de REGRAS_DA_CONTA e de COOKIES
-// (conferidos com o backend em legal.test.ts). O id do espaço, de sessao/espaco.ts.
+// Cada dado guardado vem das migrações de backend/app/contas/migracoes e, os da empresa (C3a, ADR 0018), de
+// backend/app/persistencia/migracoes; os prazos, de REGRAS_DA_CONTA e de COOKIES (conferidos com o backend em
+// legal.test.ts). O id do espaço, de sessao/espaco.ts. O que vai às calculadoras, de
+// backend/app/motores/requisicoes.py (os itens, a data, a UF, o município e a atividade).
 //
 // Risco registrado no plano v2.1 (C2, decisão 4): o art. 9º, III e IV, e o art. 41, § 1º, pedem o contato do
 // controlador e do encarregado. A página mostra só "Equipe ContaAI", por decisão do usuário; rever antes da E6.
@@ -64,9 +66,21 @@ export function Privacidade() {
                 <li>avisos de segurança, como “código de recuperação usado”: só o tipo e a data, sem IP e sem navegador;</li>
                 <li>a versão dos termos que você aceitou e a data do aceite.</li>
               </ul>
+              <p>Quando você cadastra a empresa, ficam guardados também, no espaço da sua organização:</p>
+              <ul>
+                <li>o CNPJ, a razão social, o regime no Simples, a UF, o município e a atividade;</li>
+                <li>os itens do catálogo, os preços, os custos, as classificações e os alertas;</li>
+                <li>
+                  das notas de compra importadas: o emitente, a série, o número, a data, o resumo SHA-256 do arquivo e o
+                  recibo da importação. O arquivo XML não é guardado: guarde as suas notas, porque o ContaAI não é o seu
+                  arquivo fiscal;
+                </li>
+                <li>os clientes empresa: o CNPJ, a razão social, o regime, o local e a compra mensal.</li>
+              </ul>
               <p>
-                Esses dados servem só para criar a conta, deixar você entrar e proteger a conta. A base legal é a execução
-                do contrato que os <Link para="/termos">termos de uso</Link> formam, a seu pedido (LGPD, art. 7º, V).
+                Os dados da conta servem só para criar a conta, deixar você entrar e proteger a conta; os da empresa, para
+                os cálculos que você pede. A base legal é a execução do contrato que os{' '}
+                <Link para="/termos">termos de uso</Link> formam, a seu pedido (LGPD, art. 7º, V).
               </p>
             </>
           ),
@@ -137,8 +151,8 @@ export function Privacidade() {
           conteudo: (
             <>
               <p>
-                Com ninguém. As calculadoras oficiais rodam no próprio servidor do ContaAI e recebem só os dados dos itens,
-                sem dado pessoal.
+                Com ninguém. As calculadoras oficiais rodam no próprio servidor do ContaAI e recebem só os dados dos itens e
+                da operação (a data, a UF, o município e a atividade), nunca o CNPJ, a razão social ou um dado pessoal.
               </p>
             </>
           ),
@@ -150,6 +164,10 @@ export function Privacidade() {
             <>
               <ul>
                 <li>A conta e os dados dela: até você excluir a conta.</li>
+                <li>
+                  A empresa e os dados dela: enquanto a organização existir. A exclusão da conta da única pessoa da
+                  organização apaga a organização e tudo o que ela guarda.
+                </li>
                 <li>
                   Um cadastro sem o segundo fator confirmado: deixa de valer {R.pendenteMin} minutos depois do cadastro, ou
                   da última entrada com a senha, e depois é apagado.

@@ -5,7 +5,7 @@
 // e, na linha que precisa, corrigir a classificação.
 
 import { useState } from 'react';
-import { useCalculo, useCatalogo, useGravacao } from '../dados/empresa.ts';
+import { catalogoVazio, useCalculo, useCatalogo, useGravacao } from '../dados/empresa.ts';
 import { inteiro, ncm, noMeioDaFrase, porcentagem, reais } from '../dados/formatar.ts';
 import {
   abaixoDoAlvo,
@@ -251,11 +251,23 @@ export function Catalogo() {
   const [correcao, setCorrecao] = useState<PedidoDeCorrecao | null>(null);
 
   const achado = calculo.dados && catalogo.dados ? achadoDoCatalogo(calculo.dados, catalogo.dados.loteReferencia) : null;
-  const subtitulo = calculo.dados?.avisoSimulacao ?? undefined;
+  // A empresa nova, sem itens (C3a): não há cálculo, e a frase de simulação é a descrição do cenário.
+  const vazio = catalogoVazio(catalogo.dados);
+  const subtitulo = calculo.dados?.avisoSimulacao ?? (vazio ? catalogo.dados?.cenario.descricao : undefined);
 
   let corpo;
   if (catalogo.erro !== undefined && catalogo.dados === undefined) {
     corpo = <FalhaNoBloco erro={catalogo.erro} aoTentar={catalogo.recarregar} />;
+  } else if (vazio && catalogo.dados) {
+    corpo = (
+      <div className="vazio">
+        <p>Nenhum item no catálogo ainda.</p>
+        <p className="texto-suave">
+          A tabela mostra a CBS e o IBS de cada item, a cada {inteiro(catalogo.dados.loteReferencia)} unidades, quando o
+          catálogo tiver itens.
+        </p>
+      </div>
+    );
   } else if (calculo.erro !== undefined) {
     corpo = <FalhaNoBloco erro={calculo.erro} aoTentar={calculo.recarregar} />;
   } else if (catalogo.dados === undefined || calculo.dados === undefined) {
@@ -276,12 +288,13 @@ export function Catalogo() {
     <Pagina titulo="Catálogo" {...(subtitulo ? { subtitulo } : {})}>
       <div className="catalogo__topo">
         {achado !== null ? <p className="achado achado--linha">{achado}</p> : <span />}
-        {regime && <Seletor regime={regime} aoTrocar={setEscolhido} />}
+        {regime && !vazio && <Seletor regime={regime} aoTrocar={setEscolhido} />}
       </div>
       <Bloco
         titulo="CBS e IBS por item"
         extra={
-          catalogo.dados && (
+          catalogo.dados &&
+          !vazio && (
             <span className="bloco__meta">
               A cada {inteiro(catalogo.dados.loteReferencia)} unidades, ao preço de venda atual
               {calculo.carregando && calculo.dados ? ' · recalculando…' : ''}
@@ -290,11 +303,13 @@ export function Catalogo() {
         }
       >
         {corpo}
-        {!gravacao.pode && <p className="gravar__motivo catalogo__motivo">{gravacao.motivo}</p>}
+        {!gravacao.pode && !vazio && <p className="gravar__motivo catalogo__motivo">{gravacao.motivo}</p>}
       </Bloco>
-      <Bloco titulo="Premissas do cálculo" className="catalogo__premissas">
-        {calculo.dados === undefined ? <Carregando /> : <ListaDePremissas premissas={calculo.dados.premissas} compacta />}
-      </Bloco>
+      {!vazio && (
+        <Bloco titulo="Premissas do cálculo" className="catalogo__premissas">
+          {calculo.dados === undefined ? <Carregando /> : <ListaDePremissas premissas={calculo.dados.premissas} compacta />}
+        </Bloco>
+      )}
       <Explicacao
         pedido={explicacao}
         aoFechar={() => {

@@ -209,16 +209,6 @@
   line-height: var(--altura-pequeno);
 }
 
-/* A conta sem empresa: o estado vazio no lugar das páginas do app, na largura da coluna (como os blocos). */
-.sem-empresa {
-  align-items: flex-start;
-  gap: 12px;
-}
-
-.sem-empresa p:first-child {
-  max-width: 720px;
-}
-
 /* .vazio a pinta todo link de tinta: o botão principal mantém o texto branco, e os botões ficam sem sublinhado. */
 .vazio a.botao-principal {
   color: var(--acao-texto);
@@ -259,13 +249,10 @@
     line-height: var(--altura-titulo);
   }
 
-  .sem-empresa p:last-child,
-  .sem-empresa a.botao-principal,
   .porta__acoes > a {
     width: 100%;
   }
 
-  .sem-empresa a.botao-principal,
   .porta__acoes > a {
     justify-content: center;
     min-height: 44px;

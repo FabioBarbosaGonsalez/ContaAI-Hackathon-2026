@@ -5,7 +5,7 @@
 //   o JavaScript não lê, e a API fica em /api, no mesmo endereço (ADR 0015). Para outra origem, nada vai;
 // - sem Referer e sem cache;
 // - recusa redirecionamento, para nunca seguir para outro endereço;
-// - tem tempo limite;
+// - tem tempo limite, que vale mesmo que o fetch não chegue a ver o sinal (ver o comentário em criarCliente);
 // - só leva parâmetros de caminho com letras, dígitos e hífen. Sem isso, um id como ".." trocaria a rota
 //   pedida por outra; todos os parâmetros de caminho do contrato já seguem esse padrão.
 
@@ -57,14 +57,30 @@ export function criarCliente(opcoes: OpcoesCliente = {}): ClienteApi {
     // Junta o cancelamento de quem chamou ao tempo limite, numa cópia da requisição com o sinal novo.
     // Pelo padrão Fetch, copiar uma Request com opções zera o referrer e a política de referrer:
     // por isso os dois vão de novo aqui (teste em cliente.test.ts).
-    fetch: (pedido: Request) =>
-      fetchBase(
-        new Request(pedido, {
-          signal: AbortSignal.any([pedido.signal, AbortSignal.timeout(tempoLimiteMs)]),
-          referrer: '',
-          referrerPolicy: 'no-referrer',
-        }),
-      ),
+    //
+    // A promessa também termina pelo próprio sinal: no Node 24.21 (onde rodam os testes), depois de uma coleta de
+    // lixo o abort deixa de chegar à cópia da Request, e o pedido ficava pendurado. Conferido num rascunho com o
+    // coletor forçado: a cópia perdeu o abort em 5 de 5 rodadas, e um ouvinte no sinal combinado o recebeu em 10 de
+    // 10. O Chrome 158 não perde (5 de 5 com o coletor forçado), e no navegador o resultado é o mesmo de antes.
+    fetch: (pedido: Request) => {
+      const sinal = AbortSignal.any([pedido.signal, AbortSignal.timeout(tempoLimiteMs)]);
+      const copia = new Request(pedido, { signal: sinal, referrer: '', referrerPolicy: 'no-referrer' });
+      return new Promise<Response>((resolver, rejeitar) => {
+        const aoAbortar = () => {
+          rejeitar(sinal.reason instanceof Error ? sinal.reason : new DOMException('Pedido cancelado.', 'AbortError'));
+        };
+        if (sinal.aborted) {
+          aoAbortar();
+          return;
+        }
+        sinal.addEventListener('abort', aoAbortar, { once: true });
+        fetchBase(copia)
+          .then(resolver, rejeitar)
+          .finally(() => {
+            sinal.removeEventListener('abort', aoAbortar);
+          });
+      });
+    },
     headers: { Accept: 'application/json, application/problem+json' },
     credentials: 'same-origin',
     mode: 'cors',
