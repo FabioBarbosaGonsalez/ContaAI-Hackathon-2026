@@ -126,6 +126,23 @@ class Sessao:
             Empresa.model_validate_json(linha["empresa_json"]), Cenario.model_validate_json(linha["cenario_json"])
         )
 
+    def atualizar_empresa(self, empresa: Empresa, cenario: Cenario) -> None:
+        """Configurações da empresa própria (C3-B). O CNPJ não muda."""
+        self._c.execute(
+            "UPDATE empresas SET razao_social = ?, regime_atual = ?, empresa_json = ?, cenario_json = ? WHERE cnpj = ?",
+            (
+                empresa.razaoSocial,
+                empresa.regimeAtual,
+                empresa.model_dump_json(),
+                cenario.model_dump_json(),
+                empresa.cnpj,
+            ),
+        )
+
+    def apagar_empresa(self, cnpj: str) -> None:
+        """Apaga a empresa e, em cascata, tudo o que é dela (itens, notas, custos, preços, alertas, clientes)."""
+        self._c.execute("DELETE FROM empresas WHERE cnpj = ?", (cnpj,))
+
     def empresas(self) -> list[EmpresaRegistro]:
         linhas = self._c.execute("SELECT empresa_json, cenario_json FROM empresas ORDER BY razao_social").fetchall()
         return [
@@ -148,12 +165,14 @@ class Sessao:
     def itens(self, cnpj: str) -> list[ItemCatalogo]:
         """Cadastro dos itens, com a classificação atual. O preço atual não está aqui: é o último lançamento
         (`preco_atual`)."""
-        linhas = self._c.execute("SELECT item_json FROM itens WHERE cnpj = ? ORDER BY rowid", (cnpj,)).fetchall()
+        linhas = self._c.execute(
+            "SELECT item_json FROM itens WHERE cnpj = ? AND arquivado_em IS NULL ORDER BY rowid", (cnpj,)
+        ).fetchall()
         return [self._com_classificacao(cnpj, ItemCatalogo.model_validate_json(r["item_json"])) for r in linhas]
 
     def item(self, cnpj: str, item_id: str) -> ItemCatalogo | None:
         linha = self._c.execute(
-            "SELECT item_json FROM itens WHERE cnpj = ? AND item_id = ?", (cnpj, item_id)
+            "SELECT item_json FROM itens WHERE cnpj = ? AND item_id = ? AND arquivado_em IS NULL", (cnpj, item_id)
         ).fetchone()
         return (
             None
@@ -164,7 +183,7 @@ class Sessao:
     def item_por_codigo(self, cnpj: str, cnpj_fornecedor: str, codigo: str) -> ItemCatalogo | None:
         linha = self._c.execute(
             "SELECT i.item_json FROM codigos_fornecedor c JOIN itens i ON i.cnpj = c.cnpj AND i.item_id = c.item_id"
-            " WHERE c.cnpj = ? AND c.cnpj_fornecedor = ? AND c.codigo = ?",
+            " WHERE c.cnpj = ? AND c.cnpj_fornecedor = ? AND c.codigo = ? AND i.arquivado_em IS NULL",
             (cnpj, cnpj_fornecedor, codigo),
         ).fetchone()
         return (
@@ -172,6 +191,52 @@ class Sessao:
             if linha is None
             else self._com_classificacao(cnpj, ItemCatalogo.model_validate_json(linha["item_json"]))
         )
+
+    def item_do_cadastro(self, cnpj: str, item_id: str) -> ItemCatalogo | None:
+        """O item como foi cadastrado, sem a classificação dos lançamentos: é o que `atualizar_item` regrava."""
+        linha = self._c.execute(
+            "SELECT item_json FROM itens WHERE cnpj = ? AND item_id = ? AND arquivado_em IS NULL", (cnpj, item_id)
+        ).fetchone()
+        return None if linha is None else ItemCatalogo.model_validate_json(linha["item_json"])
+
+    def existe_item(self, cnpj: str, item_id: str) -> bool:
+        """Também os arquivados: um id nunca volta a ser usado."""
+        return (
+            self._c.execute("SELECT 1 FROM itens WHERE cnpj = ? AND item_id = ?", (cnpj, item_id)).fetchone()
+            is not None
+        )
+
+    def contar_itens(self, cnpj: str) -> int:
+        """Os itens no catálogo (sem os arquivados)."""
+        linha = self._c.execute(
+            "SELECT count(*) AS n FROM itens WHERE cnpj = ? AND arquivado_em IS NULL", (cnpj,)
+        ).fetchone()
+        return int(linha["n"])
+
+    def atualizar_item(self, cnpj: str, item: ItemCatalogo) -> None:
+        """O cadastro do item (descrição, margem, fornecedor). A classificação e o preço continuam nos lançamentos
+        deles; o JSON guarda a classificação do cadastro, que só vale sem lançamento."""
+        self._c.execute(
+            "UPDATE itens SET item_json = ? WHERE cnpj = ? AND item_id = ? AND arquivado_em IS NULL",
+            (item.model_dump_json(by_alias=True), cnpj, item.id),
+        )
+        self._c.execute("DELETE FROM codigos_fornecedor WHERE cnpj = ? AND item_id = ?", (cnpj, item.id))
+        self._c.execute(
+            "INSERT INTO codigos_fornecedor (cnpj, cnpj_fornecedor, codigo, item_id) VALUES (?, ?, ?, ?)",
+            (cnpj, item.cnpjFornecedor, item.codigoFornecedor, item.id),
+        )
+
+    def arquivar_item(self, cnpj: str, item_id: str, quando: datetime) -> bool:
+        """O item sai do catálogo e o código do fornecedor fica livre para outro item. Custos, preços,
+        classificações e alertas ficam: são o histórico."""
+        cursor = self._c.execute(
+            "UPDATE itens SET arquivado_em = ? WHERE cnpj = ? AND item_id = ? AND arquivado_em IS NULL",
+            (_utc(quando), cnpj, item_id),
+        )
+        if cursor.rowcount != 1:
+            return False
+        self._c.execute("DELETE FROM codigos_fornecedor WHERE cnpj = ? AND item_id = ?", (cnpj, item_id))
+        return True
 
     def _com_classificacao(self, cnpj: str, item: ItemCatalogo) -> ItemCatalogo:
         """A classificação atual é a do último lançamento da tela; sem lançamento, a do cadastro (0002)."""
@@ -282,8 +347,11 @@ class Sessao:
         """Da emissão mais recente para a mais antiga (pelo instante, com o fuso da nota). Uma nota ainda sem
         recibo fica de fora: o recibo entra na mesma transação da nota, então ninguém de fora a vê assim."""
         linhas = self._c.execute(
-            "SELECT n.importada_em, n.recibo_json, COUNT(a.id) AS gerados, COUNT(a.id) - COUNT(a.aplicado_em)"
-            " AS abertos FROM notas n LEFT JOIN alertas a ON a.nota_id = n.id"
+            # Abertos: sem preço aplicado e de item ainda no catálogo (o mesmo critério de `alertas`).
+            "SELECT n.importada_em, n.recibo_json, COUNT(a.id) AS gerados,"
+            " COUNT(CASE WHEN a.id IS NOT NULL AND a.aplicado_em IS NULL AND i.arquivado_em IS NULL THEN 1 END) AS abertos"
+            " FROM notas n LEFT JOIN alertas a ON a.nota_id = n.id"
+            " LEFT JOIN itens i ON i.cnpj = a.cnpj AND i.item_id = a.item_id"
             " WHERE n.cnpj = ? AND n.recibo_json <> '{}'"
             " GROUP BY n.id ORDER BY julianday(n.data_emissao) DESC, n.id DESC LIMIT ?",
             (cnpj, limite),
@@ -354,12 +422,14 @@ class Sessao:
 
     def alertas(self, cnpj: str | None = None) -> list[AlertaRegistro]:
         """Do mais recente para o mais antigo."""
-        if cnpj is None:
-            linhas = self._c.execute("SELECT * FROM alertas ORDER BY criado_em DESC, rowid DESC").fetchall()
-        else:
-            linhas = self._c.execute(
-                "SELECT * FROM alertas WHERE cnpj = ? ORDER BY criado_em DESC, rowid DESC", (cnpj,)
-            ).fetchall()
+        # Sem os alertas de item arquivado: o item saiu do catálogo, não há preço para aplicar. Uma consulta só,
+        # com o CNPJ opcional como parâmetro: nenhum SQL montado com texto.
+        linhas = self._c.execute(
+            "SELECT * FROM alertas WHERE (? IS NULL OR cnpj = ?) AND NOT EXISTS (SELECT 1 FROM itens i"
+            " WHERE i.cnpj = alertas.cnpj AND i.item_id = alertas.item_id AND i.arquivado_em IS NOT NULL)"
+            " ORDER BY criado_em DESC, rowid DESC",
+            (cnpj, cnpj),
+        ).fetchall()
         return [self._alerta(r) for r in linhas]
 
     def marcar_aplicado(self, alerta_id: str, quando: datetime) -> bool:

@@ -59,6 +59,10 @@ describe('formatar', () => {
   it('máscaras de CNPJ e NCM, e o nome no meio da frase', () => {
     expect(cnpj('36817420000113')).toBe('36.817.420/0001-13');
     expect(cnpj('123')).toBe('123');
+    // CNPJ alfanumérico: o exemplo do manual do Serpro, com a mesma máscara; minúsculas não são o formato oficial.
+    expect(cnpj('12ABC34501DE35')).toBe('12.ABC.345/01DE-35');
+    expect(cnpj('12abc34501de35')).toBe('12abc34501de35');
+    expect(cnpj('12ABC34501DEAB')).toBe('12ABC34501DEAB');
     expect(ncm('22030000')).toBe('2203.00.00');
     expect(ncm(null)).toBe(TRACO);
     expect(noMeioDaFrase('Cerveja de malte')).toBe('cerveja de malte');

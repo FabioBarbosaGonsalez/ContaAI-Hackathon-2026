@@ -24,6 +24,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.agente.provedor import ProvedorFalhou
 from app.api.mensagens import traduzir
+from app.cadastro import Recusado
 from app.contas.servico import ContaBloqueada
 from app.contrato import (
     CampoInvalido,
@@ -267,6 +268,11 @@ async def _provedor(_: Request, exc: ProvedorFalhou) -> JSONResponse:
     return resposta(tipado("ia-indisponivel", 503, exc.mensagem))
 
 
+async def _recusado(_: Request, exc: Recusado) -> JSONResponse:
+    """Regra que depende dos dados (CNPJ com dígito errado, município fora da UF, NCM fora dos dados abertos)."""
+    return simples(422, exc.mensagem)
+
+
 async def _nao_encontrado(_: Request, exc: consultas.NaoEncontrado) -> JSONResponse:
     return simples(404, exc.mensagem)
 
@@ -304,6 +310,7 @@ def registrar(app: FastAPI) -> None:
     app.add_exception_handler(SementesInvalidas, _sementes)  # type: ignore[arg-type]
     app.add_exception_handler(ProvedorFalhou, _provedor)  # type: ignore[arg-type]
     app.add_exception_handler(consultas.NaoEncontrado, _nao_encontrado)  # type: ignore[arg-type]
+    app.add_exception_handler(Recusado, _recusado)  # type: ignore[arg-type]
     app.add_exception_handler(consultas.Conflito, _conflito)  # type: ignore[arg-type]
     app.add_exception_handler(EspacoInexistente, _espaco_inexistente)  # type: ignore[arg-type]
     app.add_exception_handler(EspacosEsgotados, _espacos_esgotados)  # type: ignore[arg-type]

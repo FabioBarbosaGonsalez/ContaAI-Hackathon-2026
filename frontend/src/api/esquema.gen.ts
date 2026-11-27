@@ -246,6 +246,174 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/referencias/ufs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Referencias Ufs
+         * @description As UFs dos dados abertos do motor RR (sigla, nome e código do IBGE).
+         */
+        get: operations["referencias_ufs_referencias_ufs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/referencias/municipios": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Referencias Municipios
+         * @description Os municípios da UF nos dados abertos do motor RR, com o código do IBGE.
+         */
+        get: operations["referencias_municipios_referencias_municipios_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/referencias/atividades": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Referencias Atividades
+         * @description As atividades do Simples que o ContaAI calcula, no motor SN, na data do cenário da empresa própria.
+         */
+        get: operations["referencias_atividades_referencias_atividades_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/empresas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cadastrar Empresa
+         * @description Cadastra a empresa da conta com o cenário de simulação. O CNPJ precisa do dígito verificador certo (numérico
+         *     ou alfanumérico); o nome do município e o anexo da atividade vêm dos motores.
+         */
+        post: operations["cadastrar_empresa_empresas_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/empresas/{cnpj}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ler Empresa
+         * @description A empresa da conta com a atividade, o cenário e a origem das premissas do DAS (configurações).
+         */
+        get: operations["ler_empresa_empresas__cnpj__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Configurar Empresa
+         * @description Muda só os campos enviados. As alíquotas efetivas do Simples informadas aqui substituem as da simulação
+         *     em todo cálculo da empresa (P8); `premissasDas: null` volta à simulação.
+         */
+        patch: operations["configurar_empresa_empresas__cnpj__patch"];
+        trace?: never;
+    };
+    "/catalogo/itens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Criar Item
+         * @description Um item novo, com a classificação escolhida entre as válidas para a NCM (P3) e o primeiro preço de venda.
+         *     Itens com Imposto Seletivo ainda não entram (ADR 0017).
+         */
+        post: operations["criar_item_catalogo_itens_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/catalogo/{item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Alterar Item
+         * @description Muda a descrição, a margem-alvo ou o fornecedor (CNPJ e código juntos) do item.
+         */
+        patch: operations["alterar_item_catalogo__item_id__patch"];
+        trace?: never;
+    };
+    "/catalogo/{item_id}/arquivar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Arquivar Item
+         * @description Tira o item do catálogo. O histórico dele (custos, preços, classificações e alertas) fica; os alertas abertos
+         *     dele saem das listas, e uma nota nova com o código do fornecedor dele vira item sem par.
+         */
+        post: operations["arquivar_item_catalogo__item_id__arquivar_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/espacos": {
         parameters: {
             query?: never;
@@ -836,6 +1004,48 @@ export interface components {
             /** Aviso */
             aviso: string;
         };
+        /** AtividadeDaEmpresa */
+        AtividadeDaEmpresa: {
+            /** Cativsn */
+            cAtivSN: string;
+            /** Descricao */
+            descricao: string;
+            /**
+             * Anexo
+             * @enum {string}
+             */
+            anexo: "I" | "II" | "III" | "IV" | "V";
+            /** Fonte */
+            fonte: string;
+        };
+        /** AtividadeSimples */
+        AtividadeSimples: {
+            /** Cativsn */
+            cAtivSN: string;
+            /** Descricao */
+            descricao: string;
+            /**
+             * Anexo
+             * @enum {string}
+             */
+            anexo: "I" | "II" | "III" | "IV" | "V";
+        };
+        /**
+         * AtividadesResposta
+         * @description As atividades do Simples que o ContaAI calcula: admissíveis na NF-e (modelo 55), disponíveis na data do
+         *     cenário, com anexo e sem fator R.
+         */
+        AtividadesResposta: {
+            /**
+             * Data
+             * Format: date
+             */
+            data: string;
+            /** Atividades */
+            atividades: components["schemas"]["AtividadeSimples"][];
+            /** Fonte */
+            fonte: string;
+        };
         /** Body_nfe_importar_nfe_importar_post */
         Body_nfe_importar_nfe_importar_post: {
             /**
@@ -987,7 +1197,7 @@ export interface components {
             cenario: components["schemas"]["CenarioEmpresa"];
             /**
              * Clientesb2B
-             * @description Clientes empresa desta empresa (fictícios).
+             * @description Clientes empresa desta empresa (fictícios na demonstração).
              */
             clientesB2B: components["schemas"]["ClienteB2BEstado"][];
             /**
@@ -999,7 +1209,7 @@ export interface components {
             itens: components["schemas"]["ItemCatalogoEstado"][];
             /**
              * Aviso
-             * @description Dados fictícios de demonstração (P10).
+             * @description Na demonstração e nos espaços, dados fictícios (P10); na empresa da conta, o aviso de simulação.
              */
             aviso: string;
         };
@@ -1260,6 +1470,62 @@ export interface components {
              */
             custoLiquidoAlvo: string;
         };
+        /**
+         * EmpresaCadastroRequisicao
+         * @description A empresa da conta. O nome do município e o anexo da atividade vêm dos motores, nunca da tela.
+         */
+        EmpresaCadastroRequisicao: {
+            /**
+             * Cnpj
+             * @description 14 posições, sem pontos, barra nem traço: as 12 primeiras com dígitos ou letras maiúsculas (CNPJ alfanumérico, IN RFB 2.229/2024) e as 2 últimas com os dígitos verificadores.
+             */
+            cnpj: string;
+            /**
+             * Razaosocial
+             * @description Razão social da empresa.
+             */
+            razaoSocial: string;
+            /**
+             * Regimeatual
+             * @enum {string}
+             */
+            regimeAtual: "simples_tradicional" | "simples_hibrido";
+            /**
+             * Uf
+             * @description Sigla da UF.
+             */
+            uf: string;
+            /**
+             * Municipio
+             * @description Código IBGE do município (7 dígitos).
+             */
+            municipio: number;
+            /**
+             * Cativsn
+             * @description Código da atividade do Simples (GET /referencias/atividades).
+             */
+            cAtivSN: string;
+        };
+        /**
+         * EmpresaConfiguracaoRequisicao
+         * @description Só os campos enviados mudam. O CNPJ não muda: outro CNPJ é outra empresa. `premissasDas: null` volta aos
+         *     valores da simulação; `cargaAtualPct: null` apaga a carga informada.
+         */
+        EmpresaConfiguracaoRequisicao: {
+            /** Razaosocial */
+            razaoSocial?: string | null;
+            /** Regimeatual */
+            regimeAtual?: ("simples_tradicional" | "simples_hibrido") | null;
+            /** Uf */
+            uf?: string | null;
+            /** Municipio */
+            municipio?: number | null;
+            /** Cativsn */
+            cAtivSN?: string | null;
+            premissasDas?: components["schemas"]["PremissasDasDaEmpresa"] | null;
+            /** Cargaatualpct */
+            cargaAtualPct?: number | string | null;
+        };
         /** EmpresaNoPainel */
         EmpresaNoPainel: {
             empresa: components["schemas"]["EmpresaResumo"];
@@ -1270,6 +1536,20 @@ export interface components {
             /** Ultimanota */
             ultimaNota: string | null;
             alertaMaisRecente: components["schemas"]["Alerta"] | null;
+        };
+        /** EmpresaResposta */
+        EmpresaResposta: {
+            empresa: components["schemas"]["EmpresaResumo"];
+            atividade: components["schemas"]["AtividadeDaEmpresa"];
+            cenario: components["schemas"]["CenarioEmpresa"];
+            /**
+             * Premissasdasorigem
+             * @description simulacao: valores de exemplo, rotulados; usuario: informados nas configurações.
+             * @enum {string}
+             */
+            premissasDasOrigem: "simulacao" | "usuario";
+            /** Aviso */
+            aviso: string;
         };
         /** EmpresaResumo */
         EmpresaResumo: {
@@ -1495,6 +1775,47 @@ export interface components {
             cClassTrib: string;
             /** Litrosporunidade */
             litrosPorUnidade?: string | null;
+        };
+        /**
+         * ItemAlteracaoRequisicao
+         * @description Só os campos enviados mudam. NCM e unidade não mudam (o histórico de custo é dessa NCM e dessa unidade): um
+         *     item com outra NCM é outro item. Preço e classificação têm rotas próprias, com o histórico.
+         */
+        ItemAlteracaoRequisicao: {
+            /**
+             * Cnpj
+             * @description 14 posições, sem pontos, barra nem traço: as 12 primeiras com dígitos ou letras maiúsculas (CNPJ alfanumérico, IN RFB 2.229/2024) e as 2 últimas com os dígitos verificadores.
+             */
+            cnpj: string;
+            /** Descricao */
+            descricao?: string | null;
+            /** Margemalvopct */
+            margemAlvoPct?: (number | string) | null;
+            /** Cnpjfornecedor */
+            cnpjFornecedor?: string | null;
+            /** Codigofornecedor */
+            codigoFornecedor?: string | null;
+        };
+        /**
+         * ItemArquivadoResposta
+         * @description O item saiu do catálogo; custos, preços, classificações e alertas dele ficam no histórico.
+         */
+        ItemArquivadoResposta: {
+            /** Itemid */
+            itemId: string;
+            /**
+             * Arquivadoem
+             * Format: date-time
+             */
+            arquivadoEm: string;
+        };
+        /** ItemArquivarRequisicao */
+        ItemArquivarRequisicao: {
+            /**
+             * Cnpj
+             * @description 14 posições, sem pontos, barra nem traço: as 12 primeiras com dígitos ou letras maiúsculas (CNPJ alfanumérico, IN RFB 2.229/2024) e as 2 últimas com os dígitos verificadores.
+             */
+            cnpj: string;
         };
         /**
          * ItemBase
@@ -1743,6 +2064,56 @@ export interface components {
              */
             motivo?: string | null;
         };
+        /**
+         * ItemNovoRequisicao
+         * @description Um item novo no catálogo. A classificação precisa ser uma das válidas para a NCM nos dados abertos do motor
+         *     RR (GET /busca/ncm), e o CST é o da fundamentação oficial, como na correção (P3).
+         */
+        ItemNovoRequisicao: {
+            /**
+             * Cnpj
+             * @description 14 posições, sem pontos, barra nem traço: as 12 primeiras com dígitos ou letras maiúsculas (CNPJ alfanumérico, IN RFB 2.229/2024) e as 2 últimas com os dígitos verificadores.
+             */
+            cnpj: string;
+            /**
+             * Descricao
+             * @description Como a empresa chama o produto.
+             */
+            descricao: string;
+            /** Ncm */
+            ncm: string;
+            /** Cclasstrib */
+            cClassTrib: string;
+            /**
+             * Unidade
+             * @enum {string}
+             */
+            unidade: "UN" | "KG";
+            /**
+             * Cnpjfornecedor
+             * @description 14 posições, sem pontos, barra nem traço: as 12 primeiras com dígitos ou letras maiúsculas (CNPJ alfanumérico, IN RFB 2.229/2024) e as 2 últimas com os dígitos verificadores.
+             */
+            cnpjFornecedor: string;
+            /**
+             * Codigofornecedor
+             * @description cProd do item na NF-e do fornecedor (casa a nota com o item).
+             */
+            codigoFornecedor: string;
+            /**
+             * Precovenda
+             * @description Preço de venda por unidade (vUnCom).
+             */
+            precoVenda: number | string;
+            /**
+             * Margemalvopct
+             * @description Margem que a empresa quer no item, em %.
+             */
+            margemAlvoPct: number | string;
+        };
+        /** ItemResposta */
+        ItemResposta: {
+            item: components["schemas"]["ItemCatalogoEstado"];
+        };
         /** LadoHibrido */
         LadoHibrido: {
             /**
@@ -1838,6 +2209,25 @@ export interface components {
          * @enum {string}
          */
         Motor: "regime_regular" | "simples_nacional";
+        /** MunicipioReferencia */
+        MunicipioReferencia: {
+            /**
+             * Codigo
+             * @description Código IBGE.
+             */
+            codigo: number;
+            /** Nome */
+            nome: string;
+        };
+        /** MunicipiosResposta */
+        MunicipiosResposta: {
+            /** Uf */
+            uf: string;
+            /** Municipios */
+            municipios: components["schemas"]["MunicipioReferencia"][];
+            /** Fonte */
+            fonte: string;
+        };
         /** NfeImportarResposta */
         NfeImportarResposta: {
             /**
@@ -1924,7 +2314,7 @@ export interface components {
             notas: components["schemas"]["NotaImportada"][];
             /**
              * Aviso
-             * @description Dados fictícios de demonstração (P10).
+             * @description Na demonstração e nos espaços, dados fictícios (P10); na empresa da conta, o aviso de simulação.
              */
             aviso: string;
         };
@@ -2129,6 +2519,16 @@ export interface components {
              * @description De onde veio a premissa (ex.: o rótulo do preset escolhido). Sai impressa nas premissas.
              */
             fonte?: string | null;
+        };
+        /**
+         * PremissasDasDaEmpresa
+         * @description As alíquotas efetivas de CBS e de IBS do Simples, da apuração da própria empresa (P8).
+         */
+        PremissasDasDaEmpresa: {
+            /** Pcbssn */
+            pCBSSN: number | string;
+            /** Pibssn */
+            pIBSSN: number | string;
         };
         /**
          * PresetAliquotas
@@ -2470,6 +2870,22 @@ export interface components {
             ibs?: string | null;
             /** Impostoseletivo */
             impostoSeletivo?: string | null;
+        };
+        /** UfReferencia */
+        UfReferencia: {
+            /** Sigla */
+            sigla: string;
+            /** Nome */
+            nome: string;
+            /** Codigo */
+            codigo: number;
+        };
+        /** UfsResposta */
+        UfsResposta: {
+            /** Ufs */
+            ufs: components["schemas"]["UfReferencia"][];
+            /** Fonte */
+            fonte: string;
         };
         /** Versoes */
         Versoes: {
@@ -3412,7 +3828,7 @@ export interface operations {
     catalogo_catalogo_get: {
         parameters: {
             query: {
-                /** @description CNPJ da empresa (14 dígitos). */
+                /** @description CNPJ da empresa: 14 posições, sem pontos, barra nem traço. */
                 cnpj: string;
             };
             header?: {
@@ -3483,7 +3899,7 @@ export interface operations {
     listar_notas_notas_get: {
         parameters: {
             query: {
-                /** @description CNPJ da empresa (14 dígitos). */
+                /** @description CNPJ da empresa: 14 posições, sem pontos, barra nem traço. */
                 cnpj: string;
                 /** @description Quantas notas, no máximo. */
                 limite?: number;
@@ -3599,6 +4015,953 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemaValidacao"];
+                };
+            };
+        };
+    };
+    referencias_ufs_referencias_ufs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UfsResposta"];
+                };
+            };
+            /** @description Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description O motor recusou a operação (/problemas/motor-recusou, ex.: VSN-015) ou a entrada não segue o contrato (/problemas/entrada-invalida). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaMotor"] | components["schemas"]["ProblemaValidacao"];
+                };
+            };
+            /** @description Limite de requisições por minuto atingido (header Retry-After). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Rota que só funciona no modo real (CONTAAI_MODO=real). */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description O motor devolveu uma resposta que o ContaAI não reconhece. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaMotor"];
+                };
+            };
+            /** @description Motor indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaMotor"];
+                };
+            };
+        };
+    };
+    referencias_municipios_referencias_municipios_get: {
+        parameters: {
+            query: {
+                /** @description Sigla da UF. */
+                uf: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MunicipiosResposta"];
+                };
+            };
+            /** @description Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description O motor recusou a operação (/problemas/motor-recusou, ex.: VSN-015) ou a entrada não segue o contrato (/problemas/entrada-invalida). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaMotor"] | components["schemas"]["ProblemaValidacao"];
+                };
+            };
+            /** @description Limite de requisições por minuto atingido (header Retry-After). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Rota que só funciona no modo real (CONTAAI_MODO=real). */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description O motor devolveu uma resposta que o ContaAI não reconhece. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaMotor"];
+                };
+            };
+            /** @description Motor indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaMotor"];
+                };
+            };
+        };
+    };
+    referencias_atividades_referencias_atividades_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AtividadesResposta"];
+                };
+            };
+            /** @description Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description O motor recusou a operação (/problemas/motor-recusou, ex.: VSN-015) ou a entrada não segue o contrato (/problemas/entrada-invalida). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaMotor"] | components["schemas"]["ProblemaValidacao"];
+                };
+            };
+            /** @description Limite de requisições por minuto atingido (header Retry-After). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Rota que só funciona no modo real (CONTAAI_MODO=real). */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description O motor devolveu uma resposta que o ContaAI não reconhece. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaMotor"];
+                };
+            };
+            /** @description Motor indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaMotor"];
+                };
+            };
+        };
+    };
+    cadastrar_empresa_empresas_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmpresaCadastroRequisicao"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmpresaResposta"];
+                };
+            };
+            /** @description Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Sem sessão, ou sessão encerrada ou expirada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Só o dono da organização cadastra e configura a empresa. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Empresa que a conta não alcança (a mesma resposta de uma que não existe). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description A empresa já está na conta, o limite de empresas foi atingido, ou ela mudou durante a conferência. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Corpo sem Content-Length (corpo em pedaços não é aceito). */
+            411: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Corpo maior que o limite. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description CNPJ com dígito errado, município fora da UF, atividade que o ContaAI não calcula, ou entrada fora do contrato. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaValidacao"];
+                };
+            };
+            /** @description Limite de requisições por minuto atingido (header Retry-After). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Rota que só funciona no modo real (CONTAAI_MODO=real). */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description O motor devolveu uma resposta que o ContaAI não reconhece. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaMotor"];
+                };
+            };
+            /** @description Motor indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaMotor"];
+                };
+            };
+        };
+    };
+    ler_empresa_empresas__cnpj__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description CNPJ da empresa da conta. */
+                cnpj: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmpresaResposta"];
+                };
+            };
+            /** @description Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Sem sessão, ou sessão encerrada ou expirada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Só o dono da organização cadastra e configura a empresa. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Empresa que a conta não alcança (a mesma resposta de uma que não existe). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaValidacao"];
+                };
+            };
+            /** @description Limite de requisições por minuto atingido (header Retry-After). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Rota que só funciona no modo real (CONTAAI_MODO=real). */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+        };
+    };
+    configurar_empresa_empresas__cnpj__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description CNPJ da empresa da conta. */
+                cnpj: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmpresaConfiguracaoRequisicao"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmpresaResposta"];
+                };
+            };
+            /** @description Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Sem sessão, ou sessão encerrada ou expirada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Só o dono da organização cadastra e configura a empresa. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Empresa que a conta não alcança (a mesma resposta de uma que não existe). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description A empresa já está na conta, o limite de empresas foi atingido, ou ela mudou durante a conferência. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description CNPJ com dígito errado, município fora da UF, atividade que o ContaAI não calcula, ou entrada fora do contrato. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaValidacao"];
+                };
+            };
+            /** @description Limite de requisições por minuto atingido (header Retry-After). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Rota que só funciona no modo real (CONTAAI_MODO=real). */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description O motor devolveu uma resposta que o ContaAI não reconhece. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaMotor"];
+                };
+            };
+            /** @description Motor indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaMotor"];
+                };
+            };
+        };
+    };
+    criar_item_catalogo_itens_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-ContaAI-Token"?: string | null;
+                /** @description Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada. */
+                "X-ContaAI-Espaco"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ItemNovoRequisicao"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemResposta"];
+                };
+            };
+            /** @description Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Token da demo ausente ou errado (header X-ContaAI-Token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Empresa ou alerta não encontrado, ou espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Código do fornecedor já em outro item, limite de itens, ou nada a mudar. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Corpo sem Content-Length (corpo em pedaços não é aceito). */
+            411: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Corpo maior que o limite. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description NCM fora dos dados abertos, NCM com Imposto Seletivo, classificação que não vale para a NCM, CNPJ do fornecedor com dígito errado (na empresa da conta), ou entrada fora do contrato. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaValidacao"];
+                };
+            };
+            /** @description Limite de requisições por minuto atingido (header Retry-After). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Rota que só funciona no modo real (CONTAAI_MODO=real). */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description O motor devolveu uma resposta que o ContaAI não reconhece. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaMotor"];
+                };
+            };
+            /** @description Motor indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaMotor"];
+                };
+            };
+        };
+    };
+    alterar_item_catalogo__item_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-ContaAI-Token"?: string | null;
+                /** @description Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada. */
+                "X-ContaAI-Espaco"?: string | null;
+            };
+            path: {
+                /** @description Id do item no catálogo da empresa. */
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ItemAlteracaoRequisicao"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemResposta"];
+                };
+            };
+            /** @description Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Token da demo ausente ou errado (header X-ContaAI-Token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Empresa ou alerta não encontrado, ou espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Código do fornecedor já em outro item, limite de itens, ou nada a mudar. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description NCM fora dos dados abertos, NCM com Imposto Seletivo, classificação que não vale para a NCM, CNPJ do fornecedor com dígito errado (na empresa da conta), ou entrada fora do contrato. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaValidacao"];
+                };
+            };
+            /** @description Limite de requisições por minuto atingido (header Retry-After). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Rota que só funciona no modo real (CONTAAI_MODO=real). */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description O motor devolveu uma resposta que o ContaAI não reconhece. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaMotor"];
+                };
+            };
+            /** @description Motor indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaMotor"];
+                };
+            };
+        };
+    };
+    arquivar_item_catalogo__item_id__arquivar_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-ContaAI-Token"?: string | null;
+                /** @description Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada. */
+                "X-ContaAI-Espaco"?: string | null;
+            };
+            path: {
+                /** @description Id do item no catálogo da empresa. */
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ItemArquivarRequisicao"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemArquivadoResposta"];
+                };
+            };
+            /** @description Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Token da demo ausente ou errado (header X-ContaAI-Token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Empresa ou alerta não encontrado, ou espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Código do fornecedor já em outro item, limite de itens, ou nada a mudar. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Corpo sem Content-Length (corpo em pedaços não é aceito). */
+            411: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Corpo maior que o limite. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description NCM fora dos dados abertos, NCM com Imposto Seletivo, classificação que não vale para a NCM, CNPJ do fornecedor com dígito errado (na empresa da conta), ou entrada fora do contrato. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaValidacao"];
+                };
+            };
+            /** @description Limite de requisições por minuto atingido (header Retry-After). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Rota que só funciona no modo real (CONTAAI_MODO=real). */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description O motor devolveu uma resposta que o ContaAI não reconhece. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaMotor"];
+                };
+            };
+            /** @description Motor indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaMotor"];
                 };
             };
         };

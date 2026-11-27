@@ -19,6 +19,7 @@ from app.api.dependencias import (
     marcar_mock,
     so_no_modo_real,
 )
+from app.cnpj import PADRAO_CNPJ
 from app.config import Configuracao
 from app.contrato import PADRAO_ID_ITEM, ErroDescricao, ExplicarRequisicao, ExplicarResposta, Regime
 from app.dados_demo import carregar_distribuidora
@@ -57,7 +58,7 @@ async def explicar(
     item_id: Annotated[str, Path(pattern=PADRAO_ID_ITEM)],
     regime: Regime = Regime.SIMPLES_TRADICIONAL,
     cnpj: Annotated[
-        str | None, Query(pattern=r"^[0-9]{14}$", description="Empresa do item. Sem ele, a distribuidora da demo.")
+        str | None, Query(pattern=PADRAO_CNPJ, description="Empresa do item. Sem ele, a distribuidora da demo.")
     ] = None,
     espaco: EspacoId = None,
     sessao: SessaoCookie = None,

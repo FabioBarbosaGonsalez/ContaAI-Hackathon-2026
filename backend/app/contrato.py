@@ -16,6 +16,7 @@ Convenções:
 
 from __future__ import annotations
 
+import re
 from datetime import date, datetime
 from decimal import Decimal
 from enum import StrEnum
@@ -23,6 +24,7 @@ from typing import Annotated, Literal
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
 
+from app.cnpj import PADRAO_CNPJ
 from app.contas.termos import VERSAO_TERMOS, conferir_versao
 
 AVISO_LEGAL = "Estimativa baseada nas calculadoras oficiais. Não é parecer fiscal e não substitui o contador."
@@ -646,13 +648,17 @@ class ClienteB2BEstado(_Modelo):
 class CatalogoResposta(_Modelo):
     empresa: EmpresaResumo
     cenario: CenarioEmpresa
-    clientesB2B: list[ClienteB2BEstado] = Field(description="Clientes empresa desta empresa (fictícios).")
+    clientesB2B: list[ClienteB2BEstado] = Field(
+        description="Clientes empresa desta empresa (fictícios na demonstração)."
+    )
     loteReferencia: int = Field(
         description="Unidades por cálculo de item no catálogo, na explicação e no preço-alvo (CBS/IBS a cada "
         "N unidades). A tela usa este número, nunca uma cópia própria."
     )
     itens: list[ItemCatalogoEstado]
-    aviso: str = Field(description="Dados fictícios de demonstração (P10).")
+    aviso: str = Field(
+        description="Na demonstração e nos espaços, dados fictícios (P10); na empresa da conta, o aviso de simulação."
+    )
 
 
 class EmpresaNoPainel(_Modelo):
@@ -691,7 +697,9 @@ class NotasResposta(_Modelo):
 
     empresa: EmpresaResumo
     notas: list[NotaImportada]
-    aviso: str = Field(description="Dados fictícios de demonstração (P10).")
+    aviso: str = Field(
+        description="Na demonstração e nos espaços, dados fictícios (P10); na empresa da conta, o aviso de simulação."
+    )
 
 
 class EspacoResposta(_Modelo):
@@ -805,7 +813,7 @@ class ContextoChat(Operacao):
     regime: Regime
     itens: list[ItemEntrada] = Field(default=[], max_length=200)
     cnpj: str | None = Field(
-        default=None, pattern=r"^[0-9]{14}$", description="Empresa da tela: os alertas do chat são os dela (E4)."
+        default=None, pattern=PADRAO_CNPJ, description="Empresa da tela: os alertas do chat são os dela (E4)."
     )
 
     @model_validator(mode="after")
@@ -897,7 +905,7 @@ PADRAO_ID_ITEM = r"^[a-z0-9][a-z0-9-]{0,63}$"
 class AplicarPrecoRequisicao(_Modelo):
     """Preço de venda novo, escolhido pelo usuário na tela (ex.: a ação "aplicar_preco" do chat, P3)."""
 
-    cnpj: str = Field(pattern=r"^[0-9]{14}$")
+    cnpj: str = Field(pattern=PADRAO_CNPJ)
     valorUnitario: Decimal = Field(
         gt=0, le=TETO_ENTRADA, decimal_places=2, description="Valor do produto por unidade (vUnCom), em centavos."
     )
@@ -917,7 +925,7 @@ class CorrigirClassificacaoRequisicao(_Modelo):
     """A classificação que o usuário confirmou (P3). O CST não vem da tela: o backend usa o da fundamentação
     oficial da classificação escolhida, e só aceita uma classificação válida para a NCM do item."""
 
-    cnpj: str = Field(pattern=r"^[0-9]{14}$")
+    cnpj: str = Field(pattern=PADRAO_CNPJ)
     cClassTrib: str = Field(pattern=r"^[0-9]{6}$")
 
 
@@ -1178,3 +1186,201 @@ class SegundaEtapaResposta(_Modelo):
 
 class ExcluirContaRequisicao(_Modelo):
     senha: SenhaEntrada
+
+
+# ---------------------------------------------------------------------------
+# Empresa própria (C3-B, ADR 0017): cadastro, configurações e catálogo editável. Os dados de referência (UF, município
+# e atividade do Simples) vêm dos motores oficiais, na versão fixada (P5).
+
+_CONTROLE = re.compile(r"[\x00-\x1f\x7f]")
+
+
+def _texto_de_cadastro(texto: str) -> str:
+    """Sem os espaços das pontas e sem caractere de controle (o mesmo cuidado do leitor da NF-e)."""
+    limpo = texto.strip()
+    if not limpo:
+        raise ValueError("Preencha este campo.")
+    if _CONTROLE.search(limpo):
+        raise ValueError("Use só texto, sem caracteres de controle.")
+    return limpo
+
+
+RazaoSocial = Annotated[
+    str, Field(min_length=1, max_length=150, description="Razão social da empresa."), AfterValidator(_texto_de_cadastro)
+]
+DescricaoDoItem = Annotated[
+    str,
+    Field(min_length=1, max_length=200, description="Como a empresa chama o produto."),
+    AfterValidator(_texto_de_cadastro),
+]
+CodigoDoFornecedor = Annotated[
+    str,
+    Field(min_length=1, max_length=60, description="cProd do item na NF-e do fornecedor (casa a nota com o item)."),
+    AfterValidator(_texto_de_cadastro),
+]
+CnpjEmpresa = Annotated[
+    str,
+    Field(
+        pattern=PADRAO_CNPJ,
+        description="14 posições, sem pontos, barra nem traço: as 12 primeiras com dígitos ou letras maiúsculas "
+        "(CNPJ alfanumérico, IN RFB 2.229/2024) e as 2 últimas com os dígitos verificadores.",
+    ),
+]
+RegimeDoSimples = Literal["simples_tradicional", "simples_hibrido"]
+Municipio = Annotated[int, Field(ge=1000000, le=9999999, description="Código IBGE do município (7 dígitos).")]
+Uf = Annotated[str, Field(pattern=r"^[A-Z]{2}$", description="Sigla da UF.")]
+CodigoAtividade = Annotated[
+    str, Field(pattern=r"^[0-9]{2}$", description="Código da atividade do Simples (GET /referencias/atividades).")
+]
+PrecoDeVenda = Annotated[
+    Decimal, Field(gt=0, le=TETO_ENTRADA, decimal_places=2, description="Preço de venda por unidade (vUnCom).")
+]
+MargemAlvo = Annotated[
+    Decimal, Field(gt=0, lt=100, decimal_places=4, description="Margem que a empresa quer no item, em %.")
+]
+
+
+class UfReferencia(_Modelo):
+    sigla: str
+    nome: str
+    codigo: int
+
+
+class UfsResposta(_Modelo):
+    ufs: list[UfReferencia]
+    fonte: str
+
+
+class MunicipioReferencia(_Modelo):
+    codigo: int = Field(description="Código IBGE.")
+    nome: str
+
+
+class MunicipiosResposta(_Modelo):
+    uf: str
+    municipios: list[MunicipioReferencia]
+    fonte: str
+
+
+class AtividadeSimples(_Modelo):
+    cAtivSN: str
+    descricao: str
+    anexo: Anexo
+
+
+class AtividadesResposta(_Modelo):
+    """As atividades do Simples que o ContaAI calcula: admissíveis na NF-e (modelo 55), disponíveis na data do
+    cenário, com anexo e sem fator R."""
+
+    data: date
+    atividades: list[AtividadeSimples]
+    fonte: str
+
+
+class EmpresaCadastroRequisicao(_Modelo):
+    """A empresa da conta. O nome do município e o anexo da atividade vêm dos motores, nunca da tela."""
+
+    cnpj: CnpjEmpresa
+    razaoSocial: RazaoSocial
+    regimeAtual: RegimeDoSimples
+    uf: Uf
+    municipio: Municipio
+    cAtivSN: CodigoAtividade
+
+
+class PremissasDasDaEmpresa(_Modelo):
+    """As alíquotas efetivas de CBS e de IBS do Simples, da apuração da própria empresa (P8)."""
+
+    pCBSSN: PorcentagemEntrada = Field(ge=0, lt=100)
+    pIBSSN: PorcentagemEntrada = Field(ge=0, lt=100)
+
+
+class EmpresaConfiguracaoRequisicao(_Modelo):
+    """Só os campos enviados mudam. O CNPJ não muda: outro CNPJ é outra empresa. `premissasDas: null` volta aos
+    valores da simulação; `cargaAtualPct: null` apaga a carga informada."""
+
+    razaoSocial: RazaoSocial | None = None
+    regimeAtual: RegimeDoSimples | None = None
+    uf: Uf | None = None
+    municipio: Municipio | None = None
+    cAtivSN: CodigoAtividade | None = None
+    premissasDas: PremissasDasDaEmpresa | None = None
+    cargaAtualPct: PorcentagemEntrada | None = Field(default=None, ge=0, lt=100)
+
+    @model_validator(mode="after")
+    def conferir(self) -> EmpresaConfiguracaoRequisicao:
+        enviados = self.model_fields_set
+        if not enviados:
+            raise ValueError("Envie ao menos um campo para mudar.")
+        if ("uf" in enviados) != ("municipio" in enviados):
+            raise ValueError("Envie a UF e o município juntos.")
+        obrigatorios = {"razaoSocial", "regimeAtual", "uf", "municipio", "cAtivSN"}
+        if any(getattr(self, campo) is None for campo in enviados & obrigatorios):
+            raise ValueError("Só premissasDas e cargaAtualPct aceitam null.")
+        return self
+
+
+class AtividadeDaEmpresa(AtividadeSimples):
+    fonte: str
+
+
+class EmpresaResposta(_Modelo):
+    empresa: EmpresaResumo
+    atividade: AtividadeDaEmpresa
+    cenario: CenarioEmpresa
+    premissasDasOrigem: Literal["simulacao", "usuario"] = Field(
+        description="simulacao: valores de exemplo, rotulados; usuario: informados nas configurações."
+    )
+    aviso: str
+
+
+class ItemNovoRequisicao(_Modelo):
+    """Um item novo no catálogo. A classificação precisa ser uma das válidas para a NCM nos dados abertos do motor
+    RR (GET /busca/ncm), e o CST é o da fundamentação oficial, como na correção (P3)."""
+
+    cnpj: CnpjEmpresa
+    descricao: DescricaoDoItem
+    ncm: str = Field(pattern=r"^[0-9]{8}$")
+    cClassTrib: str = Field(pattern=r"^[0-9]{6}$")
+    unidade: Literal["UN", "KG"]
+    cnpjFornecedor: CnpjEmpresa
+    codigoFornecedor: CodigoDoFornecedor
+    precoVenda: PrecoDeVenda
+    margemAlvoPct: MargemAlvo
+
+
+class ItemAlteracaoRequisicao(_Modelo):
+    """Só os campos enviados mudam. NCM e unidade não mudam (o histórico de custo é dessa NCM e dessa unidade): um
+    item com outra NCM é outro item. Preço e classificação têm rotas próprias, com o histórico."""
+
+    cnpj: CnpjEmpresa
+    descricao: DescricaoDoItem | None = None
+    margemAlvoPct: MargemAlvo | None = None
+    cnpjFornecedor: CnpjEmpresa | None = None
+    codigoFornecedor: CodigoDoFornecedor | None = None
+
+    @model_validator(mode="after")
+    def conferir(self) -> ItemAlteracaoRequisicao:
+        enviados = self.model_fields_set - {"cnpj"}
+        if not enviados:
+            raise ValueError("Envie ao menos um campo para mudar.")
+        if ("cnpjFornecedor" in enviados) != ("codigoFornecedor" in enviados):
+            raise ValueError("Envie o CNPJ e o código do fornecedor juntos.")
+        if any(getattr(self, campo) is None for campo in enviados):
+            raise ValueError("Os campos enviados não aceitam null.")
+        return self
+
+
+class ItemArquivarRequisicao(_Modelo):
+    cnpj: CnpjEmpresa
+
+
+class ItemResposta(_Modelo):
+    item: ItemCatalogoEstado
+
+
+class ItemArquivadoResposta(_Modelo):
+    """O item saiu do catálogo; custos, preços, classificações e alertas dele ficam no histórico."""
+
+    itemId: str
+    arquivadoEm: datetime

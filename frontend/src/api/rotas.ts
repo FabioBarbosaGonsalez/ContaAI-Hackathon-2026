@@ -7,7 +7,7 @@
 // - o cookie da sessão da conta só vai às rotas da conta e, na conta, às rotas de dados (ADR 0015 e ADR 0016).
 
 /** Chave no formato "MÉTODO /caminho", com o caminho como está no contrato. */
-type Metodo = 'GET' | 'POST' | 'DELETE';
+type Metodo = 'GET' | 'POST' | 'PATCH' | 'DELETE';
 
 export type ChaveRota = `${Metodo} /${string}`;
 
@@ -18,6 +18,9 @@ export const ROTAS_COM_ESPACO: ReadonlySet<ChaveRota> = new Set<ChaveRota>([
   'POST /alertas/{alerta_id}/aplicar',
   'POST /catalogo/{item_id}/preco',
   'POST /catalogo/{item_id}/classificacao',
+  'POST /catalogo/itens',
+  'PATCH /catalogo/{item_id}',
+  'POST /catalogo/{item_id}/arquivar',
   'GET /catalogo',
   'GET /notas',
   'GET /contador/painel',
@@ -33,6 +36,9 @@ export const ROTAS_COM_TOKEN: ReadonlySet<ChaveRota> = new Set<ChaveRota>([
   'POST /alertas/{alerta_id}/aplicar',
   'POST /catalogo/{item_id}/preco',
   'POST /catalogo/{item_id}/classificacao',
+  'POST /catalogo/itens',
+  'PATCH /catalogo/{item_id}',
+  'POST /catalogo/{item_id}/arquivar',
   'POST /chat',
   'POST /demo/restaurar',
 ]);

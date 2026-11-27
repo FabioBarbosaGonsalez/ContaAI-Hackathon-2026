@@ -23,6 +23,7 @@ from pathlib import Path
 import httpx
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+from app.cnpj import PADRAO_CNPJ
 from app.contrato import NfeImportarResposta
 from app.dados_demo import PASTA_DEMO, ClienteB2B, Distribuidora
 from app.motores.cliente import ClienteMotores
@@ -44,7 +45,7 @@ class VinculoClienteB2B(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    empresa: str = Field(pattern=r"^[0-9]{14}$")
+    empresa: str = Field(pattern=PADRAO_CNPJ)
     arquivo: str
 
 

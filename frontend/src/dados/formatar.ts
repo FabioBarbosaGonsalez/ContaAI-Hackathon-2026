@@ -101,10 +101,13 @@ export function instante(iso: string | null | undefined): string {
   return data === null || Number.isNaN(data.getTime()) ? TRACO : INSTANTE.format(data);
 }
 
-/** CNPJ com a máscara oficial: 36817420000113 → 36.817.420/0001-13. */
+/**
+ * CNPJ com a máscara oficial: 36817420000113 → 36.817.420/0001-13. O alfanumérico (IN RFB 2.229/2024) usa a mesma
+ * máscara, segundo as perguntas e respostas da Receita: 12ABC34501DE35 → 12.ABC.345/01DE-35.
+ */
 export function cnpj(valor: string): string {
-  return /^\d{14}$/u.test(valor)
-    ? valor.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/u, '$1.$2.$3/$4-$5')
+  return /^[0-9A-Z]{12}\d{2}$/u.test(valor)
+    ? valor.replace(/^([0-9A-Z]{2})([0-9A-Z]{3})([0-9A-Z]{3})([0-9A-Z]{4})(\d{2})$/u, '$1.$2.$3/$4-$5')
     : valor;
 }
 

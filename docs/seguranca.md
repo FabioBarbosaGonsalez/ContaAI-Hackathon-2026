@@ -12,11 +12,11 @@ Para relatar uma vulnerabilidade, veja o [SECURITY.md](../SECURITY.md).
 | Crédito do provedor de IA | Cada mensagem do chat custa dinheiro quando uma IA real é ligada |
 | Estado da demonstração (SQLite) | Notas, custos, alertas e preços aplicados das empresas fictícias, compartilhados por quem usa a demo |
 | Contas (`contas.db`, [ADR 0015](adr/0015-contas.md)) | E-mail, hash da senha, segredo do segundo fator, sessões e o aceite dos termos (versão e data) de quem tem conta: o primeiro dado pessoal do projeto |
-| Estado de cada organização (`organizacoes/<id>.db`) | Notas, catálogo e preços de uma empresa real, a partir da C3. Não pode chegar a outra organização |
+| Estado de cada organização (`organizacoes/<id>.db`) | Desde a C3-B ([ADR 0017](adr/0017-empresa-propria.md)): a empresa, o catálogo, as notas e os preços de uma empresa real. Não pode chegar a outra organização |
 | Chave do provedor de IA e token da demo | Segredos do servidor |
 | Confiança no número mostrado | O produto mostra tributo e margem: um número inventado ou adulterado é o pior defeito possível |
 
-Os dados do repositório e dos testes são sintéticos (P10): empresas, CNPJs, notas e e-mails fictícios. Desde a C1, o servidor guarda o e-mail de quem cria uma conta, num banco fora do git (`*.db` no `.gitignore`).
+Os dados do repositório e dos testes são sintéticos (P10): empresas, CNPJs, notas e e-mails fictícios. Desde a C1, o servidor guarda o e-mail de quem cria uma conta, num banco fora do git (`*.db` no `.gitignore`). Desde a C3-B, o P10 vale para a demonstração e os espaços. A empresa da conta guarda os dados reais que a pessoa cadastra, também fora do git.
 
 ## Ameaças e proteções
 
@@ -102,6 +102,31 @@ Os dados do repositório e dos testes são sintéticos (P10): empresas, CNPJs, n
   - os três vazamentos do mapeamento (alertas sem `cnpj`, painel do contador e aplicar alerta) foram fechados;
   - restaurar a demonstração com a sessão de uma conta é recusado.
 - **Excluir a conta** pede a senha de novo e apaga a pessoa e, se ela era a única integrante, a organização e o arquivo de estado (LGPD, art. 18 VI).
+
+### Empresa própria ([ADR 0017](adr/0017-empresa-propria.md))
+
+- **CNPJ:**
+  - o formato oficial com o alfanumérico (`^[0-9A-Z]{12}[0-9]{2}$`) no contrato, no leitor da NF-e e num CHECK do banco;
+  - o dígito verificador é exigido na empresa da conta e no fornecedor dos itens dela.
+- **Dados oficiais vêm dos motores, nunca da tela:**
+  - o nome do município;
+  - o anexo da atividade;
+  - a descrição da NCM;
+  - a classificação válida e o CST.
+- **Isolamento:**
+  - a empresa fica no banco da organização, e o acesso no `contas.db`;
+  - outra conta recebe o mesmo 404 de uma empresa que não existe;
+  - o mesmo CNPJ em duas contas são duas cópias separadas;
+  - o header do espaço não cadastra empresa.
+- **Papéis:** só o dono cadastra e configura a empresa. O membro lê a empresa e edita o catálogo.
+- **Métodos:**
+  - o PATCH passa pelo limite de corpo, pelo limite por IP e pela defesa contra CSRF;
+  - antes da C3-B, os dois limites só valiam para o POST (e o GET, no caso do limite por IP).
+- **Migrações:**
+  - chaves estrangeiras desligadas durante a migração e `foreign_key_check` antes do COMMIT, como manda a documentação do SQLite;
+  - com elas ligadas, a 0003 apagaria em cascata os itens e as notas.
+- **SQL:** o guarda contra SQL montado com texto passou a olhar a linha seguinte ao `execute(`, onde uma f-string escapava dele.
+- **Erros:** as recusas por dado (422) têm frase fixa, sem repetir o que foi enviado.
 
 ### Navegador: XSS, CSRF e DNS rebinding ([ADR 0011](adr/0011-contrato-da-tela-e-seguranca.md))
 
