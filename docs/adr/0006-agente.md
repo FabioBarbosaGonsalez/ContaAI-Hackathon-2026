@@ -118,7 +118,7 @@ O log registra o nome, a duração e o resultado (ok ou não) de cada ferramenta
 
 - **Limite por IP.** Janela deslizante de 60 s em memória; 0 desliga. Responde 429 com `Retry-After`.
   - `/chat`: 10 por minuto.
-  - Rotas que chamam os motores: 120 por minuto.
+  - Rotas que chamam os motores: 120 por minuto. O `GET /saude`, que consulta a versão dos dois, entrou nelas na etapa 9 da C3-B ([ADR 0017](0017-empresa-propria.md)).
   - `GET /busca/ncm`: mais 20 por minuto, porque uma busca de NCM nova faz até cerca de 430 consultas ao motor (3 NCMs × cerca de 144 classificações).
   - A tabela de IPs tem no máximo 10 mil entradas, para que muitos IPs diferentes não esgotem a memória.
   - O IP é o da conexão. Atrás de proxy, o limite vira global, o que ainda protege o crédito. Ler `X-Forwarded-For` fica para a E6, só com um proxy nosso.

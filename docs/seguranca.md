@@ -101,7 +101,8 @@ Os dados do repositório e dos testes são sintéticos (P10): empresas, CNPJs, n
   - toda rota só enxerga os CNPJs de quem chama, e um CNPJ alheio responde o mesmo 404 de um que não existe;
   - os três vazamentos do mapeamento (alertas sem `cnpj`, painel do contador e aplicar alerta) foram fechados;
   - restaurar a demonstração com a sessão de uma conta é recusado.
-- **Excluir a conta** pede a senha de novo e apaga a pessoa e, se ela era a única integrante, a organização e o arquivo de estado (LGPD, art. 18 VI).
+- **Excluir a conta** pede a senha de novo e apaga a pessoa e todas as organizações em que ela era a única integrante, com o arquivo de estado de cada uma (LGPD, art. 18 VI). Antes da etapa 7 da C3-B, só a organização da sessão saía.
+- **Bancos órfãos:** na subida, a API apaga o banco de uma organização que não existe mais no `contas.db`. Um arquivo fora do padrão fica no disco e aparece no log só pelo nome.
 
 ### Empresa própria ([ADR 0017](adr/0017-empresa-propria.md))
 
@@ -118,15 +119,33 @@ Os dados do repositório e dos testes são sintéticos (P10): empresas, CNPJs, n
   - outra conta recebe o mesmo 404 de uma empresa que não existe;
   - o mesmo CNPJ em duas contas são duas cópias separadas;
   - o header do espaço não cadastra empresa.
-- **Papéis:** só o dono cadastra e configura a empresa. O membro lê a empresa e edita o catálogo.
+- **Papéis (etapa 8):**
+  - só o dono cadastra, configura e exclui a empresa; o dono e o membro mudam o catálogo, os clientes B2B, as notas, os preços, os alertas e as classificações; todo integrante lê;
+  - as listas (`PAPEIS_QUE_EDITAM`, `PAPEIS_QUE_ADMINISTRAM`) dizem quem pode: um papel fora delas, como o contador do 3c, recebe 403 até entrar de propósito;
+  - o 403 do papel vem antes de olhar a empresa e a senha (não diz se o CNPJ existe nem gasta tentativa), e o papel é lido a cada pedido;
+  - um teste de inventário obriga toda rota nova que muda o estado a ser classificada.
 - **Métodos:**
   - o PATCH passa pelo limite de corpo, pelo limite por IP e pela defesa contra CSRF;
-  - antes da C3-B, os dois limites só valiam para o POST (e o GET, no caso do limite por IP).
+  - antes da C3-B, os dois limites só valiam para o POST (e o GET, no caso do limite por IP);
+  - o OpenAPI passou a listar no PATCH as recusas dos middlewares (403, 411 e 413), que antes só apareciam no POST;
+  - desde a etapa 8, todo método que muda o estado (o DELETE das sessões também) declara o 403 do CSRF, somado ao 403 próprio da rota em vez de escondido por ele.
+- **Clientes B2B (etapa 6):** `/clientes` tem limite por IP, porque grava e consulta o motor. O dígito do CNPJ do cliente é exigido na empresa da conta, e outra conta recebe o 404 de uma empresa que não existe.
 - **Migrações:**
   - chaves estrangeiras desligadas durante a migração e `foreign_key_check` antes do COMMIT, como manda a documentação do SQLite;
   - com elas ligadas, a 0003 apagaria em cascata os itens e as notas.
 - **SQL:** o guarda contra SQL montado com texto passou a olhar a linha seguinte ao `execute(`, onde uma f-string escapava dele.
 - **Erros:** as recusas por dado (422) têm frase fixa, sem repetir o que foi enviado.
+- **Dados e exclusão (etapa 7):**
+  - `POST /conta/dados` e `POST /empresas/{cnpj}/excluir` pedem a senha de novo, contam a senha errada como falha de entrada e têm o limite por IP da entrada;
+  - excluir a empresa é só do dono e pede o CNPJ digitado; o CNPJ errado é recusado antes da senha;
+  - o arquivo dos dados sai como anexo e sem cache, e não leva a senha, o segredo do segundo fator nem nenhum hash (testado contra os valores gravados);
+  - o membro baixa as empresas da organização, sem o e-mail dos outros integrantes.
+- **Proteções (etapa 9):**
+  - o erro 500 sai com os cabeçalhos de segurança e com o CORS da tela, pela mesma pilha de middlewares das outras respostas; antes, o Starlette o montava por fora de todos;
+  - o 500 tem frase fixa, sem a mensagem da exceção, e o uvicorn deixa de gravar a pilha: o registro é só o nosso, com o tipo e o lugar;
+  - a telemetria do FastAPI fica desligada no código, e nem `FASTAPI_OTEL_AUTO_CONFIGURE` nem um SDK instalado depois a ligam;
+  - o `GET /saude`, que consulta os dois motores, entrou no limite por IP; um teste de inventário obriga toda rota nova a ter limite ou um motivo escrito para não ter.
+- **Modo mock (etapa 10):** um teste de inventário (`tests/test_modo_mock.py`) põe cada rota do contrato num de três grupos: servida pelo mock (com `X-ContaAI-Mock: 1`), fixa ou só do modo real (501). As do modo real recebem um pedido válido, para o 501 não ser um 422 da validação, e respondem sem cookie e sem o marcador; nenhum método que muda o estado responde 2xx no mock sem o marcador. No uvicorn real, o 501 sai com os cabeçalhos de segurança e o CORS, e o mock não cria banco.
 
 ### Navegador: XSS, CSRF e DNS rebinding ([ADR 0011](adr/0011-contrato-da-tela-e-seguranca.md))
 
@@ -221,6 +240,8 @@ A tela é a próxima camada exposta a XSS. A fundação do frontend (PR 2 da E5)
 - **Erros no formato da RFC 9457.**
   - Nenhum traz pilha, URL ou host dos motores, caminho do servidor ou corpo de terceiros.
   - O erro não tratado vai para o log e o cliente recebe só "Erro interno".
+  - O log desse erro leva o tipo e o lugar no código, sem a mensagem, que pode repetir um valor enviado. O mesmo filtro vale para o log do uvicorn, que recebe a exceção relançada pelo Starlette (etapa 7 da C3-B, [ADR 0017](adr/0017-empresa-propria.md)).
+- **Log de acesso sem dado pessoal:** o do uvicorn (com o IP e o caminho com o CNPJ) fica desligado no código. O nosso grava o método, a rota-modelo (`/empresas/{cnpj}`), o status e a duração.
   - A validação não devolve o valor enviado.
 - **Cabeçalhos em toda resposta:** `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `X-Frame-Options: DENY` e `Cross-Origin-Resource-Policy: same-origin` (era `same-site` até o ADR 0011). Fora de `/docs`, também `Content-Security-Policy: default-src 'none'` e `Cache-Control: no-store`.
 - **CORS** só para as origens configuradas (`CONTAAI_CORS_ORIGENS`), sem credenciais.
@@ -279,6 +300,7 @@ Não usamos a `gitleaks-action`: desde a v2 ela deixou de ser MIT e exige chave 
   - o domínio público em `CONTAAI_HOSTS_PERMITIDOS` e em `CONTAAI_CORS_ORIGENS`;
   - HSTS e a API em `/api` no proxy;
   - o proxy repetir os cabeçalhos da tela (`cabecalhosDeSeguranca` em `frontend/csp.ts`), com a CSP e `frame-ancestors`.
+  - o log de acesso do proxy também sem o IP e sem o caminho com o CNPJ, como o da API (etapa 7 da C3-B). Sem isso, a decisão "os logs não guardam dado pessoal" vale só para a API.
 - **ESLint 9 em fim de vida** (desde 2026-08-06, sem correção de segurança). Fica por decisão do usuário até o `eslint-plugin-jsx-a11y` aceitar a 10; só roda no desenvolvimento e no CI ([ADR 0012](adr/0012-fundacao-do-frontend.md)).
-- **Erro 500 sem os cabeçalhos de segurança e de CORS**, porque o Starlette o monta por fora dos middlewares. O corpo não traz nada interno ([ADR 0009](adr/0009-camada-http-e-erros.md)).
+- **Telemetria do FastAPI** (OpenTelemetry, no FastAPI 0.165): desligada no código. Ligar observabilidade na E6 é decisão nova, e a documentação dela diz que grava as mensagens das exceções, as pilhas e o corpo lido; sem filtro, isso contraria "os logs não guardam dado pessoal" ([ADR 0017](adr/0017-empresa-propria.md)).
 - **Custo da IA real** ainda não verificado. Precisa ser conferido na página oficial do provedor antes de ligar a chave ([ADR 0006](adr/0006-agente.md)).

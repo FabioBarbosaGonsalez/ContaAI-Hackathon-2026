@@ -352,6 +352,28 @@ export interface paths {
         patch: operations["configurar_empresa_empresas__cnpj__patch"];
         trace?: never;
     };
+    "/empresas/{cnpj}/excluir": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Excluir Empresa
+         * @description Exclui a empresa de vez, sem excluir a conta: o catálogo, as notas, os custos, os preços, os alertas e os
+         *     clientes dela saem juntos, e o contador deixa de alcançá-la. Só o dono, com a senha de novo e o CNPJ digitado
+         *     para confirmar. O ContaAI não guarda o XML das notas: guarde-as antes (o arquivo fiscal é seu).
+         */
+        post: operations["excluir_empresa_empresas__cnpj__excluir_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/catalogo/itens": {
         parameters: {
             query?: never;
@@ -405,9 +427,71 @@ export interface paths {
         /**
          * Arquivar Item
          * @description Tira o item do catálogo. O histórico dele (custos, preços, classificações e alertas) fica; os alertas abertos
-         *     dele saem das listas, e uma nota nova com o código do fornecedor dele vira item sem par.
+         *     dele saem das listas, e uma nota nova com o código do fornecedor dele vira item sem par. Um item na compra mensal
+         *     de um cliente B2B não sai (409): a venda do cliente ficaria sem o item.
          */
         post: operations["arquivar_item_catalogo__item_id__arquivar_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clientes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Criar Cliente
+         * @description Um cliente empresa do regime regular e a compra mensal dele, com itens do catálogo da empresa. É a venda que a
+         *     comparação de regimes usa (GET /catalogo, `clientesB2B`).
+         */
+        post: operations["criar_cliente_clientes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/clientes/{cnpj_cliente}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Alterar Cliente
+         * @description Muda a razão social, o local (UF e município juntos) ou a compra mensal do cliente.
+         */
+        patch: operations["alterar_cliente_clientes__cnpj_cliente__patch"];
+        trace?: never;
+    };
+    "/clientes/{cnpj_cliente}/excluir": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Excluir Cliente
+         * @description Exclui o cliente de vez: o ContaAI não guarda histórico de clientes.
+         */
+        post: operations["excluir_cliente_clientes__cnpj_cliente__excluir_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -598,6 +682,29 @@ export interface paths {
          *     organização e os dados dela vão junto, inclusive o banco de estado.
          */
         post: operations["excluir_conta_excluir_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conta/dados": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Baixar Dados
+         * @description O arquivo com os dados da conta e das empresas das organizações dela (LGPD, arts. 18 II e V e 19), com a
+         *     senha de novo. Vai como anexo (Content-Disposition) e sem cache. Não leva a senha, o segredo do segundo fator
+         *     nem nenhum hash; os outros integrantes da organização não aparecem. Só com a conta: a demonstração e os
+         *     espaços de avaliação não têm dado pessoal.
+         */
+        post: operations["baixar_dados_conta_dados_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -887,6 +994,26 @@ export interface components {
              * @description Quando o preço sugerido foi aplicado.
              */
             aplicadoEm?: string | null;
+        };
+        /** AlertaExportado */
+        AlertaExportado: {
+            /** Id */
+            id: string;
+            /** Itemid */
+            itemId: string;
+            /** Notaid */
+            notaId: number;
+            /**
+             * Criadoem
+             * Format: date-time
+             */
+            criadoEm: string;
+            /** Aplicadoem */
+            aplicadoEm: string | null;
+            /** Alerta */
+            alerta: {
+                [key: string]: unknown;
+            };
         };
         /** AlertasResposta */
         AlertasResposta: {
@@ -1295,6 +1422,48 @@ export interface components {
             /** Fundamentacao */
             fundamentacao?: string | null;
         };
+        /** ClassificacaoExportada */
+        ClassificacaoExportada: {
+            /** Id */
+            id: number;
+            /** Itemid */
+            itemId: string;
+            /** Cst */
+            cst: string;
+            /** Cclasstrib */
+            cClassTrib: string;
+            /** Fonte */
+            fonte: string;
+            /**
+             * Vigentedesde
+             * Format: date-time
+             */
+            vigenteDesde: string;
+            /**
+             * Origem
+             * @constant
+             */
+            origem: "tela";
+        };
+        /**
+         * ClienteAlteracaoRequisicao
+         * @description Só os campos enviados mudam. O CNPJ do cliente não muda: outro CNPJ é outro cliente.
+         */
+        ClienteAlteracaoRequisicao: {
+            /**
+             * Cnpj
+             * @description A empresa que vende.
+             */
+            cnpj: string;
+            /** Razaosocial */
+            razaoSocial?: string | null;
+            /** Uf */
+            uf?: string | null;
+            /** Municipio */
+            municipio?: number | null;
+            /** Compramensal */
+            compraMensal?: components["schemas"]["ItemDaCompraMensal"][] | null;
+        };
         /** ClienteB2B */
         ClienteB2B: {
             /** Nome */
@@ -1328,6 +1497,101 @@ export interface components {
             /** Compramensal */
             compraMensal: components["schemas"]["ItemCompraMensal"][];
         };
+        /**
+         * ClienteExcluidoResposta
+         * @description O cliente saiu de vez: o ContaAI não guarda histórico de clientes.
+         */
+        ClienteExcluidoResposta: {
+            /** Cnpjcliente */
+            cnpjCliente: string;
+            /**
+             * Excluidoem
+             * Format: date-time
+             */
+            excluidoEm: string;
+        };
+        /** ClienteExcluirRequisicao */
+        ClienteExcluirRequisicao: {
+            /**
+             * Cnpj
+             * @description A empresa que vende.
+             */
+            cnpj: string;
+        };
+        /** ClienteExportado */
+        ClienteExportado: {
+            /** Cnpjcliente */
+            cnpjCliente: string;
+            /**
+             * Cliente
+             * @description Com a razão social do cliente, que pode ser dado pessoal.
+             */
+            cliente: {
+                [key: string]: unknown;
+            };
+        };
+        /**
+         * ClienteNovoRequisicao
+         * @description Um cliente empresa da empresa `cnpj`. A comparação de regimes é feita na venda a um cliente do regime
+         *     regular: um cliente do Simples Nacional é recusado (422).
+         */
+        ClienteNovoRequisicao: {
+            /**
+             * Cnpj
+             * @description A empresa que vende.
+             */
+            cnpj: string;
+            /**
+             * Cnpjcliente
+             * @description 14 posições, sem pontos, barra nem traço: as 12 primeiras com dígitos ou letras maiúsculas (CNPJ alfanumérico, IN RFB 2.229/2024) e as 2 últimas com os dígitos verificadores.
+             */
+            cnpjCliente: string;
+            /**
+             * Razaosocial
+             * @description Razão social da empresa.
+             */
+            razaoSocial: string;
+            /**
+             * Regime
+             * @enum {string}
+             */
+            regime: "regime_regular" | "simples_nacional";
+            /**
+             * Uf
+             * @description Sigla da UF.
+             */
+            uf: string;
+            /**
+             * Municipio
+             * @description Código IBGE do município (7 dígitos).
+             */
+            municipio: number;
+            /**
+             * Compramensal
+             * @description O que o cliente compra num mês; cada item entra uma vez.
+             */
+            compraMensal: components["schemas"]["ItemDaCompraMensal"][];
+        };
+        /** ClienteQueCompra */
+        ClienteQueCompra: {
+            /** Cnpj */
+            cnpj: string;
+            /** Nome */
+            nome: string;
+        };
+        /** ClienteResposta */
+        ClienteResposta: {
+            cliente: components["schemas"]["ClienteB2BEstado"];
+        };
+        /** CodigoFornecedorExportado */
+        CodigoFornecedorExportado: {
+            /** Cnpjfornecedor */
+            cnpjFornecedor: string;
+            /** Codigo */
+            codigo: string;
+            /** Itemid */
+            itemId: string;
+        };
         /** CodigoRequisicao */
         CodigoRequisicao: {
             /**
@@ -1335,6 +1599,42 @@ export interface components {
              * @description Os 6 dígitos do aplicativo autenticador.
              */
             codigo: string;
+        };
+        /**
+         * ContaDadosRequisicao
+         * @description O arquivo leva tudo o que a conta guarda: a senha de novo, como na exclusão da conta.
+         */
+        ContaDadosRequisicao: {
+            /** Senha */
+            senha: string;
+        };
+        /**
+         * ContaDadosResposta
+         * @description A cópia dos dados (LGPD, art. 19, I e §3º): em formato simplificado, na hora, e num formato que permite
+         *     usar de novo (JSON). Não leva a senha, o segredo do segundo fator nem nenhum hash de senha, token ou código.
+         */
+        ContaDadosResposta: {
+            /**
+             * Formato
+             * @description Versão do formato deste arquivo.
+             * @constant
+             */
+            formato: "contaai-dados-1";
+            /**
+             * Geradoem
+             * Format: date-time
+             */
+            geradoEm: string;
+            conta: components["schemas"]["DadosDaPessoa"];
+            /** Organizacoes */
+            organizacoes: components["schemas"]["OrganizacaoExportada"][];
+            /**
+             * Naoincluido
+             * @description O que o ContaAI guarda e não vai no arquivo, e por quê.
+             */
+            naoIncluido: string[];
+            /** Aviso */
+            aviso: string;
         };
         /** ContaResposta */
         ContaResposta: {
@@ -1426,6 +1726,60 @@ export interface components {
              * Format: date-time
              */
             vigenteDesde: string;
+        };
+        /** CustoExportado */
+        CustoExportado: {
+            /** Id */
+            id: number;
+            /** Itemid */
+            itemId: string;
+            /** Notaid */
+            notaId: number;
+            /**
+             * Data
+             * Format: date-time
+             */
+            data: string;
+            /** Quantidade */
+            quantidade: string;
+            /** Custounitario */
+            custoUnitario: string;
+            /** Creditounitario */
+            creditoUnitario: string | null;
+            /** Fontecredito */
+            fonteCredito: ("nfe" | "motor") | null;
+        };
+        /** DadosDaPessoa */
+        DadosDaPessoa: {
+            /** Email */
+            email: string;
+            /**
+             * Criadaem
+             * Format: date-time
+             */
+            criadaEm: string;
+            /**
+             * Situacao
+             * @enum {string}
+             */
+            situacao: "pendente" | "ativa";
+            termos: components["schemas"]["TermosDaConta"] | null;
+            /** Segundofatorconfirmadoem */
+            segundoFatorConfirmadoEm: string | null;
+            /**
+             * Codigosrecuperacaorestantes
+             * @description Só a quantidade: os códigos não ficam guardados.
+             */
+            codigosRecuperacaoRestantes: number;
+            /** @description Falhas seguidas de entrada, se houver. */
+            tentativas: components["schemas"]["TentativasExportadas"] | null;
+            /**
+             * Eventos
+             * @description Todos, os mais recentes primeiro.
+             */
+            eventos: components["schemas"]["EventoSeguranca"][];
+            /** Sessoes */
+            sessoes: components["schemas"]["SessaoExportada"][];
         };
         /** Emitente */
         Emitente: {
@@ -1525,6 +1879,60 @@ export interface components {
             premissasDas?: components["schemas"]["PremissasDasDaEmpresa"] | null;
             /** Cargaatualpct */
             cargaAtualPct?: number | string | null;
+        };
+        /**
+         * EmpresaExcluirRequisicao
+         * @description Excluir a empresa é definitivo: a senha de novo e o CNPJ digitado para confirmar.
+         */
+        EmpresaExcluirRequisicao: {
+            /** Senha */
+            senha: string;
+            /**
+             * Cnpjconfirmacao
+             * @description O CNPJ da empresa, digitado de novo (o mesmo do caminho).
+             */
+            cnpjConfirmacao: string;
+        };
+        /**
+         * EmpresaExportada
+         * @description Uma empresa da organização. `empresa` vazio: o acesso ficou sem a empresa no banco (uma falha no meio de
+         *     uma exclusão); o recadastro aceita esse caso.
+         */
+        EmpresaExportada: {
+            /** Cnpj */
+            cnpj: string;
+            /**
+             * Acessodesde
+             * Format: date-time
+             */
+            acessoDesde: string;
+            /** Empresa */
+            empresa: {
+                [key: string]: unknown;
+            } | null;
+            /** Cenario */
+            cenario: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Itens
+             * @description Inclusive os arquivados.
+             */
+            itens: components["schemas"]["ItemExportado"][];
+            /** Codigosfornecedor */
+            codigosFornecedor: components["schemas"]["CodigoFornecedorExportado"][];
+            /** Notas */
+            notas: components["schemas"]["NotaExportada"][];
+            /** Custos */
+            custos: components["schemas"]["CustoExportado"][];
+            /** Precos */
+            precos: components["schemas"]["PrecoExportado"][];
+            /** Alertas */
+            alertas: components["schemas"]["AlertaExportado"][];
+            /** Classificacoes */
+            classificacoes: components["schemas"]["ClassificacaoExportada"][];
+            /** Clientesb2B */
+            clientesB2B: components["schemas"]["ClienteExportado"][];
         };
         /** EmpresaNoPainel */
         EmpresaNoPainel: {
@@ -1973,6 +2381,19 @@ export interface components {
             /** Quantidade */
             quantidade: string;
         };
+        /** ItemDaCompraMensal */
+        ItemDaCompraMensal: {
+            /**
+             * Itemid
+             * @description Id de um item do catálogo da empresa.
+             */
+            itemId: string;
+            /**
+             * Quantidade
+             * @description Quantidade por mês, na unidade do item.
+             */
+            quantidade: number | string;
+        };
         /** ItemEntrada */
         ItemEntrada: {
             /** Id */
@@ -2007,6 +2428,21 @@ export interface components {
              * @description CBS + IBS da compra por unidade, lida do grupo IBSCBS da NF-e. No carrinho e no preço-alvo só é usada no Simples tradicional, onde entra no custo; na comparação de regimes é o crédito das compras do híbrido. Ausente: o backend calcula no motor RR sobre o custo, na data e com as alíquotas da operação, com a hipótese exibida de fornecedor no regime regular.
              */
             creditoCompraUnitario?: number | string | null;
+        };
+        /** ItemExportado */
+        ItemExportado: {
+            /** Itemid */
+            itemId: string;
+            /** Ncm */
+            ncm: string;
+            /** Unidade */
+            unidade: string;
+            /** Arquivadoem */
+            arquivadoEm: string | null;
+            /** Item */
+            item: {
+                [key: string]: unknown;
+            };
         };
         /** ItemNotaCasado */
         ItemNotaCasado: {
@@ -2257,6 +2693,36 @@ export interface components {
             alertas: components["schemas"]["Alerta"][];
         };
         /**
+         * NotaExportada
+         * @description A nota importada: o ContaAI não guarda o XML, só o resumo dele (sha256) e o recibo da importação.
+         */
+        NotaExportada: {
+            /** Id */
+            id: number;
+            /** Cnpjemitente */
+            cnpjEmitente: string;
+            /** Serie */
+            serie: string;
+            /** Numero */
+            numero: string;
+            /**
+             * Dataemissao
+             * Format: date-time
+             */
+            dataEmissao: string;
+            /** Sha256 */
+            sha256: string;
+            /**
+             * Importadaem
+             * Format: date-time
+             */
+            importadaEm: string;
+            /** Recibo */
+            recibo: {
+                [key: string]: unknown;
+            };
+        };
+        /**
          * NotaImportada
          * @description Uma NF-e de compra já importada. O resumo e as contagens de itens vêm do recibo gravado na importação;
          *     as de alertas, do estado atual (um alerta aplicado depois deixa de contar como aberto).
@@ -2347,6 +2813,33 @@ export interface components {
              * @enum {string}
              */
             papel: "dono" | "membro";
+        };
+        /**
+         * OrganizacaoExportada
+         * @description Uma organização da pessoa, com as empresas dela. Os outros integrantes não aparecem (nem o e-mail deles).
+         */
+        OrganizacaoExportada: {
+            /** Id */
+            id: string;
+            /** Nome */
+            nome: string;
+            /**
+             * Criadaem
+             * Format: date-time
+             */
+            criadaEm: string;
+            /**
+             * Papel
+             * @enum {string}
+             */
+            papel: "dono" | "membro";
+            /**
+             * Desde
+             * Format: date-time
+             */
+            desde: string;
+            /** Empresas */
+            empresas: components["schemas"]["EmpresaExportada"][];
         };
         /** OrigemAlerta */
         OrigemAlerta: {
@@ -2457,6 +2950,27 @@ export interface components {
             memoria?: {
                 [key: string]: string;
             } | null;
+        };
+        /** PrecoExportado */
+        PrecoExportado: {
+            /** Id */
+            id: number;
+            /** Itemid */
+            itemId: string;
+            /** Valorunitario */
+            valorUnitario: string;
+            /**
+             * Vigentedesde
+             * Format: date-time
+             */
+            vigenteDesde: string;
+            /**
+             * Origem
+             * @enum {string}
+             */
+            origem: "semente" | "alerta" | "tela";
+            /** Alertaid */
+            alertaId: string | null;
         };
         /**
          * Premissa
@@ -2627,6 +3141,36 @@ export interface components {
              * @default []
              */
             erros: components["schemas"]["ErroMotor"][];
+        };
+        /**
+         * ProblemaItemEmUso
+         * @description 409 /problemas/item-em-uso: o item está na compra mensal de clientes B2B e não pode sair do catálogo (C3-B,
+         *     ADR 0017). `clientes` diz quais, para a tela levar a pessoa até eles.
+         */
+        ProblemaItemEmUso: {
+            /**
+             * Type
+             * @description URI do tipo do problema (relativa à API).
+             * @default about:blank
+             */
+            type: string;
+            /**
+             * Title
+             * @description Resumo do tipo do problema; não muda entre ocorrências.
+             */
+            title: string;
+            /**
+             * Status
+             * @description O mesmo código HTTP da resposta.
+             */
+            status: number;
+            /**
+             * Detail
+             * @description Explicação desta ocorrência, para a pessoa ler.
+             */
+            detail?: string | null;
+            /** Clientes */
+            clientes: components["schemas"]["ClienteQueCompra"][];
         };
         /**
          * ProblemaMotor
@@ -2820,6 +3364,38 @@ export interface components {
             /** Aviso */
             aviso?: string | null;
         };
+        /** SessaoExportada */
+        SessaoExportada: {
+            /**
+             * Criadaem
+             * Format: date-time
+             */
+            criadaEm: string;
+            /**
+             * Ultimouso
+             * Format: date-time
+             */
+            ultimoUso: string;
+            /**
+             * Expiraem
+             * Format: date-time
+             */
+            expiraEm: string;
+            /**
+             * Atual
+             * @description A sessão que pediu o arquivo.
+             */
+            atual: boolean;
+        };
+        /** TentativasExportadas */
+        TentativasExportadas: {
+            /** Falhasseguidas */
+            falhasSeguidas: number;
+            /** Esperaate */
+            esperaAte: string | null;
+            /** Bloqueada */
+            bloqueada: boolean;
+        };
         /** TermosDaConta */
         TermosDaConta: {
             /** Versao */
@@ -2981,7 +3557,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
-            /** @description POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
+            /** @description Pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -3015,6 +3591,15 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemaMotor"] | components["schemas"]["ProblemaValidacao"];
+                };
+            };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
                 };
             };
             /** @description O motor devolveu uma resposta que o ContaAI não reconhece. */
@@ -3068,7 +3653,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
-            /** @description POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
+            /** @description Pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -3102,6 +3687,15 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemaCalculo"] | components["schemas"]["ProblemaMotor"] | components["schemas"]["ProblemaValidacao"];
+                };
+            };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
                 };
             };
             /** @description O motor devolveu uma resposta que o ContaAI não reconhece. */
@@ -3151,6 +3745,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
         };
     };
     regime_comparar_regime_comparar_post: {
@@ -3184,7 +3787,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
-            /** @description POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
+            /** @description Pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -3218,6 +3821,15 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemaCalculo"] | components["schemas"]["ProblemaMotor"] | components["schemas"]["ProblemaValidacao"];
+                };
+            };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
                 };
             };
             /** @description O motor devolveu uma resposta que o ContaAI não reconhece. */
@@ -3284,7 +3896,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
-            /** @description POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
+            /** @description Na organização, papel sem permissão para mudar os dados da empresa (só o dono e o membro mudam); ou pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -3349,6 +3961,15 @@ export interface operations {
             };
             /** @description Limite de requisições por minuto atingido (header Retry-After). */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3447,6 +4068,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
         };
     };
     aplicar_alerta_alertas__alerta_id__aplicar_post: {
@@ -3491,7 +4121,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
-            /** @description POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
+            /** @description Na organização, papel sem permissão para mudar os dados da empresa (só o dono e o membro mudam); ou pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -3547,6 +4177,15 @@ export interface operations {
             };
             /** @description Limite de requisições por minuto atingido (header Retry-After). */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3612,7 +4251,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
-            /** @description POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
+            /** @description Na organização, papel sem permissão para mudar os dados da empresa (só o dono e o membro mudam); ou pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -3668,6 +4307,15 @@ export interface operations {
             };
             /** @description Limite de requisições por minuto atingido (header Retry-After). */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3733,7 +4381,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
-            /** @description POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
+            /** @description Na organização, papel sem permissão para mudar os dados da empresa (só o dono e o membro mudam); ou pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -3789,6 +4437,15 @@ export interface operations {
             };
             /** @description Limite de requisições por minuto atingido (header Retry-After). */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3894,6 +4551,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
         };
     };
     listar_notas_notas_get: {
@@ -3967,6 +4633,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
         };
     };
     contador_painel_contador_painel_get: {
@@ -4017,6 +4692,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemaValidacao"];
                 };
             };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
         };
     };
     referencias_ufs_referencias_ufs_get: {
@@ -4057,6 +4741,15 @@ export interface operations {
             };
             /** @description Limite de requisições por minuto atingido (header Retry-After). */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4141,6 +4834,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
             /** @description Rota que só funciona no modo real (CONTAAI_MODO=real). */
             501: {
                 headers: {
@@ -4208,6 +4910,15 @@ export interface operations {
             };
             /** @description Limite de requisições por minuto atingido (header Retry-After). */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4284,7 +4995,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
-            /** @description Só o dono da organização cadastra e configura a empresa. */
+            /** @description Só o dono da organização cadastra e configura a empresa; ou pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -4340,6 +5051,15 @@ export interface operations {
             };
             /** @description Limite de requisições por minuto atingido (header Retry-After). */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4415,15 +5135,6 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
-            /** @description Só o dono da organização cadastra e configura a empresa. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Problema"];
-                };
-            };
             /** @description Empresa que a conta não alcança (a mesma resposta de uma que não existe). */
             404: {
                 headers: {
@@ -4444,6 +5155,15 @@ export interface operations {
             };
             /** @description Limite de requisições por minuto atingido (header Retry-After). */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4505,7 +5225,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
-            /** @description Só o dono da organização cadastra e configura a empresa. */
+            /** @description Só o dono da organização cadastra e configura a empresa; ou pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -4532,6 +5252,24 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
+            /** @description Corpo sem Content-Length (corpo em pedaços não é aceito). */
+            411: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Corpo maior que o limite. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
             /** @description CNPJ com dígito errado, município fora da UF, atividade que o ContaAI não calcula, ou entrada fora do contrato. */
             422: {
                 headers: {
@@ -4543,6 +5281,15 @@ export interface operations {
             };
             /** @description Limite de requisições por minuto atingido (header Retry-After). */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4575,6 +5322,121 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemaMotor"];
+                };
+            };
+        };
+    };
+    excluir_empresa_empresas__cnpj__excluir_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description CNPJ da empresa da conta. */
+                cnpj: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmpresaExcluirRequisicao"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Sem sessão, sessão encerrada ou expirada, ou senha incorreta. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Só o dono da organização exclui a empresa; ou pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Empresa que a conta não alcança (a mesma resposta de uma que não existe). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Corpo sem Content-Length (corpo em pedaços não é aceito). */
+            411: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Corpo maior que o limite. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description O CNPJ digitado para confirmar não é o da empresa, ou entrada fora do contrato. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaValidacao"];
+                };
+            };
+            /** @description Espera depois de falhas seguidas da senha ou limite por IP (header Retry-After), ou conta bloqueada (/problemas/conta-bloqueada). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Rota que só funciona no modo real (CONTAAI_MODO=real). */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
                 };
             };
         };
@@ -4623,7 +5485,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
-            /** @description POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
+            /** @description Na organização, papel sem permissão para mudar os dados da empresa (só o dono e o membro mudam); ou pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -4679,6 +5541,15 @@ export interface operations {
             };
             /** @description Limite de requisições por minuto atingido (header Retry-After). */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4762,6 +5633,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
+            /** @description Na organização, papel sem permissão para mudar os dados da empresa (só o dono e o membro mudam); ou pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
             /** @description Empresa ou alerta não encontrado, ou espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente). */
             404: {
                 headers: {
@@ -4780,6 +5660,24 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
+            /** @description Corpo sem Content-Length (corpo em pedaços não é aceito). */
+            411: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Corpo maior que o limite. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
             /** @description NCM fora dos dados abertos, NCM com Imposto Seletivo, classificação que não vale para a NCM, CNPJ do fornecedor com dígito errado (na empresa da conta), ou entrada fora do contrato. */
             422: {
                 headers: {
@@ -4791,6 +5689,15 @@ export interface operations {
             };
             /** @description Limite de requisições por minuto atingido (header Retry-After). */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4874,7 +5781,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
-            /** @description POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
+            /** @description Na organização, papel sem permissão para mudar os dados da empresa (só o dono e o membro mudam); ou pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -4892,7 +5799,134 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
-            /** @description Código do fornecedor já em outro item, limite de itens, ou nada a mudar. */
+            /** @description O item está na compra mensal de clientes B2B (/problemas/item-em-uso, com a lista em `clientes`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaItemEmUso"] | components["schemas"]["Problema"];
+                };
+            };
+            /** @description Corpo sem Content-Length (corpo em pedaços não é aceito). */
+            411: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Corpo maior que o limite. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaValidacao"];
+                };
+            };
+            /** @description Limite de requisições por minuto atingido (header Retry-After). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Rota que só funciona no modo real (CONTAAI_MODO=real). */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+        };
+    };
+    criar_cliente_clientes_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-ContaAI-Token"?: string | null;
+                /** @description Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada. */
+                "X-ContaAI-Espaco"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClienteNovoRequisicao"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClienteResposta"];
+                };
+            };
+            /** @description Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Token da demo ausente ou errado (header X-ContaAI-Token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Na organização, papel sem permissão para mudar os dados da empresa (só o dono e o membro mudam); ou pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Empresa ou alerta não encontrado, ou espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Cliente já cadastrado, limite de clientes, ou nada a mudar. */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -4919,7 +5953,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
-            /** @description NCM fora dos dados abertos, NCM com Imposto Seletivo, classificação que não vale para a NCM, CNPJ do fornecedor com dígito errado (na empresa da conta), ou entrada fora do contrato. */
+            /** @description Cliente do Simples Nacional, CNPJ do cliente com dígito errado (na empresa da conta), cliente igual à empresa, município fora da UF, item da compra fora do catálogo, ou entrada fora do contrato. */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -4930,6 +5964,15 @@ export interface operations {
             };
             /** @description Limite de requisições por minuto atingido (header Retry-After). */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4966,6 +6009,275 @@ export interface operations {
             };
         };
     };
+    alterar_cliente_clientes__cnpj_cliente__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-ContaAI-Token"?: string | null;
+                /** @description Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada. */
+                "X-ContaAI-Espaco"?: string | null;
+            };
+            path: {
+                /** @description CNPJ do cliente B2B. */
+                cnpj_cliente: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClienteAlteracaoRequisicao"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClienteResposta"];
+                };
+            };
+            /** @description Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Token da demo ausente ou errado (header X-ContaAI-Token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Na organização, papel sem permissão para mudar os dados da empresa (só o dono e o membro mudam); ou pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Empresa ou alerta não encontrado, ou espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Cliente já cadastrado, limite de clientes, ou nada a mudar. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Corpo sem Content-Length (corpo em pedaços não é aceito). */
+            411: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Corpo maior que o limite. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Cliente do Simples Nacional, CNPJ do cliente com dígito errado (na empresa da conta), cliente igual à empresa, município fora da UF, item da compra fora do catálogo, ou entrada fora do contrato. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaValidacao"];
+                };
+            };
+            /** @description Limite de requisições por minuto atingido (header Retry-After). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Rota que só funciona no modo real (CONTAAI_MODO=real). */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description O motor devolveu uma resposta que o ContaAI não reconhece. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaMotor"];
+                };
+            };
+            /** @description Motor indisponível. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaMotor"];
+                };
+            };
+        };
+    };
+    excluir_cliente_clientes__cnpj_cliente__excluir_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-ContaAI-Token"?: string | null;
+                /** @description Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada. */
+                "X-ContaAI-Espaco"?: string | null;
+            };
+            path: {
+                /** @description CNPJ do cliente B2B. */
+                cnpj_cliente: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClienteExcluirRequisicao"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClienteExcluidoResposta"];
+                };
+            };
+            /** @description Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Token da demo ausente ou errado (header X-ContaAI-Token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Na organização, papel sem permissão para mudar os dados da empresa (só o dono e o membro mudam); ou pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Empresa ou alerta não encontrado, ou espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Corpo sem Content-Length (corpo em pedaços não é aceito). */
+            411: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Corpo maior que o limite. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaValidacao"];
+                };
+            };
+            /** @description Limite de requisições por minuto atingido (header Retry-After). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Rota que só funciona no modo real (CONTAAI_MODO=real). */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+        };
+    };
     criar_espaco_espacos_post: {
         parameters: {
             query?: never;
@@ -4993,7 +6305,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
-            /** @description POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
+            /** @description Pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -5031,6 +6343,15 @@ export interface operations {
             };
             /** @description Limite de requisições por minuto atingido (header Retry-After). */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5115,6 +6436,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemaValidacao"];
                 };
             };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
             /** @description Rota que só funciona no modo real (CONTAAI_MODO=real). */
             501: {
                 headers: {
@@ -5157,7 +6487,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
-            /** @description POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
+            /** @description Pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -5204,6 +6534,15 @@ export interface operations {
             };
             /** @description Limite de requisições por minuto atingido (header Retry-After). */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5262,7 +6601,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
-            /** @description POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
+            /** @description Pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -5300,6 +6639,15 @@ export interface operations {
             };
             /** @description Espera depois de falhas seguidas na conta ou limite por IP (header Retry-After), ou conta bloqueada depois de 100 falhas (/problemas/conta-bloqueada: só o administrador desbloqueia). */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5358,7 +6706,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
-            /** @description POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
+            /** @description Pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -5396,6 +6744,15 @@ export interface operations {
             };
             /** @description Espera depois de falhas seguidas na conta ou limite por IP (header Retry-After), ou conta bloqueada depois de 100 falhas (/problemas/conta-bloqueada: só o administrador desbloqueia). */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5448,6 +6805,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
+            /** @description Pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -5455,6 +6821,15 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemaValidacao"];
+                };
+            };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
                 };
             };
             /** @description Rota que só funciona no modo real (CONTAAI_MODO=real). */
@@ -5508,7 +6883,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
-            /** @description POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
+            /** @description Pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -5546,6 +6921,15 @@ export interface operations {
             };
             /** @description Espera depois de falhas seguidas na conta ou limite por IP (header Retry-After), ou conta bloqueada depois de 100 falhas (/problemas/conta-bloqueada: só o administrador desbloqueia). */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5609,6 +6993,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemaValidacao"];
                 };
             };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
             /** @description Rota que só funciona no modo real (CONTAAI_MODO=real). */
             501: {
                 headers: {
@@ -5654,6 +7047,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
+            /** @description Pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -5661,6 +7063,15 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemaValidacao"];
+                };
+            };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
                 };
             };
             /** @description Rota que só funciona no modo real (CONTAAI_MODO=real). */
@@ -5712,7 +7123,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
-            /** @description POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
+            /** @description Pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -5759,6 +7170,120 @@ export interface operations {
             };
             /** @description Espera depois de falhas seguidas (header Retry-After), ou conta bloqueada (/problemas/conta-bloqueada). */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Rota que só funciona no modo real (CONTAAI_MODO=real). */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+        };
+    };
+    baixar_dados_conta_dados_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContaDadosRequisicao"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContaDadosResposta"];
+                };
+            };
+            /** @description Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Sem sessão, sessão encerrada ou expirada, ou senha incorreta. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Corpo sem Content-Length (corpo em pedaços não é aceito). */
+            411: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Corpo maior que o limite. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaValidacao"];
+                };
+            };
+            /** @description Espera depois de falhas seguidas (header Retry-After), ou conta bloqueada (/problemas/conta-bloqueada). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5819,6 +7344,15 @@ export interface operations {
             };
             /** @description Limite de requisições por minuto atingido (header Retry-After). */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5909,6 +7443,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
             /** @description O motor devolveu uma resposta que o ContaAI não reconhece. */
             502: {
                 headers: {
@@ -5960,7 +7503,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
-            /** @description POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
+            /** @description Pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -5998,6 +7541,15 @@ export interface operations {
             };
             /** @description Limite de requisições por minuto atingido (header Retry-After). */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6090,6 +7642,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
             /** @description O motor devolveu uma resposta que o ContaAI não reconhece. */
             502: {
                 headers: {
@@ -6154,7 +7715,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
-            /** @description POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
+            /** @description Pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -6192,6 +7753,15 @@ export interface operations {
             };
             /** @description Limite de mensagens por minuto atingido (header Retry-After). */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6259,7 +7829,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
-            /** @description POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
+            /** @description Com a sessão de uma conta: os dados da organização não são trocados pelas sementes; ou pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -6306,6 +7876,15 @@ export interface operations {
             };
             /** @description Limite de requisições por minuto atingido (header Retry-After). */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6369,6 +7948,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
         };
     };
     tipo_problema_problemas__nome__get: {
@@ -6416,6 +8004,15 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["ProblemaValidacao"];
+                };
+            };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
                 };
             };
         };

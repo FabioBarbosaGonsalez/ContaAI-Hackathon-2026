@@ -56,7 +56,7 @@ Decisões do usuário em 2026-11-25 (todas as recomendações aceitas):
 
 ### Segurança
 
-- **O id vai num header, não na URL.** O log de acesso padrão do uvicorn registra a linha da requisição (método e caminho), não os headers.
+- **O id vai num header, não na URL.** O log de acesso padrão do uvicorn registra a linha da requisição (método e caminho), não os headers. Desde a etapa 7 da C3-B, o log de acesso é o nosso, com a rota-modelo e sem o IP, e também não lê headers ([ADR 0017](0017-empresa-propria.md)).
 - **O id só vira nome de arquivo depois de conferido pelo padrão `^[0-9a-f]{32}$`.** Fora do padrão, o header dá 422 (validação do contrato), e o gerenciador recusa de novo antes de montar qualquer caminho. Testado com `../`, maiúsculas, tamanho errado e quebra de linha.
 - **Abuso:**
   - `POST /espacos` tem limite próprio por IP (`CONTAAI_LIMITE_ESPACOS_POR_MINUTO`, 5) além do limite geral;

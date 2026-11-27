@@ -146,7 +146,36 @@ class Conta:
 
 @dataclass(frozen=True)
 class Exclusao:
-    organizacao_apagada: str | None
+    """As organizações que saíram junto com a pessoa (as que só tinham ela): os bancos delas também saem."""
+
+    organizacoes_apagadas: list[str]
+
+
+@dataclass(frozen=True)
+class OrganizacaoDaPessoa:
+    id: str
+    nome: str
+    criada_em: datetime
+    papel: str
+    desde: datetime
+    acessos: list[tuple[str, datetime]]  # (CNPJ, desde)
+
+
+@dataclass(frozen=True)
+class DadosDaPessoa:
+    """O que o contas.db guarda da pessoa, para o arquivo dos dados (LGPD, art. 19). Sem a senha, o segredo do TOTP
+    e os hashes (de senha, token e código)."""
+
+    email: str
+    criada_em: datetime
+    situacao: str
+    termos: tuple[str, datetime] | None
+    segundo_fator_confirmado_em: datetime | None
+    codigos_restantes: int
+    tentativas: tuple[int, datetime | None, bool] | None  # (falhas seguidas, espera até, bloqueada)
+    eventos: list[tuple[str, datetime]]
+    sessoes: list[tuple[datetime, datetime, datetime, bool]]  # (criada, último uso, expira, é a atual)
+    organizacoes: list[OrganizacaoDaPessoa]
 
 
 # -- apoio ------------------------------------------------------------------------------------------------
@@ -593,15 +622,21 @@ class Contas:
         with self.banco.transacao(escrita=True) as c:
             c.execute("DELETE FROM acessos_empresa WHERE organizacao_id = ? AND cnpj = ?", (organizacao_id, cnpj))
 
-    def excluir(self, sessao: SessaoAtiva, senha: str, agora: datetime) -> Exclusao:
-        """Apaga a pessoa (LGPD, art. 18 VI). Se ela é a única integrante, a organização vai junto; se é a única
-        dona de uma organização com outros membros, precisa passar a posse antes."""
+    def conferir_senha(self, usuario_id: str, senha: str, agora: datetime) -> None:
+        """A senha de novo, antes de uma ação definitiva (excluir a conta ou a empresa) ou de baixar os dados. A
+        senha errada conta como falha de entrada: a mesma espera e o mesmo bloqueio da entrada (NIST 3.2.2)."""
         with self.banco.transacao() as c:
-            linha = c.execute("SELECT senha_hash FROM usuarios WHERE id = ?", (sessao.usuario_id,)).fetchone()
-            _barrar(self._falhas(c, sessao.usuario_id), agora)
+            linha = c.execute("SELECT senha_hash FROM usuarios WHERE id = ?", (usuario_id,)).fetchone()
+            _barrar(self._falhas(c, usuario_id), agora)
         if linha is None or not regras.confere(linha["senha_hash"], senha):
-            self._falhou(sessao.usuario_id, agora)
+            self._falhou(usuario_id, agora)
             raise EntradaRecusada("Senha incorreta.")
+
+    def excluir(self, sessao: SessaoAtiva, senha: str, agora: datetime) -> Exclusao:
+        """Apaga a pessoa (LGPD, art. 18 VI). As organizações em que ela é a única integrante vão junto, todas (e
+        não só a da sessão); se é a única dona de uma organização com outros membros, precisa passar a posse
+        antes."""
+        self.conferir_senha(sessao.usuario_id, senha, agora)
         with self.banco.transacao(escrita=True) as c:
             presa = c.execute(
                 "SELECT 1 FROM membros m WHERE m.usuario_id = ? AND m.papel = 'dono' "
@@ -613,7 +648,73 @@ class Contas:
             if presa:
                 raise PosseNaoTransferida
             apagadas = self._apagar_usuario(c, sessao.usuario_id)
-        return Exclusao(sessao.organizacao_id if sessao.organizacao_id in apagadas else None)
+        return Exclusao(apagadas)
+
+    def dados_da_pessoa(self, usuario_id: str, token: str) -> DadosDaPessoa:
+        """Tudo o que o contas.db guarda da pessoa, numa leitura só. `token`: o da sessão que pede, para marcá-la."""
+        atual = _resumo(token)
+        with self.banco.transacao() as c:
+            u = c.execute(
+                "SELECT email, criado_em, situacao, termos_versao, termos_aceitos_em FROM usuarios WHERE id = ?",
+                (usuario_id,),
+            ).fetchone()
+            fator = c.execute("SELECT confirmado_em FROM segundo_fator WHERE usuario_id = ?", (usuario_id,)).fetchone()
+            restantes = c.execute(
+                "SELECT count(*) AS n FROM codigos_recuperacao WHERE usuario_id = ?", (usuario_id,)
+            ).fetchone()["n"]
+            t = c.execute(
+                "SELECT falhas_seguidas, espera_ate, bloqueada FROM tentativas WHERE usuario_id = ?", (usuario_id,)
+            ).fetchone()
+            eventos = [
+                (r["tipo"], _d(r["em"]))
+                for r in c.execute(
+                    "SELECT tipo, em FROM eventos_seguranca WHERE usuario_id = ? ORDER BY em DESC, id", (usuario_id,)
+                )
+            ]
+            sessoes = [
+                (_d(r["criada_em"]), _d(r["ultimo_uso"]), _d(r["expira_em"]), r["hash"] == atual)
+                for r in c.execute(
+                    "SELECT hash, criada_em, ultimo_uso, expira_em FROM sessoes WHERE usuario_id = ? "
+                    "ORDER BY criada_em DESC",
+                    (usuario_id,),
+                )
+            ]
+            organizacoes = []
+            for o in c.execute(
+                "SELECT o.id, o.nome, o.criada_em, m.papel, m.desde FROM membros m "
+                "JOIN organizacoes o ON o.id = m.organizacao_id WHERE m.usuario_id = ? ORDER BY m.desde, o.id",
+                (usuario_id,),
+            ).fetchall():
+                acessos = [
+                    (r["cnpj"], _d(r["desde"]))
+                    for r in c.execute(
+                        "SELECT cnpj, desde FROM acessos_empresa WHERE organizacao_id = ? ORDER BY cnpj", (o["id"],)
+                    )
+                ]
+                organizacoes.append(
+                    OrganizacaoDaPessoa(o["id"], o["nome"], _d(o["criada_em"]), o["papel"], _d(o["desde"]), acessos)
+                )
+        return DadosDaPessoa(
+            email=u["email"],
+            criada_em=_d(u["criado_em"]),
+            situacao=u["situacao"],
+            termos=(u["termos_versao"], _d(u["termos_aceitos_em"])) if u["termos_versao"] else None,
+            segundo_fator_confirmado_em=_d(fator["confirmado_em"]) if fator and fator["confirmado_em"] else None,
+            codigos_restantes=restantes,
+            tentativas=(
+                (t["falhas_seguidas"], _d(t["espera_ate"]) if t["espera_ate"] else None, bool(t["bloqueada"]))
+                if t
+                else None
+            ),
+            eventos=eventos,
+            sessoes=sessoes,
+            organizacoes=organizacoes,
+        )
+
+    def organizacoes(self) -> frozenset[str]:
+        """Os ids das organizações que existem (a limpeza dos bancos órfãos, na subida)."""
+        with self.banco.transacao() as c:
+            return frozenset(r["id"] for r in c.execute("SELECT id FROM organizacoes"))
 
     # -- administração ----------------------------------------------------------------------------------
 

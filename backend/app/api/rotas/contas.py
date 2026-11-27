@@ -11,6 +11,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Response
 
+from app import dados_da_conta
 from app.api import respostas
 from app.api.dependencias import (
     COOKIE_PASSE,
@@ -19,6 +20,7 @@ from app.api.dependencias import (
     PasseCookie,
     SessaoCookie,
     apagar_banco_da_organizacao,
+    banco_da_organizacao,
     contas,
     cookie_apagado,
     sessao_do_cookie,
@@ -39,6 +41,8 @@ from app.contrato import (
     CadastroRequisicao,
     CadastroResposta,
     CodigoRequisicao,
+    ContaDadosRequisicao,
+    ContaDadosResposta,
     ContaResposta,
     EntrarAtivacaoResposta,
     EntrarRequisicao,
@@ -91,7 +95,7 @@ def _apagar_cookie(response: Response, nome: str) -> None:
     response.headers.append("Set-Cookie", cookie_apagado(nome))
 
 
-def _recusa(e: EntradaRecusada | AguardeParaTentar | CadastroRecusado) -> Exception:
+def recusa(e: EntradaRecusada | AguardeParaTentar | CadastroRecusado) -> Exception:
     if isinstance(e, ContaBloqueada):
         return e  # tratado em app.api.problemas: /problemas/conta-bloqueada
     if isinstance(e, AguardeParaTentar):
@@ -152,7 +156,7 @@ async def cadastrar(cfg: Cfg, req: CadastroRequisicao, response: Response) -> Ca
             contas(cfg).cadastrar, req.email, req.senha, req.organizacao.strip(), req.termosAceitos, agora
         )
     except CadastroRecusado as e:
-        raise _recusa(e) from None
+        raise recusa(e) from None
     _gravar_cookie(response, COOKIE_PASSE, feito.passe, feito.expira_em, agora)
     return CadastroResposta(
         otpauth=feito.endereco,
@@ -170,7 +174,7 @@ async def ativar(cfg: Cfg, req: CodigoRequisicao, response: Response, passe: Pas
     try:
         sessao, codigos = await asyncio.to_thread(contas(cfg).ativar, passe or "", req.codigo, agora)
     except (EntradaRecusada, AguardeParaTentar) as e:
-        raise _recusa(e) from None
+        raise recusa(e) from None
     conta = await asyncio.to_thread(_sessao_aberta, cfg, response, sessao, agora)
     return AtivacaoResposta(
         conta=conta,
@@ -190,7 +194,7 @@ async def entrar(cfg: Cfg, req: EntrarRequisicao, response: Response) -> EntrarR
     try:
         feito = await asyncio.to_thread(contas(cfg).entrar, req.email, req.senha, agora)
     except (EntradaRecusada, AguardeParaTentar) as e:
-        raise _recusa(e) from None
+        raise recusa(e) from None
     _gravar_cookie(response, COOKIE_PASSE, feito.passe, feito.expira_em, agora)
     if feito.ativacao is None:
         return EntrarResposta(etapa="codigo", expiraEm=feito.expira_em)
@@ -216,7 +220,7 @@ async def segunda_etapa(
             contas(cfg).confirmar_codigo, passe or "", req.codigo, req.codigoRecuperacao, agora
         )
     except (EntradaRecusada, AguardeParaTentar) as e:
-        raise _recusa(e) from None
+        raise recusa(e) from None
     conta = await asyncio.to_thread(_sessao_aberta, cfg, response, sessao, agora)
     aviso = None
     if novo is not None:
@@ -271,11 +275,50 @@ async def excluir(cfg: Cfg, req: ExcluirContaRequisicao, response: Response, ses
     try:
         feito = await asyncio.to_thread(contas(cfg).excluir, sessao, req.senha, agora_utc())
     except (EntradaRecusada, AguardeParaTentar) as e:
-        raise _recusa(e) from None
+        raise recusa(e) from None
     except PosseNaoTransferida:
         raise HTTPException(
             status_code=409, detail="Passe a posse da organização a outro membro antes de excluir a conta."
         ) from None
-    if feito.organizacao_apagada is not None:
-        await asyncio.to_thread(apagar_banco_da_organizacao, cfg, feito.organizacao_apagada)
+    for organizacao in feito.organizacoes_apagadas:
+        await asyncio.to_thread(apagar_banco_da_organizacao, cfg, organizacao)
     _apagar_cookie(response, COOKIE_SESSAO)
+
+
+SENHA_DE_NOVO: respostas.Respostas = {
+    **SESSAO,
+    **respostas.LIMITE,
+    401: {"description": "Sem sessão, sessão encerrada ou expirada, ou senha incorreta."},
+    429: {
+        "description": "Espera depois de falhas seguidas (header Retry-After), ou conta bloqueada "
+        "(/problemas/conta-bloqueada)."
+    },
+}
+
+
+@rotas.post("/conta/dados", response_model=ContaDadosResposta, responses=SENHA_DE_NOVO)
+async def baixar_dados(
+    cfg: Cfg, req: ContaDadosRequisicao, response: Response, sessao_token: SessaoCookie = None
+) -> ContaDadosResposta:
+    """O arquivo com os dados da conta e das empresas das organizações dela (LGPD, arts. 18 II e V e 19), com a
+    senha de novo. Vai como anexo (Content-Disposition) e sem cache. Não leva a senha, o segredo do segundo fator
+    nem nenhum hash; os outros integrantes da organização não aparecem. Só com a conta: a demonstração e os
+    espaços de avaliação não têm dado pessoal."""
+    so_no_modo_real(cfg)
+    sessao = await asyncio.to_thread(_exigir_sessao, cfg, sessao_token)
+    agora = agora_utc()
+    try:
+        await asyncio.to_thread(contas(cfg).conferir_senha, sessao.usuario_id, req.senha, agora)
+    except (EntradaRecusada, AguardeParaTentar) as e:
+        raise recusa(e) from None
+    arquivo = await asyncio.to_thread(
+        dados_da_conta.montar,
+        contas(cfg),
+        lambda organizacao: banco_da_organizacao(cfg, organizacao),
+        sessao.usuario_id,
+        sessao_token or "",
+        agora,
+    )
+    response.headers["Content-Disposition"] = f'attachment; filename="{dados_da_conta.nome_do_arquivo(agora)}"'
+    response.headers["Cache-Control"] = "no-store"
+    return arquivo

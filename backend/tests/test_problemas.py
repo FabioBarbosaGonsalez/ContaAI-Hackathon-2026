@@ -7,7 +7,6 @@ from __future__ import annotations
 from http import HTTPStatus
 
 import pytest
-from fastapi import APIRouter
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
 
@@ -110,13 +109,12 @@ def test_411_e_413_do_upload_no_formato_problema() -> None:
 
 
 def test_erro_inesperado_nao_expoe_a_mensagem_interna() -> None:
-    rotas = APIRouter()
-
-    @rotas.get("/_teste/explode")
     def explode() -> None:
         raise RuntimeError("segredo interno /srv/contaai/banco.db")
 
-    app.include_router(rotas)
+    # Direto no roteador: o `include_router` do FastAPI 0.165 embrulha as rotas num `_IncludedRouter`, e a limpeza
+    # pelo caminho, abaixo, não as achava (a rota de teste ficava no app até o fim da bateria).
+    app.router.add_api_route("/_teste/explode", explode, methods=["GET"])
     try:
         r = TestClient(app, raise_server_exceptions=False).get("/_teste/explode")
         c = problema(r, 500)

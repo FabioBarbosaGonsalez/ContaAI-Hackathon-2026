@@ -98,7 +98,7 @@ describe('página inicial', () => {
 describe('termos de uso e privacidade', () => {
   it.each([
     ['/termos', 'Termos de uso', `Versão de ${dataDaVersao(VERSAO_TERMOS)}`],
-    ['/privacidade', 'Privacidade', 'Atualizada em 26/11/2026'],
+    ['/privacidade', 'Privacidade', 'Atualizada em 27/11/2026'],
   ])('%s: título, data, aviso de rascunho e um índice igual às seções', async (caminho, titulo, data) => {
     await montar(caminho);
     expect(screen.getByRole('heading', { level: 1, name: titulo })).toBeDefined();
@@ -136,6 +136,14 @@ describe('termos de uso e privacidade', () => {
     expect(screen.getByText('__Host-contaai_sessao')).toBeDefined();
     expect(screen.getByText('__Host-contaai_passe')).toBeDefined();
     expect(screen.getByText('contaai.espaco')).toBeDefined();
+  });
+
+  it('a privacidade diz que o log técnico não guarda o IP nem o CNPJ da rota (C3-B, etapa 7)', async () => {
+    await montar('/privacidade');
+    const texto = document.body.textContent;
+    expect(texto).toMatch(/O log técnico da API registra.+sem o IP e sem dado pessoal/u);
+    expect(screen.getByText('/empresas/{cnpj}')).toBeDefined();
+    expect(texto).not.toMatch(/registrar, em log técnico, o IP/u);
   });
 });
 

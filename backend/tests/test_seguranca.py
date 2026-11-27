@@ -67,7 +67,8 @@ def test_rotas_dos_motores_tem_limite_geral(monkeypatch: pytest.MonkeyPatch) -> 
     monkeypatch.setattr(middlewares, "LIMITE_GERAL", LimitadorPorIp(1))
     assert cliente.get("/busca/ncm", params={"q": "arroz"}).status_code == 200
     assert cliente.get("/busca/ncm", params={"q": "arroz"}).status_code == 429
-    assert cliente.get("/saude").status_code == 200  # fora do limite
+    assert cliente.get("/cenarios/presets").status_code == 200  # fora do limite: não chama os motores
+    assert cliente.get("/saude").status_code == 429  # dentro: consulta a versão dos dois motores (C3-B, etapa 9)
 
 
 def test_busca_tem_limite_proprio(monkeypatch: pytest.MonkeyPatch) -> None:

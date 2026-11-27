@@ -24,8 +24,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from app.api import middlewares, problemas
-from app.api.dependencias import banco, http_interno, novo_cliente_motores, repositorio
+from app.api import middlewares, problemas, registro
+from app.api.dependencias import banco, http_interno, limpar_bancos_orfaos, novo_cliente_motores, repositorio
 from app.api.dependencias import contas as contas_do_processo
 from app.api.rotas import agente, calculo, classificacao, contas, empresa, espacos, explicacao, notas, operacao
 from app.config import Configuracao, configuracao
@@ -63,15 +63,18 @@ def _tem_empresas(repo: Repositorio) -> bool:
 
 @asynccontextmanager
 async def ciclo_de_vida(_: FastAPI) -> AsyncIterator[None]:
+    registro.configurar()  # de novo na subida: vale também se o servidor reconfigurou os loggers depois do import
     cfg = configuracao()
     if cfg.modo == "real":
         banco(cfg.banco_caminho)  # migra na subida: um esquema alterado impede o backend de subir
         contas_do_processo(cfg)  # idem para o contas.db (ADR 0015)
+        await asyncio.to_thread(limpar_bancos_orfaos, cfg)  # LGPD: organização excluída não deixa banco no disco
         if cfg.semear_ao_subir:
             await semear_se_vazio(cfg)
     yield
 
 
+registro.configurar()  # logs sem dado pessoal (app.api.registro): sem o log de acesso do uvicorn
 _DOCS = configuracao().docs_publica
 
 app = FastAPI(
@@ -85,11 +88,17 @@ app = FastAPI(
     docs_url="/docs" if _DOCS else None,
     redoc_url="/redoc" if _DOCS else None,
     openapi_url="/openapi.json" if _DOCS else None,
+    # A telemetria do FastAPI (OpenTelemetry) grava, pela documentação dela, as mensagens das exceções, as pilhas e o
+    # corpo lido. Hoje ela não liga, porque não há SDK nem exportador instalado; desligada aqui, nem a variável
+    # FASTAPI_OTEL_AUTO_CONFIGURE nem um SDK instalado depois a ligam sem uma decisão (logs sem dado pessoal, C3-B).
+    telemetry={"tracing": False, "metrics": False, "logs": False, "operation_spans": False, "auto_configure": False},
 )
 
-# Ordem: cada middleware adicionado fica POR FORA dos anteriores. De fora para dentro: cabeçalhos de
-# segurança, Host, CORS, Origin, limite por IP, tamanho do corpo. O CORS fica por fora dos limites para que
-# um 403, 411, 413 ou 429 também leve Access-Control-Allow-Origin e o frontend consiga ler o erro.
+# Ordem: cada middleware adicionado fica POR FORA dos anteriores. De fora para dentro: log de acesso, cabeçalhos
+# de segurança, Host, CORS, Origin, limite por IP, tamanho do corpo e o 500 do erro não tratado. O CORS fica por
+# fora dos limites para que um 403, 411, 413 ou 429 também leve Access-Control-Allow-Origin e o frontend consiga ler
+# o erro; o 500 fica por dentro de todos pelo mesmo motivo (C3-B, etapa 9).
+app.add_middleware(middlewares.ErroNaoTratado)
 app.add_middleware(BaseHTTPMiddleware, dispatch=middlewares.limitar_corpo)
 app.add_middleware(BaseHTTPMiddleware, dispatch=middlewares.limitar_requisicoes)
 app.add_middleware(BaseHTTPMiddleware, dispatch=middlewares.verificar_origem)
@@ -105,6 +114,7 @@ app.add_middleware(
 )
 app.add_middleware(BaseHTTPMiddleware, dispatch=middlewares.verificar_host)
 app.add_middleware(BaseHTTPMiddleware, dispatch=middlewares.cabecalhos_de_seguranca)
+app.add_middleware(BaseHTTPMiddleware, dispatch=registro.registrar_acesso)
 
 problemas.registrar(app)
 

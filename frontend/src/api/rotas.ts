@@ -21,6 +21,9 @@ export const ROTAS_COM_ESPACO: ReadonlySet<ChaveRota> = new Set<ChaveRota>([
   'POST /catalogo/itens',
   'PATCH /catalogo/{item_id}',
   'POST /catalogo/{item_id}/arquivar',
+  'POST /clientes',
+  'PATCH /clientes/{cnpj_cliente}',
+  'POST /clientes/{cnpj_cliente}/excluir',
   'GET /catalogo',
   'GET /notas',
   'GET /contador/painel',
@@ -39,6 +42,9 @@ export const ROTAS_COM_TOKEN: ReadonlySet<ChaveRota> = new Set<ChaveRota>([
   'POST /catalogo/itens',
   'PATCH /catalogo/{item_id}',
   'POST /catalogo/{item_id}/arquivar',
+  'POST /clientes',
+  'PATCH /clientes/{cnpj_cliente}',
+  'POST /clientes/{cnpj_cliente}/excluir',
   'POST /chat',
   'POST /demo/restaurar',
 ]);
@@ -56,6 +62,7 @@ export const ROTAS_DA_CONTA: ReadonlySet<ChaveRota> = new Set<ChaveRota>([
   'DELETE /sessoes/atual',
   'DELETE /sessoes',
   'POST /conta/excluir',
+  'POST /conta/dados',
 ]);
 
 /**
@@ -67,6 +74,7 @@ export const ROTAS_DE_ENTRADA: ReadonlySet<ChaveRota> = new Set<ChaveRota>([
   'POST /sessoes',
   'POST /sessoes/codigo',
   'POST /conta/excluir',
+  'POST /conta/dados',
 ]);
 
 export function chaveDaRota(metodo: string, caminho: string): ChaveRota {

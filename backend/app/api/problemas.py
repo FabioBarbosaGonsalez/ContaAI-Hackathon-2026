@@ -24,13 +24,15 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.agente.provedor import ProvedorFalhou
 from app.api.mensagens import traduzir
-from app.cadastro import Recusado
+from app.api.registro import resumo_da_excecao
+from app.cadastro import ItemEmUso, Recusado
 from app.contas.servico import ContaBloqueada
 from app.contrato import (
     CampoInvalido,
     OrigemCampo,
     Problema,
     ProblemaCalculo,
+    ProblemaItemEmUso,
     ProblemaMotor,
     ProblemaValidacao,
     TipoProblema,
@@ -42,6 +44,7 @@ from app.nfe.leitor import NotaInvalida
 from app.persistencia.espacos import EspacoInexistente, EspacosEsgotados
 from app.persistencia.sementes import SementesInvalidas
 from app.precificacao.preco_alvo import CalculoRecusado
+from app.seguranca import METODOS_INSEGUROS
 
 log = logging.getLogger("contaai")
 
@@ -130,6 +133,14 @@ TIPOS: dict[str, TipoProblema] = {
             descricao="Depois de 100 tentativas erradas seguidas, a conta fica bloqueada até um administrador "
             "desbloquear. Esperar não adianta: o Retry-After (1 h) só pede a clientes automáticos que não insistam. "
             "As outras esperas do limite de tentativas saem como about:blank, com o Retry-After que vale.",
+        ),
+        TipoProblema(
+            type=f"{PREFIXO}item-em-uso",
+            title="Item na compra mensal de clientes",
+            status=[409],
+            descricao="O item está na compra mensal de clientes B2B da empresa e não pode sair do catálogo: a venda "
+            "desses clientes ficaria sem ele. `clientes` lista o CNPJ e o nome de cada um. Tire o item da compra "
+            "deles (PATCH /clientes/{cnpj_cliente}) e arquive de novo.",
         ),
         TipoProblema(
             type=f"{PREFIXO}sementes-indisponiveis",
@@ -281,6 +292,11 @@ async def _conflito(_: Request, exc: consultas.Conflito) -> JSONResponse:
     return simples(409, exc.mensagem)
 
 
+async def _item_em_uso(_: Request, exc: ItemEmUso) -> JSONResponse:
+    base = tipado("item-em-uso", 409, exc.mensagem)
+    return resposta(ProblemaItemEmUso(**base.model_dump(), clientes=exc.clientes))
+
+
 async def _espaco_inexistente(_: Request, exc: EspacoInexistente) -> JSONResponse:
     return resposta(tipado("espaco-inexistente", 404, "Espaço de avaliação inexistente ou expirado. Crie outro."))
 
@@ -294,10 +310,24 @@ async def _conta_bloqueada(_: Request, exc: ContaBloqueada) -> JSONResponse:
     return resposta(tipado("conta-bloqueada", 429, exc.mensagem), {"Retry-After": str(exc.espera_s)})
 
 
+# Sem "avise a equipe": o ContaAI não publica um contato (decisão 4 da C2), e a frase prometeria um canal que não
+# existe.
+FRASE_ERRO_INTERNO = "Erro interno. Tente de novo em instantes."
+
+
+def erro_interno(exc: BaseException) -> JSONResponse:
+    """Qualquer exceção sem tratador: registra no log do servidor e responde sem pilha nem mensagem interna. O log
+    leva o tipo e onde aconteceu, sem a mensagem, que pode repetir um valor enviado (app.api.registro)."""
+    log.error("Erro não tratado: %s", resumo_da_excecao(exc))
+    return simples(500, FRASE_ERRO_INTERNO)
+
+
 async def _inesperado(_: Request, exc: Exception) -> JSONResponse:
-    """Qualquer outra exceção: registra no log do servidor e responde sem pilha nem mensagem interna."""
-    log.exception("Erro não tratado", exc_info=exc)
-    return simples(500, "Erro interno. Tente de novo; se continuar, avise a equipe.")
+    """Último recurso, no ServerErrorMiddleware do Starlette, por fora de todos os middlewares: o 500 daqui sai sem os
+    cabeçalhos de segurança. Desde a etapa 9 da C3-B, o erro de uma rota vira 500 por dentro deles
+    (app.api.middlewares.ErroNaoTratado), e o de um middleware, em cabecalhos_de_seguranca; aqui só chega uma
+    falha no próprio log de acesso ou nos cabeçalhos."""
+    return erro_interno(exc)
 
 
 def registrar(app: FastAPI) -> None:
@@ -312,6 +342,7 @@ def registrar(app: FastAPI) -> None:
     app.add_exception_handler(consultas.NaoEncontrado, _nao_encontrado)  # type: ignore[arg-type]
     app.add_exception_handler(Recusado, _recusado)  # type: ignore[arg-type]
     app.add_exception_handler(consultas.Conflito, _conflito)  # type: ignore[arg-type]
+    app.add_exception_handler(ItemEmUso, _item_em_uso)  # type: ignore[arg-type]
     app.add_exception_handler(EspacoInexistente, _espaco_inexistente)  # type: ignore[arg-type]
     app.add_exception_handler(EspacosEsgotados, _espacos_esgotados)  # type: ignore[arg-type]
     app.add_exception_handler(ContaBloqueada, _conta_bloqueada)  # type: ignore[arg-type]
@@ -334,13 +365,27 @@ def _incluir_modelos(esquemas: dict[str, Any], *modelos: type[Problema]) -> None
         esquemas.setdefault(modelo.__name__, esquema)
 
 
-# Recusas dos middlewares (app/api/middlewares.py, ADR 0011), que valem para toda rota ou para todo POST.
+# Recusas dos middlewares (app/api/middlewares.py, ADR 0011): o Host vale para toda rota; o CSRF, para todo método
+# que muda o estado (METODOS_INSEGUROS, com o DELETE das sessões); o tamanho do corpo, para o POST e o PATCH (o PATCH
+# entrou nas defesas na C3-B, ADR 0017).
 RECUSA_HOST = {"400": {"description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding)."}}
-RECUSAS_POST = {
-    "403": {"description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF)."},
+# O erro não tratado (C3-B, etapa 9): toda rota pode dar 500, com a frase fixa e os cabeçalhos de segurança.
+ERRO_INTERNO = {"500": {"description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar)."}}
+RECUSA_CSRF = "Pedido vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF)."
+RECUSAS_CORPO = {
     "411": {"description": "Corpo sem Content-Length (corpo em pedaços não é aceito)."},
     "413": {"description": "Corpo maior que o limite."},
 }
+
+
+def _somar_csrf(respostas: dict[str, Any]) -> None:
+    """O 403 do CSRF junto do 403 da própria rota (o papel, na C3-B), sem esconder nenhum dos dois. Idempotente."""
+    propria = respostas.get("403")
+    csrf = RECUSA_CSRF[0].lower() + RECUSA_CSRF[1:]
+    if propria is None:
+        respostas["403"] = {"description": RECUSA_CSRF}
+    elif csrf not in propria.get("description", ""):
+        propria["description"] = f"{propria['description'].rstrip('.')}; ou {csrf}"
 
 
 def ajustar_openapi(spec: dict[str, Any]) -> dict[str, Any]:
@@ -349,7 +394,10 @@ def ajustar_openapi(spec: dict[str, Any]) -> dict[str, Any]:
     for operacoes in spec.get("paths", {}).values():
         for metodo, operacao in operacoes.items():
             respostas = operacao.setdefault("responses", {})
-            for codigo, resp in (RECUSA_HOST | (RECUSAS_POST if metodo == "post" else {})).items():
+            if metodo.upper() in METODOS_INSEGUROS:
+                _somar_csrf(respostas)
+            gerais = RECUSA_HOST | ERRO_INTERNO | (RECUSAS_CORPO if metodo in ("post", "patch") else {})
+            for codigo, resp in gerais.items():
                 respostas.setdefault(codigo, dict(resp))
             for codigo, resp in operacao.get("responses", {}).items():
                 if not codigo.isdigit() or int(codigo) < 400:

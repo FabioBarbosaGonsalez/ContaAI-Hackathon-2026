@@ -9,10 +9,11 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable
 
 from fastapi import Request, Response
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-from app.api.problemas import simples
+from app.api.problemas import erro_interno, simples
 from app.config import Configuracao, configuracao
-from app.seguranca import LimitadorPorIp
+from app.seguranca import METODOS_INSEGUROS, LimitadorPorIp
 
 Proximo = Callable[[Request], Awaitable[Response]]
 
@@ -20,8 +21,9 @@ Proximo = Callable[[Request], Awaitable[Response]]
 FOLGA_MULTIPART = 16 * 1024
 ROTA_NFE = "/nfe/importar"
 
-# Cadastro, entrada e código (C1, ADR 0015): limite por IP próprio, além do contador de falhas de cada conta.
-ROTAS_ENTRADA = ("/contas", "/sessoes", "/conta/excluir")
+# Cadastro, entrada e código (C1, ADR 0015), e as rotas que pedem a senha de novo (C3-B, etapa 7): limite por IP
+# próprio, além do contador de falhas de cada conta.
+ROTAS_ENTRADA = ("/contas", "/sessoes", "/conta/excluir", "/conta/dados")
 # Rotas que chamam os motores (ou o provedor de IA) ou mudam o estado, e por isso têm limite por IP.
 ROTAS_LIMITADAS = (
     "/carrinho/calcular",
@@ -38,10 +40,10 @@ ROTAS_LIMITADAS = (
     "/catalogo/",  # POST e PATCH em /catalogo/... (o GET /catalogo não chama os motores)
     "/empresas",  # C3-B: cadastro e configurações consultam os motores
     "/referencias/",  # C3-B: UF, município e atividade, dos motores
+    "/clientes",  # C3-B: os clientes B2B gravam e consultam o município no motor
+    "/saude",  # C3-B, etapa 9: consulta a versão dos dois motores a cada pedido
     *ROTAS_ENTRADA,
 )
-# Métodos que mudam o estado: passam pela defesa contra CSRF.
-METODOS_INSEGUROS = ("POST", "PUT", "PATCH", "DELETE")
 # Cookie da sessão (app.api.dependencias.COOKIE_SESSAO; repetido aqui para o middleware não importar as rotas).
 COOKIE_SESSAO = "__Host-contaai_sessao"
 # Um limitador por processo. Os testes trocam estes objetos (monkeypatch neste módulo).
@@ -123,6 +125,11 @@ async def verificar_origem(request: Request, call_next: Proximo) -> Response:
     return await call_next(request)
 
 
+def _exclui_empresa(caminho: str) -> bool:
+    """POST /empresas/{cnpj}/excluir: pede a senha, como a entrada."""
+    return caminho.startswith("/empresas/") and caminho.endswith("/excluir")
+
+
 async def limitar_requisicoes(request: Request, call_next: Proximo) -> Response:
     caminho = request.url.path
     if request.method in ("GET", "POST", "PATCH") and caminho.startswith(ROTAS_LIMITADAS):
@@ -132,7 +139,7 @@ async def limitar_requisicoes(request: Request, call_next: Proximo) -> Response:
             limitadores.append(LIMITE_BUSCA)
         if caminho == "/espacos" and request.method == "POST":
             limitadores.append(LIMITE_ESPACOS)
-        if caminho.startswith(ROTAS_ENTRADA) and request.method == "POST":
+        if request.method == "POST" and (caminho.startswith(ROTAS_ENTRADA) or _exclui_empresa(caminho)):
             limitadores = [LIMITE_ENTRADA]
         for limitador in limitadores:
             permitido, espera = limitador.permitir(ip)
@@ -147,7 +154,10 @@ async def cabecalhos_de_seguranca(request: Request, call_next: Proximo) -> Respo
     """Cabeçalhos em toda resposta (ADR 0008). A API só devolve JSON: nada dela deve ser executado,
     emoldurado ou guardado em cache compartilhado. A documentação (/docs) carrega o Swagger da CDN do
     FastAPI e fica sem a CSP restritiva."""
-    resposta = await call_next(request)
+    try:
+        resposta = await call_next(request)
+    except Exception as exc:  # a falha de um middleware de dentro (a de uma rota já chega como 500)
+        resposta = erro_interno(exc)
     resposta.headers["X-Content-Type-Options"] = "nosniff"
     resposta.headers["Referrer-Policy"] = "no-referrer"
     resposta.headers["X-Frame-Options"] = "DENY"
@@ -158,3 +168,38 @@ async def cabecalhos_de_seguranca(request: Request, call_next: Proximo) -> Respo
         resposta.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'"
         resposta.headers["Cache-Control"] = "no-store"
     return resposta
+
+
+class ErroNaoTratado:
+    """O 500 por dentro de todos os middlewares (C3-B, etapa 9; ADR 0009).
+
+    O Starlette monta o 500 no ServerErrorMiddleware, por fora de todos os middlewares: a resposta saía sem os
+    cabeçalhos de segurança e sem o CORS, e a tela de outra origem nem conseguia ler o erro. Este middleware é o
+    primeiro a ser adicionado (o mais de dentro): o 500 da rota volta pelos outros como qualquer resposta e recebe os
+    cabeçalhos, o CORS e a linha do log de acesso.
+
+    A exceção não segue adiante. O registro dela é o nosso, sem a mensagem (app.api.registro), e o uvicorn deixa de
+    gravar a pilha. Se a resposta já tinha começado, ela não pode ser trocada, e a exceção segue para o Starlette.
+    """
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        comecou = False
+
+        async def enviar(mensagem: Message) -> None:
+            nonlocal comecou
+            if mensagem["type"] == "http.response.start":
+                comecou = True
+            await send(mensagem)
+
+        try:
+            await self.app(scope, receive, enviar)
+        except Exception as exc:
+            if comecou:
+                raise
+            await erro_interno(exc)(scope, receive, send)

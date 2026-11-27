@@ -12,7 +12,7 @@ export type VersaoTermos = components['schemas']['CadastroRequisicao']['termosAc
 export const VERSAO_TERMOS: VersaoTermos = '2026-11-26';
 
 /** A data da última mudança no texto de src/telas/Privacidade.tsx. */
-export const ATUALIZACAO_PRIVACIDADE = '2026-11-26';
+export const ATUALIZACAO_PRIVACIDADE = '2026-11-27';
 
 /** "2026-11-26" → "26/11/2026", sem passar por Date (sem fuso). */
 export function dataDaVersao(iso: string): string {

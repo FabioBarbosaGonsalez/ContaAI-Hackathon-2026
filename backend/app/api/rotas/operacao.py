@@ -17,7 +17,7 @@ from app.api.dependencias import (
     Token,
     abrir_estado,
     espacos,
-    exigir_token_fora_do_espaco,
+    exigir_permissao_para_mudar,
     http_interno,
     so_no_modo_real,
 )
@@ -36,6 +36,7 @@ rotas = APIRouter(tags=["operação"])
         **respostas.MOTOR,
         **respostas.ESTADO,
         **respostas.SO_MODO_REAL,
+        403: {"description": "Com a sessão de uma conta: os dados da organização não são trocados pelas sementes."},
         503: {
             "model": ProblemaMotor,
             "description": "Motor indisponível (/problemas/motor-indisponivel), ou sementes não encontradas "
@@ -61,7 +62,7 @@ async def demo_restaurar(
             detail="Só a demonstração e os espaços de avaliação podem ser restaurados. Os dados da sua organização "
             "não são trocados pelos da demonstração.",
         )
-    exigir_token_fora_do_espaco(cfg, token, estado)
+    exigir_permissao_para_mudar(cfg, token, estado)
     if estado.espaco is None:
         await restaurar(estado.repositorio, motores, cfg.pasta_demo)
     else:

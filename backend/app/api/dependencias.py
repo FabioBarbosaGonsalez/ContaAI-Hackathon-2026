@@ -42,11 +42,22 @@ log = logging.getLogger("contaai")
 
 # Cookies da conta (ADR 0015): HttpOnly, Secure, SameSite=Strict, Path=/ e sem Domain, o que o prefixo __Host-
 # exige do navegador. A sessão dura até 8 h; o passe, entre a senha e o código, 5 min.
+# Papéis na organização (C3-B, etapa 8; ADR 0017). As listas dizem quem pode, nunca quem não pode: um papel que
+# não está nelas (o contador do 3c, por exemplo) não muda nada até ser posto aqui de propósito.
+# - editar: o catálogo, os clientes B2B, as notas, os preços, os alertas e as classificações;
+# - administrar: cadastrar, configurar e excluir a empresa.
+# Ler (catálogo, alertas, notas, a empresa, a explicação e o chat) vale para todo integrante da organização.
+PAPEIS_QUE_EDITAM = frozenset({"dono", "membro"})
+PAPEIS_QUE_ADMINISTRAM = frozenset({"dono"})
+RECUSA_EDICAO = "O seu papel na organização não permite mudar os dados da empresa."
+
 COOKIE_SESSAO = "__Host-contaai_sessao"
 COOKIE_PASSE = "__Host-contaai_passe"
 SessaoCookie = Annotated[str | None, Cookie(alias=COOKIE_SESSAO, include_in_schema=False)]
 PasseCookie = Annotated[str | None, Cookie(alias=COOKIE_PASSE, include_in_schema=False)]
 _ID_ORGANIZACAO = re.compile(r"^[0-9a-f]{32}$")
+# O banco da organização e os arquivos que o SQLite cria ao lado dele (WAL, memória compartilhada e diário).
+_ARQUIVO_DA_ORGANIZACAO = re.compile(r"^([0-9a-f]{32})\.db(-wal|-shm|-journal)?$")
 
 
 def cookie_apagado(nome: str) -> str:
@@ -167,6 +178,39 @@ def apagar_banco_da_organizacao(cfg: Configuracao, organizacao_id: str) -> None:
             log.warning("Arquivo de estado de uma organização excluída ficou no disco: %s", caminho.name)
 
 
+def limpar_bancos_orfaos(cfg: Configuracao) -> list[str]:
+    """Na subida (C3-B, etapa 7): apaga os bancos de organização que não existem mais no contas.db. Sobram, por
+    exemplo, quando o arquivo estava preso (Windows) na hora da exclusão, ou quando a exclusão parou no meio. Um nome
+    fora do padrão não é apagado: fica no disco e aparece no log, só pelo nome do arquivo.
+
+    A pasta é lida antes das organizações: uma organização nova grava a linha no contas.db antes de existir o
+    arquivo dela (que só nasce com a sessão), então um arquivo visto aqui nunca é de uma organização que ainda não
+    foi lida. Devolve os nomes apagados."""
+    pasta = cfg.pasta_organizacoes
+    if not pasta.is_dir():
+        return []
+    arquivos = sorted(pasta.iterdir())
+    existentes = contas(cfg).organizacoes()
+    apagados = []
+    for arquivo in arquivos:
+        achado = _ARQUIVO_DA_ORGANIZACAO.fullmatch(arquivo.name)
+        if achado is None:
+            log.warning("Arquivo fora do padrão na pasta das organizações (não apagado): %s", arquivo.name)
+            continue
+        if achado.group(1) in existentes:
+            continue
+        try:
+            arquivo.unlink()
+        except OSError:
+            log.warning("Arquivo de estado de uma organização excluída ficou no disco: %s", arquivo.name)
+            continue
+        apagados.append(arquivo.name)
+    if apagados:
+        banco.cache_clear()
+        log.info("Subida: %d arquivo(s) de organizações excluídas apagado(s).", len(apagados))
+    return apagados
+
+
 def sessao_do_cookie(cfg: Configuracao, token: str | None) -> SessaoAtiva | None:
     """A sessão do cookie, ou None sem cookie. Cookie vencido ou desconhecido: 401, e a resposta apaga o cookie."""
     if token is None:
@@ -205,11 +249,20 @@ def abrir_estado(cfg: Configuracao, espaco_id: str | None, token_sessao: str | N
     return Estado(repo, cnpjs=_cnpjs_do_banco(repo))
 
 
-def exigir_token_fora_do_espaco(cfg: Configuracao, token: str | None, estado: Estado) -> None:
-    """O token protege só a demonstração compartilhada. No espaço (isolado e com validade, ADR 0010) e no banco
-    da organização (a sessão já diz quem é, ADR 0015), mudar o estado não exige o token."""
+def exigir_papel(sessao: SessaoAtiva, papeis: frozenset[str], detalhe: str) -> None:
+    """403 para quem não tem um dos papéis da lista (C3-B, etapa 8)."""
+    if sessao.papel not in papeis:
+        raise HTTPException(status_code=403, detail=detalhe)
+
+
+def exigir_permissao_para_mudar(cfg: Configuracao, token: str | None, estado: Estado) -> None:
+    """Toda rota que muda o estado passa por aqui. Na demonstração compartilhada, o token. No espaço (isolado e com
+    validade, ADR 0010), nada a mais. No banco da organização, a sessão já diz quem é (ADR 0015) e o papel precisa
+    estar em PAPEIS_QUE_EDITAM."""
     if estado.na_demo:
         exigir_token(cfg, token)
+    elif estado.sessao is not None:
+        exigir_papel(estado.sessao, PAPEIS_QUE_EDITAM, RECUSA_EDICAO)
 
 
 def exigir_token(cfg: Configuracao, token: str | None) -> None:
