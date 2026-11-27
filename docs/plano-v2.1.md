@@ -543,6 +543,69 @@ Achados do mapa:
 - **Respostas dos contadores** (E0-08): dependem do time.
 - **Fora do escopo:** a linha do tempo 2026 × 2027 e a exportação (decisão D3 da E5).
 
+## Implementação futura: a nota pela foto do DANFE
+
+Para quem não recebeu o XML. Estudo de 2026-11-27, sem código no repositório: só um protótipo no rascunho, com chaves fictícias.
+
+**O que as fontes dizem:**
+- **Ajuste SINIEF 07/05, cláusula sétima, §7º, I:** o XML deve ser "encaminhado ou disponibilizado download" "ao destinatário da mercadoria, pelo emitente da NF-e, imediatamente após o recebimento da autorização de uso". O XML continua sendo o caminho principal; a foto é a saída para quando o fornecedor não mandou.
+- **LC 123, art. 26, §6º, II:** o MEI emite documento fiscal na venda "para destinatário cadastrado no Cadastro Nacional da Pessoa Jurídica (CNPJ)" e fica dispensado "para o consumidor final". Quem compra de empresa recebe NF-e.
+  - O cadastro do ContaAI ainda não aceita MEI (só o Simples tradicional e o híbrido).
+  - O plano v2.0 deixa o MEI no pitch.
+- **NT 2014.002 v1.40** (Portal Nacional da NF-e, 03/07/2026): o NFeDistribuicaoDFe exige "um certificado digital de PJ ou PF"; os documentos ficam disponíveis "por até 90 dias"; sem a manifestação do destinatário, volta "apenas o resumo da NF-e"; o limite é de 20 consultas por hora (rejeição 656).
+- **Consulta pública do portal:** tem hCaptcha, e a página diz que ele "ajuda a evitar consultas por programas automáticos".
+- **MOC 7.0, Anexo II:**
+  - o código de barras do DANFE é CODE-128C com a chave de acesso;
+  - o tamanho mínimo é de 6 cm de largura e 0,8 cm de altura.
+- **NT Conjunta 2025.001:**
+  - com o CNPJ alfanumérico, a chave aceita letras nas 12 primeiras posições;
+  - o DV da chave usa o ASCII − 48;
+  - o código de barras vira um modelo híbrido, de CODE-128C e CODE-128A.
+  - **Inconsistência:** a NT diz "código 100" para alternar entre A e C. No Code 128, o 100 leva ao conjunto B e o 101 ao A. A ISO/IEC 15417 **não foi lida**.
+
+**Caminhos avaliados:**
+
+| Caminho | Situação |
+|---|---|
+| Buscar a nota oficial pela chave | **Reprovado.** O certificado digital é pago (R$ 150 a 280 por ano, segundo blogs; **sem tabela oficial lida**) e o ContaAI teria de guardar o certificado da empresa. A consulta pública tem captcha contra programas automáticos. |
+| Ler a nota inteira pela foto (OCR) | **Fica de fora por ora.** O Tesseract errou dois números numa imagem limpa (NCM `18063210` lida `180632106`; `4,8700` lido `4,8/00`). Além disso, ele precisa de uma política de Trusted Types para criar o Worker. |
+| Ler só a chave pela foto e a pessoa conferir os itens | **Recomendado.** É grátis, roda no navegador e a foto não sai do aparelho. |
+
+**Protótipo no Chrome** (CSP igual à de `frontend/csp.ts`):
+- **A CSP de hoje barra o WebAssembly:** `script-src` precisa de `'wasm-unsafe-eval'`.
+- **O Tesseract é barrado pelo `trusted-types 'none'`:** o `new Worker` é um destino do Trusted Types.
+- **Leitura do código de barras:** o `zxing-wasm` leu as duas chaves fictícias (só números e com letras) com 3 px por módulo e giro de até 4°. Falhou com giro de 10° e com desfoque.
+- **O teste foi sintético.** A taxa de acerto em fotos reais de celular **não foi medida**.
+
+**Licenças conferidas nos arquivos:**
+- `zxing-wasm` 3.1.8: MIT, com o zxing-cpp em Apache-2.0 e o zint em BSD-3-Clause;
+- `tesseract.js` 7.0.0 e `tesseract.js-core`: Apache-2.0;
+- os dados de idioma do Tesseract (tessdata): Apache-2.0.
+
+**Como seria:**
+- **Na tela:**
+  - a pessoa fotografa o DANFE (`<input type="file" accept="image/*" capture="environment">`);
+  - o navegador lê só a chave e confere o DV;
+  - a tela preenche o emitente, a série, o número e o mês;
+  - os itens vêm do catálogo, e a pessoa digita as quantidades e os valores e confere tudo.
+- **Na API:**
+  - recebe só os campos conferidos, nunca a imagem;
+  - a nota fica marcada "da foto, conferida pelo usuário";
+  - o crédito da compra é refeito pelo motor, com a hipótese impressa (`fonteCredito: 'motor'`), nunca como lido da NF-e.
+- **No banco:**
+  - a nota repetida continua barrada por `UNIQUE (cnpj, cnpj_emitente, serie, numero)`;
+  - a origem da nota entra numa migração nova, porque o `sha256` só existe para o XML.
+- **Na segurança:**
+  - `'wasm-unsafe-eval'` na CSP;
+  - o OWASP ZAP e o `npm run seguranca` de novo;
+  - o arquivo `.wasm` servido pelo próprio site: o `zxing-wasm` busca no jsDelivr por padrão, e o `locateFile` troca isso.
+
+**Antes de implementar:**
+- fotos de DANFEs reais tiradas com o celular, pelo usuário, só na máquina dele e nunca no repositório (têm dados de empresas reais);
+- o `capture` no celular (o MDN diz que no computador ele é ignorado; **não testado**);
+- a ISO/IEC 15417;
+- o MEI no cadastro (regras do SIMEI na reforma, **não lidas**).
+
 ## Como cada etapa é feita
 
 1. **Antes do código:** verificar se cada ferramenta ou serviço é gratuito e sinalizar qualquer custo.
