@@ -175,9 +175,56 @@ ERROS_FALSOS = {
 }
 
 
+# Formato conferido nos motores RR 1.7.2 e SN 1.0.2 em 2026-11-27 (C3-B). Os códigos do IBGE de RS e de Porto Alegre
+# são os da demonstração; o resto é um recorte só para os testes.
+UFS_FALSAS = [
+    {"codigo": 43, "nome": "RIO GRANDE DO SUL", "sigla": "RS"},
+    {"codigo": 35, "nome": "SÃO PAULO", "sigla": "SP"},
+    {"codigo": 99, "nome": "EXTERIOR", "sigla": "EX"},
+]
+MUNICIPIOS_FALSOS = {
+    "RS": [{"codigo": 4314902, "nome": "Porto Alegre"}, {"codigo": 4305108, "nome": "Caxias do Sul"}],
+    "SP": [{"codigo": 3550308, "nome": "São Paulo"}],
+    "EX": [{"codigo": 9999999, "nome": "EXTERIOR"}],
+}
+
+
+def _atividade(codigo: str, anexo: str | None, admissivel: bool, fator_r: bool = False) -> dict[str, Any]:
+    return {
+        "codigo": codigo,
+        "ordem": int(codigo),
+        "descricao": f"Atividade {codigo} (teste)",
+        "anexoSemFatorR": anexo,
+        "anexoComFatorR": "III" if fator_r else None,
+        "sujeitaFatorR": fator_r,
+        "rotuloAnexo": anexo,
+        "rotuloCurtoAnexo": anexo,
+        "disponivel": admissivel,
+        "anexosFaltantes": [],
+        "modoFatorR": "OPCIONAL" if fator_r else "NAO_APLICAVEL",
+        "tpDocsAdmissiveis": ["55", "65"] if admissivel else [],
+        "admissivelNoDocumento": admissivel,
+    }
+
+
+ATIVIDADES_FALSAS = [
+    _atividade("01", "I", True),
+    _atividade("03", "II", True),
+    _atividade("05", "III", False),  # serviço: não sai em NF-e modelo 55
+    _atividade("09", "V", False, fator_r=True),
+    _atividade("90", None, True),  # operações não tributáveis: sem anexo
+]
+
+
 def dados_abertos_falsos(request: httpx.Request, consultas: list[str]) -> httpx.Response:
     caminho, q = request.url.path, dict(request.url.params)
     consultas.append(caminho)
+    if caminho.endswith("/dados-abertos/ufs"):
+        return httpx.Response(200, json=UFS_FALSAS)
+    if caminho.endswith("/dados-abertos/ufs/municipios"):
+        return httpx.Response(200, json=MUNICIPIOS_FALSOS.get(q.get("siglaUf", ""), []))
+    if caminho.endswith("/simples-nacional/atividades"):
+        return httpx.Response(200, json=ATIVIDADES_FALSAS if q.get("tpDoc") == "55" else [])
     if caminho.endswith("/classificacoes-tributarias/cbs-ibs"):
         return httpx.Response(200, json=CLASSIFICACOES_FALSAS)
     if caminho.endswith("/classificacoes-tributarias/ncm-aplicavel"):

@@ -1,0 +1,366 @@
+"""Empresa própria (C3-B, ADR 0017): referências oficiais, cadastro, configurações e catálogo editável.
+
+Tudo o que é dado oficial vem dos motores, na versão fixada (P5), e nunca da tela:
+- UF e município (código do IBGE e nome): dados abertos do motor RR;
+- atividade do Simples e o anexo dela: motor SN, com a admissibilidade na NF-e (modelo 55);
+- NCM (descrição oficial e Imposto Seletivo) e as classificações válidas: dados abertos do motor RR (P3).
+
+O cenário da empresa própria é o mesmo da demonstração (data/demo), rotulado como simulação (decisão 2 da C3). As
+alíquotas efetivas do Simples da própria empresa entram nas configurações (P8).
+"""
+
+from __future__ import annotations
+
+import secrets
+from dataclasses import dataclass
+from datetime import date, datetime
+from pathlib import Path
+
+from app.classificacao.candidatos import classificacoes_da_ncm
+from app.cnpj import cnpj_valido
+from app.contas.servico import Contas
+from app.contrato import (
+    AtividadeDaEmpresa,
+    AtividadeSimples,
+    AtividadesResposta,
+    EmpresaCadastroRequisicao,
+    EmpresaConfiguracaoRequisicao,
+    EmpresaResposta,
+    ItemAlteracaoRequisicao,
+    ItemArquivadoResposta,
+    ItemNovoRequisicao,
+    ItemResposta,
+    MunicipioReferencia,
+    MunicipiosResposta,
+    UfReferencia,
+    UfsResposta,
+)
+from app.dados_demo import AtividadeSimples as AtividadeDoCadastro
+from app.dados_demo import Cenario, Empresa, ItemCatalogo, carregar_distribuidora
+from app.motores.dados_abertos import DA, ROTA_ATIVIDADES_SN, DadosAbertos
+from app.nfe.consultas import (
+    Conflito,
+    NaoEncontrado,
+    _empresa,
+    _item_estado,
+    cenario_empresa,
+    resumo_empresa,
+)
+from app.persistencia.repositorio import EmpresaRegistro, Repositorio
+
+# Tetos de produto, não regra fiscal: só evitam que uma conta cresça sem limite no disco do servidor.
+EMPRESAS_POR_ORGANIZACAO = 10
+ITENS_POR_EMPRESA = 500
+TP_DOC_NFE = "55"
+ANEXOS = ("I", "II", "III", "IV", "V")
+MENSAGEM_CNPJ = "CNPJ inválido: confira os dígitos verificadores."
+# Os dados abertos do motor RR trazem "EX" (EXTERIOR, município 9999999), o código das operações com o exterior. Não
+# é uma UF onde a empresa fica: sai da lista do cadastro.
+UF_EXTERIOR = "EX"
+
+
+class Recusado(Exception):
+    """A entrada segue o contrato, mas não passa numa regra que depende dos dados (422)."""
+
+    def __init__(self, mensagem: str) -> None:
+        super().__init__(mensagem)
+        self.mensagem = mensagem
+
+
+@dataclass(frozen=True)
+class Versoes:
+    rr: str
+    sn: str
+
+
+# -- referências ------------------------------------------------------------------------------------------
+
+
+def cenario_padrao(pasta_demo: Path) -> Cenario:
+    """O cenário de data/demo (data, alíquotas e premissas rotuladas), como simulação da empresa própria."""
+    return carregar_distribuidora(pasta_demo).cenario.model_copy(
+        update={"origem": "empresa_propria", "cargaAtualPct": None}
+    )
+
+
+def _fonte_rr(versao: str, rota: str) -> str:
+    return f"Dados abertos do motor RR {versao} (GET {DA}{rota})."
+
+
+def _fonte_atividades(data: date, versao: str) -> str:
+    return f"GET {ROTA_ATIVIDADES_SN}?data={data.isoformat()}&tpDoc={TP_DOC_NFE} (motor SN {versao})"
+
+
+async def ufs(da: DadosAbertos, versoes: Versoes) -> UfsResposta:
+    lista = sorted((u for u in await da.ufs() if u.sigla != UF_EXTERIOR), key=lambda u: u.sigla)
+    return UfsResposta(
+        ufs=[UfReferencia(sigla=u.sigla, nome=u.nome, codigo=u.codigo) for u in lista],
+        fonte=_fonte_rr(versoes.rr, "/ufs"),
+    )
+
+
+async def municipios(da: DadosAbertos, uf: str, versoes: Versoes) -> MunicipiosResposta:
+    if uf == UF_EXTERIOR or uf not in {u.sigla for u in await da.ufs()}:
+        raise NaoEncontrado("UF não encontrada nos dados abertos do motor RR.")
+    lista = await da.municipios(uf)
+    return MunicipiosResposta(
+        uf=uf,
+        municipios=[MunicipioReferencia(codigo=m.codigo, nome=m.nome) for m in lista],
+        fonte=_fonte_rr(versoes.rr, f"/ufs/municipios?siglaUf={uf}"),
+    )
+
+
+async def atividades(da: DadosAbertos, data: date, versoes: Versoes) -> AtividadesResposta:
+    """As atividades que o ContaAI calcula: admissíveis na NF-e e disponíveis na data, com anexo e sem fator R
+    (o fator R depende da folha de salários, que o ContaAI não recebe)."""
+    validas = [
+        AtividadeSimples(cAtivSN=a.codigo, descricao=a.descricao, anexo=a.anexoSemFatorR)
+        for a in await da.atividades_simples(data, TP_DOC_NFE)
+        if a.disponivel and a.admissivelNoDocumento and not a.sujeitaFatorR and a.anexoSemFatorR in ANEXOS
+    ]
+    return AtividadesResposta(data=data, atividades=validas, fonte=_fonte_atividades(data, versoes.sn))
+
+
+# -- empresa ----------------------------------------------------------------------------------------------
+
+
+async def _local(da: DadosAbertos, uf: str, municipio: int) -> str:
+    """O nome oficial do município, conferido na UF."""
+    if uf == UF_EXTERIOR or uf not in {u.sigla for u in await da.ufs()}:
+        raise Recusado("UF não encontrada nos dados abertos do motor RR.")
+    achado = next((m for m in await da.municipios(uf) if m.codigo == municipio), None)
+    if achado is None:
+        raise Recusado("Município não encontrado nesta UF nos dados abertos do motor RR.")
+    return achado.nome
+
+
+async def _atividade(da: DadosAbertos, data: date, codigo: str, versoes: Versoes) -> AtividadeDoCadastro:
+    lista = await atividades(da, data, versoes)
+    achada = next((a for a in lista.atividades if a.cAtivSN == codigo), None)
+    if achada is None:
+        raise Recusado(
+            "Atividade do Simples que o ContaAI não calcula: use uma das admissíveis na NF-e (GET "
+            "/referencias/atividades)."
+        )
+    return AtividadeDoCadastro(
+        anexo=achada.anexo, cAtivSN=achada.cAtivSN, descricaoAtividade=achada.descricao, fonte=lista.fonte
+    )
+
+
+async def montar_empresa(
+    da: DadosAbertos, req: EmpresaCadastroRequisicao, base: Cenario, versoes: Versoes
+) -> tuple[Empresa, Cenario]:
+    if not cnpj_valido(req.cnpj):
+        raise Recusado(MENSAGEM_CNPJ)
+    nome = await _local(da, req.uf, req.municipio)
+    atividade = await _atividade(da, base.data, req.cAtivSN, versoes)
+    empresa = Empresa(
+        razaoSocial=req.razaoSocial,
+        cnpj=req.cnpj,
+        regimeAtual=req.regimeAtual,
+        uf=req.uf,
+        municipio=req.municipio,
+        municipioNome=nome,
+        simples=atividade,
+    )
+    cenario = base.model_copy(update={"premissasDas": base.premissasDas.model_copy(update={"anexo": atividade.anexo})})
+    return empresa, cenario
+
+
+def resposta_da_empresa(reg: EmpresaRegistro, aviso: str) -> EmpresaResposta:
+    s = reg.empresa.simples
+    return EmpresaResposta(
+        empresa=resumo_empresa(reg),
+        atividade=AtividadeDaEmpresa(cAtivSN=s.cAtivSN, descricao=s.descricaoAtividade, anexo=s.anexo, fonte=s.fonte),
+        cenario=cenario_empresa(reg),
+        premissasDasOrigem=reg.cenario.premissasDas.origem,
+        aviso=aviso,
+    )
+
+
+def cadastrar_empresa(
+    repo: Repositorio,
+    contas: Contas,
+    organizacao_id: str,
+    empresa: Empresa,
+    cenario: Cenario,
+    agora: datetime,
+    aviso: str,
+) -> EmpresaResposta:
+    """Grava no banco da organização e depois dá o acesso no banco das contas. Se o acesso falhar, a empresa sai
+    do banco da organização: os dois bancos não têm transação em comum."""
+    with repo.escrita() as s:
+        if s.empresa(empresa.cnpj) is not None:
+            raise Conflito("Esta empresa já está cadastrada na sua conta.")
+        if len(s.empresas()) >= EMPRESAS_POR_ORGANIZACAO:
+            raise Conflito(f"A conta já tem {EMPRESAS_POR_ORGANIZACAO} empresas, o limite por conta.")
+        s.inserir_empresa(empresa, cenario)
+    try:
+        contas.vincular_empresa(organizacao_id, empresa.cnpj, agora)
+    except BaseException:
+        with repo.escrita() as s:
+            s.apagar_empresa(empresa.cnpj)
+        raise
+    return resposta_da_empresa(EmpresaRegistro(empresa, cenario), aviso)
+
+
+def ler_empresa(repo: Repositorio, cnpj: str, aviso: str) -> EmpresaResposta:
+    with repo.leitura() as s:
+        return resposta_da_empresa(_empresa(s, cnpj), aviso)
+
+
+async def configurar_empresa(
+    da: DadosAbertos,
+    repo: Repositorio,
+    cnpj: str,
+    req: EmpresaConfiguracaoRequisicao,
+    base: Cenario,
+    versoes: Versoes,
+    aviso: str,
+) -> EmpresaResposta:
+    """Só o que veio muda. As consultas aos motores ficam fora da transação; a gravação confere que a empresa
+    ainda é a mesma que foi lida (checagem otimista, como na correção da classificação)."""
+    with repo.leitura() as s:
+        lido = _empresa(s, cnpj)
+    empresa, cenario = lido.empresa, lido.cenario
+    enviados = req.model_fields_set
+    mudancas: dict[str, object] = {}
+    if "razaoSocial" in enviados:
+        mudancas["razaoSocial"] = req.razaoSocial
+    if "regimeAtual" in enviados:
+        mudancas["regimeAtual"] = req.regimeAtual
+    if "uf" in enviados and req.uf is not None and req.municipio is not None:
+        mudancas |= {"uf": req.uf, "municipio": req.municipio, "municipioNome": await _local(da, req.uf, req.municipio)}
+    premissas = cenario.premissasDas
+    if "cAtivSN" in enviados and req.cAtivSN is not None:
+        atividade = await _atividade(da, cenario.data, req.cAtivSN, versoes)
+        mudancas["simples"] = atividade
+        premissas = premissas.model_copy(update={"anexo": atividade.anexo})
+    if "premissasDas" in enviados:
+        if req.premissasDas is None:  # volta aos valores da simulação, no anexo da atividade
+            premissas = base.premissasDas.model_copy(update={"anexo": premissas.anexo})
+        else:
+            premissas = premissas.model_copy(
+                update={
+                    "pCBSSN": req.premissasDas.pCBSSN,
+                    "pIBSSN": req.premissasDas.pIBSSN,
+                    "fonte": "Configurações da empresa (P8).",
+                    "origem": "usuario",
+                }
+            )
+    atualizacao_cenario: dict[str, object] = {"premissasDas": premissas}
+    if "cargaAtualPct" in enviados:
+        atualizacao_cenario["cargaAtualPct"] = req.cargaAtualPct
+    nova_empresa = empresa.model_copy(update=mudancas)
+    novo_cenario = cenario.model_copy(update=atualizacao_cenario)
+    # Revalida (model_copy não valida): o que entrou passou pelo contrato, mas o modelo gravado é outro.
+    nova_empresa = Empresa.model_validate(nova_empresa.model_dump())
+    novo_cenario = Cenario.model_validate(novo_cenario.model_dump())
+    with repo.escrita() as s:
+        atual = _empresa(s, cnpj)
+        if (atual.empresa, atual.cenario) != (empresa, cenario):
+            raise Conflito("A empresa mudou enquanto as configurações eram conferidas. Tente de novo.")
+        s.atualizar_empresa(nova_empresa, novo_cenario)
+    return resposta_da_empresa(EmpresaRegistro(nova_empresa, novo_cenario), aviso)
+
+
+# -- catálogo ---------------------------------------------------------------------------------------------
+
+
+async def criar_item(
+    da: DadosAbertos, repo: Repositorio, req: ItemNovoRequisicao, exigir_digito: bool, agora: datetime
+) -> ItemResposta:
+    """O item com a classificação que o usuário escolheu entre as válidas para a NCM (P3). Itens sujeitos ao
+    Imposto Seletivo ficam para depois: a classificação do IS e os litros por unidade não têm, por enquanto, uma
+    fonte oficial que o ContaAI consulte, e o ContaAI não inventa (ADR 0017)."""
+    if exigir_digito and not cnpj_valido(req.cnpjFornecedor):
+        raise Recusado("CNPJ do fornecedor inválido: confira os dígitos verificadores.")
+    with repo.leitura() as s:
+        reg = _empresa(s, req.cnpj)
+    data = reg.cenario.data
+    info = await da.ncm(req.ncm, data)
+    if info is None:
+        raise Recusado("NCM não encontrada nos dados abertos do motor RR na data do cenário.")
+    if info.tributadoPeloImpostoSeletivo:
+        raise Recusado(
+            "Esta NCM é tributada pelo Imposto Seletivo. O cadastro de itens com Imposto Seletivo ainda não está "
+            "disponível na empresa própria."
+        )
+    escolhida = next(
+        (c for c in await classificacoes_da_ncm(da, req.ncm, data) if c.cClassTrib == req.cClassTrib), None
+    )
+    if escolhida is None:
+        raise Recusado(
+            "Classificação não válida para a NCM nos dados abertos do motor RR. Use uma das candidatas da busca "
+            "(GET /busca/ncm)."
+        )
+    fonte = (
+        f"Escolhida no cadastro do item em {agora.date().isoformat()} (UTC), com a confirmação do usuário (P3): "
+        f"{escolhida.cClassTrib} ({escolhida.descricao}), válida para a NCM nos dados abertos do motor RR em "
+        f"{data.isoformat()}."
+    )
+    with repo.escrita() as s:
+        _empresa(s, req.cnpj)
+        if s.contar_itens(req.cnpj) >= ITENS_POR_EMPRESA:
+            raise Conflito(f"O catálogo já tem {ITENS_POR_EMPRESA} itens, o limite por empresa.")
+        if s.item_por_codigo(req.cnpj, req.cnpjFornecedor, req.codigoFornecedor) is not None:
+            raise Conflito("Este código do fornecedor já está em outro item do catálogo.")
+        item_id = f"item-{secrets.token_hex(6)}"
+        while s.existe_item(req.cnpj, item_id):
+            item_id = f"item-{secrets.token_hex(6)}"
+        item = ItemCatalogo(
+            id=item_id,
+            descricao=req.descricao,
+            ncm=req.ncm,
+            ncmDescricaoOficial=info.hierarquia() or req.ncm,
+            cst=escolhida.cst,
+            cClassTrib=escolhida.cClassTrib,
+            classificacaoFonte=fonte,
+            impostoSeletivo=None,
+            unidade=req.unidade,
+            cnpjFornecedor=req.cnpjFornecedor,
+            codigoFornecedor=req.codigoFornecedor,
+            precoVenda=req.precoVenda,
+            margemAlvoPct=req.margemAlvoPct,
+        )
+        s.inserir_item(req.cnpj, item)
+        s.lancar_preco(req.cnpj, item.id, req.precoVenda, agora, "tela")
+        estado = _item_estado(s, req.cnpj, item)
+    return ItemResposta(item=estado)
+
+
+def alterar_item(repo: Repositorio, item_id: str, req: ItemAlteracaoRequisicao, exigir_digito: bool) -> ItemResposta:
+    enviados = req.model_fields_set - {"cnpj"}
+    if exigir_digito and req.cnpjFornecedor is not None and not cnpj_valido(req.cnpjFornecedor):
+        raise Recusado("CNPJ do fornecedor inválido: confira os dígitos verificadores.")
+    with repo.escrita() as s:
+        _empresa(s, req.cnpj)
+        cat = s.item(req.cnpj, item_id)
+        if cat is None:
+            raise NaoEncontrado("Item não encontrado no catálogo desta empresa.")
+        mudancas = {campo: getattr(req, campo) for campo in enviados}
+        if "codigoFornecedor" in mudancas:
+            outro = s.item_por_codigo(req.cnpj, req.cnpjFornecedor or "", req.codigoFornecedor or "")
+            if outro is not None and outro.id != item_id:
+                raise Conflito("Este código do fornecedor já está em outro item do catálogo.")
+        novo = ItemCatalogo.model_validate(cat.model_copy(update=mudancas).model_dump(by_alias=True))
+        if novo == cat:
+            raise Conflito("Nada mudou: o item já tem estes valores.")
+        # O JSON guarda a classificação do cadastro; a atual (do último lançamento) não vai para ele.
+        cadastro = s.item_do_cadastro(req.cnpj, item_id)
+        if cadastro is None:
+            raise NaoEncontrado("Item não encontrado no catálogo desta empresa.")
+        s.atualizar_item(req.cnpj, ItemCatalogo.model_validate(cadastro.model_copy(update=mudancas).model_dump()))
+        atualizado = s.item(req.cnpj, item_id)
+        if atualizado is None:
+            raise NaoEncontrado("Item não encontrado no catálogo desta empresa.")
+        estado = _item_estado(s, req.cnpj, atualizado)
+    return ItemResposta(item=estado)
+
+
+def arquivar_item(repo: Repositorio, cnpj: str, item_id: str, agora: datetime) -> ItemArquivadoResposta:
+    with repo.escrita() as s:
+        _empresa(s, cnpj)
+        if not s.arquivar_item(cnpj, item_id, agora):
+            raise NaoEncontrado("Item não encontrado no catálogo desta empresa.")
+    return ItemArquivadoResposta(itemId=item_id, arquivadoEm=agora)

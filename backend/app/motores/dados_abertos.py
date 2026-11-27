@@ -27,6 +27,7 @@ log = logging.getLogger("contaai.dados_abertos")
 DA = "/calculadora/dados-abertos"
 ROTA_ERROS_RR = "/calculadora/observabilidade/erros"
 ROTA_ERROS_SN = "/calculadora/observabilidade/simples-nacional/erros"
+ROTA_ATIVIDADES_SN = "/calculadora/simples-nacional/atividades"
 # NCM de máquina (cozinha industrial), sem benefício: o que vale para ela vale para quase todo produto.
 # Usada para separar o que é específico da NCM consultada (método do ADR 0003).
 NCM_NEUTRA = "84381000"
@@ -76,6 +77,28 @@ class ErroCatalogo(_Lido):
     codigo: str
     titulo: str
     descricao: str
+
+
+class UfOficial(_Lido):
+    codigo: int
+    nome: str
+    sigla: str
+
+
+class MunicipioOficial(_Lido):
+    codigo: int  # código do IBGE, o mesmo que o motor RR recebe na operação
+    nome: str
+
+
+class AtividadeSimplesOficial(_Lido):
+    """Uma atividade do Simples no motor SN (GET /calculadora/simples-nacional/atividades)."""
+
+    codigo: str
+    descricao: str
+    anexoSemFatorR: str | None = None
+    sujeitaFatorR: bool = False
+    disponivel: bool = False
+    admissivelNoDocumento: bool = False
 
 
 def sem_html(texto: str) -> str:
@@ -189,6 +212,21 @@ class DadosAbertos:
         validas = {c for c, ok in zip(candidatas, resultados, strict=True) if ok}
         self.cache.guardar(chave, sorted(validas))
         return validas
+
+    async def ufs(self) -> list[UfOficial]:
+        rr = Motor.REGIME_REGULAR
+        return self._ler(list[UfOficial], await self._get(rr, f"{self.url_rr}{DA}/ufs", {}), rr)
+
+    async def municipios(self, sigla_uf: str) -> list[MunicipioOficial]:
+        rr = Motor.REGIME_REGULAR
+        valor = await self._get(rr, f"{self.url_rr}{DA}/ufs/municipios", {"siglaUf": sigla_uf})
+        return self._ler(list[MunicipioOficial], valor, rr)
+
+    async def atividades_simples(self, data: date, tp_doc: str = "55") -> list[AtividadeSimplesOficial]:
+        """As atividades do Simples na data, com a admissibilidade no documento (55 = NF-e)."""
+        sn = Motor.SIMPLES_NACIONAL
+        valor = await self._get(sn, f"{self.url_sn}{ROTA_ATIVIDADES_SN}", {"data": data.isoformat(), "tpDoc": tp_doc})
+        return self._ler(list[AtividadeSimplesOficial], valor, sn)
 
     async def erro(self, codigo: str) -> tuple[Motor, ErroCatalogo] | None:
         """Descrição oficial de um código de erro (REG-xxx no RR, VSN-xxx no SN); None se não existe."""

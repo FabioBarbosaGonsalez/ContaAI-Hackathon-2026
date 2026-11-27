@@ -35,7 +35,9 @@ ROTAS_LIMITADAS = (
     "/alertas/",
     "/demo/restaurar",
     "/espacos",
-    "/catalogo/",  # POST /catalogo/{id}/preco e /classificacao (o GET /catalogo não chama os motores)
+    "/catalogo/",  # POST e PATCH em /catalogo/... (o GET /catalogo não chama os motores)
+    "/empresas",  # C3-B: cadastro e configurações consultam os motores
+    "/referencias/",  # C3-B: UF, município e atividade, dos motores
     *ROTAS_ENTRADA,
 )
 # Métodos que mudam o estado: passam pela defesa contra CSRF.
@@ -66,7 +68,7 @@ async def limitar_corpo(request: Request, call_next: Proximo) -> Response:
     recusa corpo maior que o Content-Length declarado. Sem Content-Length e sem Transfer-Encoding, a
     requisição não tem corpo (RFC 9112, 6.3); corpo em pedaços (chunked) é recusado, porque não diz o tamanho.
     """
-    if request.method != "POST":
+    if request.method not in ("POST", "PUT", "PATCH"):
         return await call_next(request)
     cfg = _cfg_atual(request)
     declarado = request.headers.get("content-length")
@@ -123,7 +125,7 @@ async def verificar_origem(request: Request, call_next: Proximo) -> Response:
 
 async def limitar_requisicoes(request: Request, call_next: Proximo) -> Response:
     caminho = request.url.path
-    if request.method in ("GET", "POST") and caminho.startswith(ROTAS_LIMITADAS):
+    if request.method in ("GET", "POST", "PATCH") and caminho.startswith(ROTAS_LIMITADAS):
         ip = request.client.host if request.client else "desconhecido"
         limitadores = [LIMITE_CHAT if caminho == "/chat" else LIMITE_GERAL]
         if caminho == "/busca/ncm":

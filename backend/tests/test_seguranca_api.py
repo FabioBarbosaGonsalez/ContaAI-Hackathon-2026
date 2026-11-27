@@ -218,11 +218,16 @@ def test_o_sql_do_repositorio_nunca_e_montado_com_texto() -> None:
     permitidos = {'conexao.execute(f"PRAGMA busy_timeout = {ESPERA_ESCRITA_MS}")'}  # constante do módulo
     achados = []
     for arquivo in (BACKEND / "app").rglob("*.py"):
-        for linha in arquivo.read_text(encoding="utf-8").splitlines():
-            trecho = linha.strip()
+        linhas = [linha.strip() for linha in arquivo.read_text(encoding="utf-8").splitlines()]
+        for n, trecho in enumerate(linhas):
             if re.search(r"\.execute(many)?\(\s*f[\"']", trecho) or re.search(r"\.execute\([^)]*\+", trecho):
                 if trecho not in permitidos:
                     achados.append(f"{arquivo.name}: {trecho}")
+            # O SQL na linha seguinte ao execute( (achado da C3-B: a f-string ali escapava da regra acima).
+            if re.search(r"\.execute(many)?\($", trecho) and n + 1 < len(linhas):
+                seguinte = linhas[n + 1]
+                if re.match(r"f[\"']", seguinte) or re.search(r"[\"']\s*\+|\+\s*[\"']", seguinte):
+                    achados.append(f"{arquivo.name}: {trecho} {seguinte}")
     assert achados == []
 
 

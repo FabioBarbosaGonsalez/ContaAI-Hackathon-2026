@@ -26,6 +26,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from decimal import ROUND_HALF_UP, Decimal
 
+from app.cnpj import PADRAO_CNPJ
+
 NS = "http://www.portalfiscal.inf.br/nfe"
 EXPAT_MINIMO = (2, 6, 0)
 MAX_PROFUNDIDADE = 16
@@ -274,11 +276,11 @@ def ler_nfe(conteudo: bytes) -> NotaLida:
     if inf.find(_q("dest/CNPJ")) is None:
         raise NotaInvalida("O destinatário precisa ter CNPJ.")
     emitente = Participante(
-        cnpj=_padrao(inf, "emit/CNPJ", "CNPJ do emitente", r"[0-9]{14}"),
+        cnpj=_padrao(inf, "emit/CNPJ", "CNPJ do emitente", PADRAO_CNPJ),
         nome=_texto(inf, "emit/xNome", "xNome do emitente", 60) or "",
     )
     destinatario = Participante(
-        cnpj=_padrao(inf, "dest/CNPJ", "CNPJ do destinatário", r"[0-9]{14}"),
+        cnpj=_padrao(inf, "dest/CNPJ", "CNPJ do destinatário", PADRAO_CNPJ),
         nome=_texto(inf, "dest/xNome", "xNome do destinatário", 60) or "",
     )
 

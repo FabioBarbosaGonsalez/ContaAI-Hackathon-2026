@@ -577,6 +577,22 @@ class Contas:
                 for r in c.execute("SELECT cnpj FROM acessos_empresa WHERE organizacao_id = ?", (organizacao_id,))
             )
 
+    def vincular_empresa(self, organizacao_id: str, cnpj: str, agora: datetime) -> None:
+        """A organização passa a alcançar o CNPJ (C3-B, ADR 0017). O mesmo CNPJ pode estar em outra organização:
+        não há como provar quem é o dono, e um CNPJ único deixaria alguém bloquear a empresa de outra pessoa
+        cadastrando-a antes; os dados de cada organização ficam separados (plano v2.1, decisão 5 da C3)."""
+        with self.banco.transacao(escrita=True) as c:
+            c.execute(
+                # Um acesso que sobrou (a empresa saiu do banco da organização numa falha) não trava o recadastro.
+                "INSERT INTO acessos_empresa (organizacao_id, cnpj, desde) VALUES (?, ?, ?)"
+                " ON CONFLICT (organizacao_id, cnpj) DO NOTHING",
+                (organizacao_id, cnpj, _t(agora)),
+            )
+
+    def desvincular_empresa(self, organizacao_id: str, cnpj: str) -> None:
+        with self.banco.transacao(escrita=True) as c:
+            c.execute("DELETE FROM acessos_empresa WHERE organizacao_id = ? AND cnpj = ?", (organizacao_id, cnpj))
+
     def excluir(self, sessao: SessaoAtiva, senha: str, agora: datetime) -> Exclusao:
         """Apaga a pessoa (LGPD, art. 18 VI). Se ela é a única integrante, a organização vai junto; se é a única
         dona de uma organização com outros membros, precisa passar a posse antes."""

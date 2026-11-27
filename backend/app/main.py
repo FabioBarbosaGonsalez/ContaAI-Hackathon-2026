@@ -27,7 +27,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from app.api import middlewares, problemas
 from app.api.dependencias import banco, http_interno, novo_cliente_motores, repositorio
 from app.api.dependencias import contas as contas_do_processo
-from app.api.rotas import agente, calculo, classificacao, contas, espacos, explicacao, notas, operacao
+from app.api.rotas import agente, calculo, classificacao, contas, empresa, espacos, explicacao, notas, operacao
 from app.config import Configuracao, configuracao
 from app.contrato import AVISO_LEGAL
 from app.motores.cliente import FalhaMotor
@@ -96,7 +96,7 @@ app.add_middleware(BaseHTTPMiddleware, dispatch=middlewares.verificar_origem)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=configuracao().cors_origens,
-    allow_methods=["GET", "POST", "DELETE"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE"],
     allow_headers=["Content-Type", "X-ContaAI-Token", "X-ContaAI-Espaco"],
     # Sem isto, o JavaScript de outra origem não lê estes headers (só os da lista segura do padrão Fetch).
     expose_headers=["Retry-After", "X-ContaAI-Mock"],
@@ -108,7 +108,7 @@ app.add_middleware(BaseHTTPMiddleware, dispatch=middlewares.cabecalhos_de_segura
 
 problemas.registrar(app)
 
-for modulo in (calculo, notas, espacos, contas, classificacao, explicacao, agente, operacao):
+for modulo in (calculo, notas, empresa, espacos, contas, classificacao, explicacao, agente, operacao):
     app.include_router(modulo.rotas)
 
 

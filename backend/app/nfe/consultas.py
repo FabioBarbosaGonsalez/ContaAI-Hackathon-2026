@@ -36,6 +36,11 @@ from app.persistencia.repositorio import AlertaRegistro, EmpresaRegistro, Lancam
 from app.precificacao.lote import LOTE
 
 AVISO_DEMO = "Dados fictícios de demonstração (P10): empresas, CNPJs, preços e custos não são reais."
+# Empresa da conta (C3-B, ADR 0017): o P10 vale só para a demonstração; aqui os dados são os que a empresa cadastrou.
+AVISO_EMPRESA_PROPRIA = (
+    "Dados cadastrados pela sua empresa. Os resultados são simulações com as calculadoras oficiais: não são "
+    "apuração fiscal e não substituem o contador."
+)
 HISTORICO_MAX = 10
 
 
@@ -115,7 +120,7 @@ def _item_estado(s: Sessao, cnpj: str, cat: ItemCatalogo) -> ItemCatalogoEstado:
     )
 
 
-def catalogo(repo: Repositorio, cnpj: str) -> CatalogoResposta:
+def catalogo(repo: Repositorio, cnpj: str, aviso: str = AVISO_DEMO) -> CatalogoResposta:
     with repo.leitura() as s:
         reg = _empresa(s, cnpj)
         itens = [_item_estado(s, cnpj, cat) for cat in s.itens(cnpj)]
@@ -126,11 +131,11 @@ def catalogo(repo: Repositorio, cnpj: str) -> CatalogoResposta:
         clientesB2B=clientes,
         loteReferencia=int(LOTE),
         itens=itens,
-        aviso=AVISO_DEMO,
+        aviso=aviso,
     )
 
 
-def notas(repo: Repositorio, cnpj: str, limite: int) -> NotasResposta:
+def notas(repo: Repositorio, cnpj: str, limite: int, aviso: str = AVISO_DEMO) -> NotasResposta:
     """As notas de compra da empresa, lidas do recibo de cada importação (o mesmo do POST /nfe/importar)."""
     with repo.leitura() as s:
         reg = _empresa(s, cnpj)
@@ -148,7 +153,7 @@ def notas(repo: Repositorio, cnpj: str, limite: int) -> NotasResposta:
                 alertasAbertos=n.alertas_abertos,
             )
         )
-    return NotasResposta(empresa=resumo_empresa(reg), notas=saida, aviso=AVISO_DEMO)
+    return NotasResposta(empresa=resumo_empresa(reg), notas=saida, aviso=aviso)
 
 
 @dataclass(frozen=True)
@@ -256,6 +261,8 @@ def aplicar(
         cnpj, reg = achado
         if reg.aplicado_em is not None:
             raise Conflito("O preço deste alerta já foi aplicado.")
+        if s.item(cnpj, reg.alerta.itemId) is None:
+            raise Conflito("O item deste alerta foi arquivado e saiu do catálogo.")
         sugerido = reg.alerta.precoSugerido
         if sugerido is None:
             raise Conflito("Este alerta não tem preço sugerido (margem-alvo impossível).")
@@ -266,7 +273,7 @@ def aplicar(
     return AplicarAlertaResposta(alerta=_saida(atualizado), precoAnterior=anterior, precoNovo=sugerido)
 
 
-def painel(repo: Repositorio, cnpjs: frozenset[str] | None = None) -> PainelContadorResposta:
+def painel(repo: Repositorio, cnpjs: frozenset[str] | None = None, aviso: str = AVISO_DEMO) -> PainelContadorResposta:
     """Com `cnpjs`, só as empresas desse conjunto (ADR 0015)."""
     with repo.leitura() as s:
         linhas = []
@@ -286,4 +293,4 @@ def painel(repo: Repositorio, cnpjs: frozenset[str] | None = None) -> PainelCont
                 )
             )
     linhas.sort(key=lambda e: (-e.alertasAbertos, e.empresa.razaoSocial))
-    return PainelContadorResposta(empresas=linhas, aviso=AVISO_DEMO)
+    return PainelContadorResposta(empresas=linhas, aviso=aviso)

@@ -159,7 +159,7 @@ Na conversa de mapeamento eu tinha citado 2.4.1: corrigido para 2.6.0, por causa
 - **Cabeçalhos em toda resposta:** `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `X-Frame-Options: DENY` e `Cross-Origin-Resource-Policy: same-site`. Fora da documentação (`/docs`, que carrega o Swagger da CDN do FastAPI), também `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'` e `Cache-Control: no-store`.
 - **Upload:** só tipos de XML (`text/xml`, `application/xml` ou sem tipo); outro tipo dá 415.
 - **Entradas:**
-  - CNPJ nas consultas com padrão de 14 dígitos;
+  - CNPJ nas consultas com padrão de 14 dígitos (desde a C3-B, o formato oficial com o CNPJ alfanumérico: [ADR 0017](0017-empresa-propria.md));
   - id do alerta com padrão `alerta-` + 16 hexadecimais;
   - caminhos do manifesto das sementes presos à pasta `data/demo`.
 - **Configuração:** `CONTAAI_BANCO_CAMINHO` vazio é recusado, porque viraria o caminho ".".
@@ -257,3 +257,12 @@ A migração `0001_inicial.sql` foi editada no pacote A (datas, `CHECK` e índic
 - `tests/test_listar_notas.py` (8 testes): ordem pela emissão (importadas na ordem 1001, 1003, 1002, listadas 1003, 1002, 1001), contagens iguais às do recibo, alerta aplicado sai dos abertos, nota repetida não duplica, isolamento por empresa e por espaço, 404 e 422, e o mock coerente com o `alertas.json`.
 - Três mutações foram pegas: ordem por id, abertos igual a gerados e consulta sem o filtro do CNPJ.
 - Os outros 11 mocks saíram idênticos ao gerar de novo, e o `pytest -m golden` passou com os motores reais.
+
+### Revisão da C3-B (2026-11-27, [ADR 0017](0017-empresa-propria.md))
+
+- **CNPJ alfanumérico:** o leitor aceita o CNPJ alfanumérico no emitente e no destinatário (NT 2026.004 v1.01, em produção desde 01/07/2026) e confere só o formato. O destinatário continua precisando ser uma empresa de quem chama.
+- **Item arquivado:**
+  - as notas que chegam com o código do fornecedor dele viram item sem par;
+  - os alertas dele saem das listas, do painel e da contagem de abertos de cada nota;
+  - aplicar um alerta dele responde 409.
+- **Os CNPJs fictícios** continuam com o dígito inválido de propósito. Fora da demonstração e dos espaços, a API exige o dígito certo, então nenhum deles entra como empresa própria (`tests/test_cnpj.py`).

@@ -130,6 +130,18 @@ def test_valida_cada_campo_usado(de: str, para: str, mensagem: str) -> None:
         ler_nfe(_trocar(nota(NOTA_2), de, para))
 
 
+def test_cnpj_alfanumerico_no_emitente_e_no_destinatario() -> None:
+    """NT 2026.004 v1.01 da NF-e: emit/CNPJ (C02) e dest/CNPJ (E02) passam a alfanuméricos (C, 14), em produção
+    desde 01/07/2026. O leitor confere só o formato; o destinatário ainda precisa ser uma empresa do ContaAI."""
+    alterada = _trocar(nota(NOTA_2), "<CNPJ>71604258000156</CNPJ>", "<CNPJ>12ABC34501DE35</CNPJ>")
+    alterada = _trocar(alterada, f"<CNPJ>{SERRA_AZUL}</CNPJ>", "<CNPJ>AB12CD34EF5601</CNPJ>")
+    lida = ler_nfe(alterada)
+    assert (lida.emitente.cnpj, lida.destinatario.cnpj) == ("12ABC34501DE35", "AB12CD34EF5601")
+    for errado in ("12abc34501de35", "12ABC34501DEAB"):
+        with pytest.raises(NotaInvalida, match="CNPJ do emitente fora do formato"):
+            ler_nfe(_trocar(nota(NOTA_2), "<CNPJ>71604258000156</CNPJ>", f"<CNPJ>{errado}</CNPJ>"))
+
+
 def test_texto_com_caractere_de_controle_e_recusado_sem_eco() -> None:
     # ESC (0x1b) já é ilegal em XML 1.0 e o parser recusa; DEL (0x7f) é legal no XML e a validação recusa.
     with pytest.raises(NotaInvalida, match="bem formado"):

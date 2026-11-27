@@ -295,7 +295,8 @@ def test_migracao_0002_preserva_os_precos_e_as_regras(tmp_path: Path) -> None:
             "INSERT INTO precos (cnpj, item_id, valor_unitario, vigente_desde, origem)"
             " VALUES ('36817420000113', 'a', '27.90', '2027-03-01T03:00:00+00:00', 'semente')"
         )
-    assert Banco(caminho).migrar() == ["0002_tela.sql"]
+    # A 0003 (C3-B) vem junto: um banco da 0001 recebe todas as que faltam, em ordem.
+    assert Banco(caminho).migrar() == ["0002_tela.sql", "0003_empresa_propria.sql"]
     with sqlite3.connect(caminho) as c:
         assert c.execute("SELECT valor_unitario, origem FROM precos").fetchall() == [("27.90", "semente")]
         with pytest.raises(sqlite3.IntegrityError, match="não se altera"):
@@ -330,7 +331,8 @@ def test_espaco_copiado_antes_da_0002_recebe_a_migracao_ao_abrir(demo, tmp_path:
         c.execute("ATTACH DATABASE ? AS novo", (str(destino.caminho),))
         c.execute("BEGIN")
         for tabela in ("empresas", "itens", "codigos_fornecedor", "notas", "custos", "alertas", "precos"):
-            c.execute(f"INSERT INTO {tabela} SELECT * FROM novo.{tabela}")  # noqa: S608 (nomes fixos do teste)
+            colunas = ", ".join(r[1] for r in c.execute(f"PRAGMA table_info({tabela})"))  # as da 0001
+            c.execute(f"INSERT INTO {tabela} SELECT {colunas} FROM novo.{tabela}")  # noqa: S608 (nomes fixos do teste)
         c.execute("COMMIT")
         c.execute("DETACH DATABASE novo")
     finally:

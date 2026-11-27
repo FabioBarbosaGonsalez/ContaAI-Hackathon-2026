@@ -71,10 +71,18 @@ class Banco:
                     if ja[versao]["sha256"] != resumo:
                         raise MigracaoAlterada(f"A migração {nome} mudou depois de aplicada. Crie uma migração nova.")
                     continue
+                # Procedimento de mudança de esquema da documentação do SQLite (lang_altertable.html, "Making
+                # Other Kinds Of Table Schema Changes"): chaves estrangeiras desligadas fora da transação (o
+                # PRAGMA não tem efeito dentro dela) e PRAGMA foreign_key_check antes do COMMIT. Com elas ligadas,
+                # o DROP TABLE de uma tabela-mãe faz um DELETE implícito que dispara o ON DELETE CASCADE
+                # (lang_droptable.html): reconstruir `empresas` apagaria itens, notas e clientes.
+                conexao.execute("PRAGMA foreign_keys = OFF")
                 conexao.execute("BEGIN IMMEDIATE")
                 try:
                     for comando in _comandos(sql):
                         conexao.execute(comando)
+                    if conexao.execute("PRAGMA foreign_key_check").fetchone() is not None:
+                        raise RuntimeError(f"A migração {nome} deixaria chave estrangeira quebrada.")
                     conexao.execute(
                         "INSERT INTO schema_migrations (versao, nome, sha256, aplicada_em) VALUES (?, ?, ?, ?)",
                         (versao, nome, resumo, datetime.now(UTC).isoformat()),
@@ -83,6 +91,8 @@ class Banco:
                 except BaseException:
                     conexao.execute("ROLLBACK")
                     raise
+                finally:
+                    conexao.execute("PRAGMA foreign_keys = ON")
                 aplicadas_agora.append(nome)
         finally:
             conexao.close()

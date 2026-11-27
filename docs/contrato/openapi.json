@@ -585,7 +585,7 @@
               "anyOf": [
                 {
                   "type": "string",
-                  "pattern": "^[0-9]{14}$"
+                  "pattern": "^[0-9A-Z]{12}[0-9]{2}$"
                 },
                 {
                   "type": "null"
@@ -1271,11 +1271,11 @@
             "required": true,
             "schema": {
               "type": "string",
-              "pattern": "^[0-9]{14}$",
-              "description": "CNPJ da empresa (14 dígitos).",
+              "pattern": "^[0-9A-Z]{12}[0-9]{2}$",
+              "description": "CNPJ da empresa: 14 posições, sem pontos, barra nem traço.",
               "title": "Cnpj"
             },
-            "description": "CNPJ da empresa (14 dígitos)."
+            "description": "CNPJ da empresa: 14 posições, sem pontos, barra nem traço."
           },
           {
             "name": "X-ContaAI-Espaco",
@@ -1376,11 +1376,11 @@
             "required": true,
             "schema": {
               "type": "string",
-              "pattern": "^[0-9]{14}$",
-              "description": "CNPJ da empresa (14 dígitos).",
+              "pattern": "^[0-9A-Z]{12}[0-9]{2}$",
+              "description": "CNPJ da empresa: 14 posições, sem pontos, barra nem traço.",
               "title": "Cnpj"
             },
-            "description": "CNPJ da empresa (14 dígitos)."
+            "description": "CNPJ da empresa: 14 posições, sem pontos, barra nem traço."
           },
           {
             "name": "limite",
@@ -1542,6 +1542,1250 @@
           },
           "400": {
             "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/referencias/ufs": {
+      "get": {
+        "tags": [
+          "empresa"
+        ],
+        "summary": "Referencias Ufs",
+        "description": "As UFs dos dados abertos do motor RR (sigla, nome e código do IBGE).",
+        "operationId": "referencias_ufs_referencias_ufs_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UfsResposta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "O motor recusou a operação (/problemas/motor-recusou, ex.: VSN-015) ou a entrada não segue o contrato (/problemas/entrada-invalida).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ProblemaMotor"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ProblemaValidacao"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "O motor devolveu uma resposta que o ContaAI não reconhece.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaMotor"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Motor indisponível.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaMotor"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por minuto atingido (header Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Rota que só funciona no modo real (CONTAAI_MODO=real).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/referencias/municipios": {
+      "get": {
+        "tags": [
+          "empresa"
+        ],
+        "summary": "Referencias Municipios",
+        "description": "Os municípios da UF nos dados abertos do motor RR, com o código do IBGE.",
+        "operationId": "referencias_municipios_referencias_municipios_get",
+        "parameters": [
+          {
+            "name": "uf",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Z]{2}$",
+              "description": "Sigla da UF.",
+              "title": "Uf"
+            },
+            "description": "Sigla da UF."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MunicipiosResposta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "O motor recusou a operação (/problemas/motor-recusou, ex.: VSN-015) ou a entrada não segue o contrato (/problemas/entrada-invalida).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ProblemaMotor"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ProblemaValidacao"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "O motor devolveu uma resposta que o ContaAI não reconhece.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaMotor"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Motor indisponível.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaMotor"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por minuto atingido (header Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Rota que só funciona no modo real (CONTAAI_MODO=real).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/referencias/atividades": {
+      "get": {
+        "tags": [
+          "empresa"
+        ],
+        "summary": "Referencias Atividades",
+        "description": "As atividades do Simples que o ContaAI calcula, no motor SN, na data do cenário da empresa própria.",
+        "operationId": "referencias_atividades_referencias_atividades_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtividadesResposta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "O motor recusou a operação (/problemas/motor-recusou, ex.: VSN-015) ou a entrada não segue o contrato (/problemas/entrada-invalida).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ProblemaMotor"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ProblemaValidacao"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "O motor devolveu uma resposta que o ContaAI não reconhece.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaMotor"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Motor indisponível.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaMotor"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por minuto atingido (header Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Rota que só funciona no modo real (CONTAAI_MODO=real).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/empresas": {
+      "post": {
+        "tags": [
+          "empresa"
+        ],
+        "summary": "Cadastrar Empresa",
+        "description": "Cadastra a empresa da conta com o cenário de simulação. O CNPJ precisa do dígito verificador certo (numérico\nou alfanumérico); o nome do município e o anexo da atividade vêm dos motores.",
+        "operationId": "cadastrar_empresa_empresas_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmpresaCadastroRequisicao"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmpresaResposta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "CNPJ com dígito errado, município fora da UF, atividade que o ContaAI não calcula, ou entrada fora do contrato.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaValidacao"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "O motor devolveu uma resposta que o ContaAI não reconhece.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaMotor"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Motor indisponível.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaMotor"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Rota que só funciona no modo real (CONTAAI_MODO=real).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por minuto atingido (header Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou sessão encerrada ou expirada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Só o dono da organização cadastra e configura a empresa.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Empresa que a conta não alcança (a mesma resposta de uma que não existe).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A empresa já está na conta, o limite de empresas foi atingido, ou ela mudou durante a conferência.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "411": {
+            "description": "Corpo sem Content-Length (corpo em pedaços não é aceito).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo maior que o limite.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/empresas/{cnpj}": {
+      "get": {
+        "tags": [
+          "empresa"
+        ],
+        "summary": "Ler Empresa",
+        "description": "A empresa da conta com a atividade, o cenário e a origem das premissas do DAS (configurações).",
+        "operationId": "ler_empresa_empresas__cnpj__get",
+        "parameters": [
+          {
+            "name": "cnpj",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-Z]{12}[0-9]{2}$",
+              "description": "CNPJ da empresa da conta.",
+              "title": "Cnpj"
+            },
+            "description": "CNPJ da empresa da conta."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmpresaResposta"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Rota que só funciona no modo real (CONTAAI_MODO=real).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por minuto atingido (header Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou sessão encerrada ou expirada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Só o dono da organização cadastra e configura a empresa.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Empresa que a conta não alcança (a mesma resposta de uma que não existe).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaValidacao"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "empresa"
+        ],
+        "summary": "Configurar Empresa",
+        "description": "Muda só os campos enviados. As alíquotas efetivas do Simples informadas aqui substituem as da simulação\nem todo cálculo da empresa (P8); `premissasDas: null` volta à simulação.",
+        "operationId": "configurar_empresa_empresas__cnpj__patch",
+        "parameters": [
+          {
+            "name": "cnpj",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-Z]{12}[0-9]{2}$",
+              "description": "CNPJ da empresa da conta.",
+              "title": "Cnpj"
+            },
+            "description": "CNPJ da empresa da conta."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmpresaConfiguracaoRequisicao"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmpresaResposta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "CNPJ com dígito errado, município fora da UF, atividade que o ContaAI não calcula, ou entrada fora do contrato.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaValidacao"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "O motor devolveu uma resposta que o ContaAI não reconhece.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaMotor"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Motor indisponível.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaMotor"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Rota que só funciona no modo real (CONTAAI_MODO=real).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por minuto atingido (header Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou sessão encerrada ou expirada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Só o dono da organização cadastra e configura a empresa.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Empresa que a conta não alcança (a mesma resposta de uma que não existe).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A empresa já está na conta, o limite de empresas foi atingido, ou ela mudou durante a conferência.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/catalogo/itens": {
+      "post": {
+        "tags": [
+          "empresa"
+        ],
+        "summary": "Criar Item",
+        "description": "Um item novo, com a classificação escolhida entre as válidas para a NCM (P3) e o primeiro preço de venda.\nItens com Imposto Seletivo ainda não entram (ADR 0017).",
+        "operationId": "criar_item_catalogo_itens_post",
+        "parameters": [
+          {
+            "name": "X-ContaAI-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Contaai-Token"
+            }
+          },
+          {
+            "name": "X-ContaAI-Espaco",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{32}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada.",
+              "title": "X-Contaai-Espaco"
+            },
+            "description": "Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemNovoRequisicao"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemResposta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "NCM fora dos dados abertos, NCM com Imposto Seletivo, classificação que não vale para a NCM, CNPJ do fornecedor com dígito errado (na empresa da conta), ou entrada fora do contrato.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaValidacao"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "O motor devolveu uma resposta que o ContaAI não reconhece.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaMotor"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Motor indisponível.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaMotor"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token da demo ausente ou errado (header X-ContaAI-Token).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Empresa ou alerta não encontrado, ou espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por minuto atingido (header Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Rota que só funciona no modo real (CONTAAI_MODO=real).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Código do fornecedor já em outro item, limite de itens, ou nada a mudar.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "411": {
+            "description": "Corpo sem Content-Length (corpo em pedaços não é aceito).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo maior que o limite.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/catalogo/{item_id}": {
+      "patch": {
+        "tags": [
+          "empresa"
+        ],
+        "summary": "Alterar Item",
+        "description": "Muda a descrição, a margem-alvo ou o fornecedor (CNPJ e código juntos) do item.",
+        "operationId": "alterar_item_catalogo__item_id__patch",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9-]{0,63}$",
+              "description": "Id do item no catálogo da empresa.",
+              "title": "Item Id"
+            },
+            "description": "Id do item no catálogo da empresa."
+          },
+          {
+            "name": "X-ContaAI-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Contaai-Token"
+            }
+          },
+          {
+            "name": "X-ContaAI-Espaco",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{32}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada.",
+              "title": "X-Contaai-Espaco"
+            },
+            "description": "Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemAlteracaoRequisicao"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemResposta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "NCM fora dos dados abertos, NCM com Imposto Seletivo, classificação que não vale para a NCM, CNPJ do fornecedor com dígito errado (na empresa da conta), ou entrada fora do contrato.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaValidacao"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "O motor devolveu uma resposta que o ContaAI não reconhece.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaMotor"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Motor indisponível.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaMotor"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token da demo ausente ou errado (header X-ContaAI-Token).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Empresa ou alerta não encontrado, ou espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por minuto atingido (header Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Rota que só funciona no modo real (CONTAAI_MODO=real).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Código do fornecedor já em outro item, limite de itens, ou nada a mudar.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/catalogo/{item_id}/arquivar": {
+      "post": {
+        "tags": [
+          "empresa"
+        ],
+        "summary": "Arquivar Item",
+        "description": "Tira o item do catálogo. O histórico dele (custos, preços, classificações e alertas) fica; os alertas abertos\ndele saem das listas, e uma nota nova com o código do fornecedor dele vira item sem par.",
+        "operationId": "arquivar_item_catalogo__item_id__arquivar_post",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9-]{0,63}$",
+              "description": "Id do item no catálogo da empresa.",
+              "title": "Item Id"
+            },
+            "description": "Id do item no catálogo da empresa."
+          },
+          {
+            "name": "X-ContaAI-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Contaai-Token"
+            }
+          },
+          {
+            "name": "X-ContaAI-Espaco",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{32}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada.",
+              "title": "X-Contaai-Espaco"
+            },
+            "description": "Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemArquivarRequisicao"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemArquivadoResposta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "NCM fora dos dados abertos, NCM com Imposto Seletivo, classificação que não vale para a NCM, CNPJ do fornecedor com dígito errado (na empresa da conta), ou entrada fora do contrato.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaValidacao"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "O motor devolveu uma resposta que o ContaAI não reconhece.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaMotor"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Motor indisponível.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaMotor"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token da demo ausente ou errado (header X-ContaAI-Token).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Empresa ou alerta não encontrado, ou espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por minuto atingido (header Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Rota que só funciona no modo real (CONTAAI_MODO=real).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Código do fornecedor já em outro item, limite de itens, ou nada a mudar.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "POST vindo de outra origem (Origin fora de CONTAAI_CORS_ORIGENS, contra CSRF).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "411": {
+            "description": "Corpo sem Content-Length (corpo em pedaços não é aceito).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo maior que o limite.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2643,7 +3887,7 @@
               "anyOf": [
                 {
                   "type": "string",
-                  "pattern": "^[0-9]{14}$"
+                  "pattern": "^[0-9A-Z]{12}[0-9]{2}$"
                 },
                 {
                   "type": "null"
@@ -3938,7 +5182,7 @@
         "properties": {
           "cnpj": {
             "type": "string",
-            "pattern": "^[0-9]{14}$",
+            "pattern": "^[0-9A-Z]{12}[0-9]{2}$",
             "title": "Cnpj"
           },
           "valorUnitario": {
@@ -4022,6 +5266,102 @@
           "aviso"
         ],
         "title": "AtivacaoResposta"
+      },
+      "AtividadeDaEmpresa": {
+        "properties": {
+          "cAtivSN": {
+            "type": "string",
+            "title": "Cativsn"
+          },
+          "descricao": {
+            "type": "string",
+            "title": "Descricao"
+          },
+          "anexo": {
+            "type": "string",
+            "enum": [
+              "I",
+              "II",
+              "III",
+              "IV",
+              "V"
+            ],
+            "title": "Anexo"
+          },
+          "fonte": {
+            "type": "string",
+            "title": "Fonte"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cAtivSN",
+          "descricao",
+          "anexo",
+          "fonte"
+        ],
+        "title": "AtividadeDaEmpresa"
+      },
+      "AtividadeSimples": {
+        "properties": {
+          "cAtivSN": {
+            "type": "string",
+            "title": "Cativsn"
+          },
+          "descricao": {
+            "type": "string",
+            "title": "Descricao"
+          },
+          "anexo": {
+            "type": "string",
+            "enum": [
+              "I",
+              "II",
+              "III",
+              "IV",
+              "V"
+            ],
+            "title": "Anexo"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cAtivSN",
+          "descricao",
+          "anexo"
+        ],
+        "title": "AtividadeSimples"
+      },
+      "AtividadesResposta": {
+        "properties": {
+          "data": {
+            "type": "string",
+            "format": "date",
+            "title": "Data"
+          },
+          "atividades": {
+            "items": {
+              "$ref": "#/components/schemas/AtividadeSimples"
+            },
+            "type": "array",
+            "title": "Atividades"
+          },
+          "fonte": {
+            "type": "string",
+            "title": "Fonte"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "data",
+          "atividades",
+          "fonte"
+        ],
+        "title": "AtividadesResposta",
+        "description": "As atividades do Simples que o ContaAI calcula: admissíveis na NF-e (modelo 55), disponíveis na data do\ncenário, com anexo e sem fator R."
       },
       "Body_nfe_importar_nfe_importar_post": {
         "properties": {
@@ -4369,7 +5709,7 @@
             },
             "type": "array",
             "title": "Clientesb2B",
-            "description": "Clientes empresa desta empresa (fictícios)."
+            "description": "Clientes empresa desta empresa (fictícios na demonstração)."
           },
           "loteReferencia": {
             "type": "integer",
@@ -4386,7 +5726,7 @@
           "aviso": {
             "type": "string",
             "title": "Aviso",
-            "description": "Dados fictícios de demonstração (P10)."
+            "description": "Na demonstração e nos espaços, dados fictícios (P10); na empresa da conta, o aviso de simulação."
           }
         },
         "additionalProperties": false,
@@ -4810,7 +6150,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "pattern": "^[0-9]{14}$"
+                "pattern": "^[0-9A-Z]{12}[0-9]{2}$"
               },
               {
                 "type": "null"
@@ -4835,7 +6175,7 @@
         "properties": {
           "cnpj": {
             "type": "string",
-            "pattern": "^[0-9]{14}$",
+            "pattern": "^[0-9A-Z]{12}[0-9]{2}$",
             "title": "Cnpj"
           },
           "cClassTrib": {
@@ -4955,6 +6295,165 @@
         "title": "EmpateTradicional",
         "description": "Preço no Simples tradicional que dá ao cliente o mesmo custo líquido de um concorrente do regime\nregular que cobra o mesmo preço total (plano 11.2, \"argumento de venda\"; ADR 0007)."
       },
+      "EmpresaCadastroRequisicao": {
+        "properties": {
+          "cnpj": {
+            "type": "string",
+            "pattern": "^[0-9A-Z]{12}[0-9]{2}$",
+            "title": "Cnpj",
+            "description": "14 posições, sem pontos, barra nem traço: as 12 primeiras com dígitos ou letras maiúsculas (CNPJ alfanumérico, IN RFB 2.229/2024) e as 2 últimas com os dígitos verificadores."
+          },
+          "razaoSocial": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 1,
+            "title": "Razaosocial",
+            "description": "Razão social da empresa."
+          },
+          "regimeAtual": {
+            "type": "string",
+            "enum": [
+              "simples_tradicional",
+              "simples_hibrido"
+            ],
+            "title": "Regimeatual"
+          },
+          "uf": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$",
+            "title": "Uf",
+            "description": "Sigla da UF."
+          },
+          "municipio": {
+            "type": "integer",
+            "maximum": 9999999.0,
+            "minimum": 1000000.0,
+            "title": "Municipio",
+            "description": "Código IBGE do município (7 dígitos)."
+          },
+          "cAtivSN": {
+            "type": "string",
+            "pattern": "^[0-9]{2}$",
+            "title": "Cativsn",
+            "description": "Código da atividade do Simples (GET /referencias/atividades)."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cnpj",
+          "razaoSocial",
+          "regimeAtual",
+          "uf",
+          "municipio",
+          "cAtivSN"
+        ],
+        "title": "EmpresaCadastroRequisicao",
+        "description": "A empresa da conta. O nome do município e o anexo da atividade vêm dos motores, nunca da tela."
+      },
+      "EmpresaConfiguracaoRequisicao": {
+        "properties": {
+          "razaoSocial": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 150,
+                "minLength": 1,
+                "description": "Razão social da empresa."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Razaosocial"
+          },
+          "regimeAtual": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "simples_tradicional",
+                  "simples_hibrido"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Regimeatual"
+          },
+          "uf": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[A-Z]{2}$",
+                "description": "Sigla da UF."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uf"
+          },
+          "municipio": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 9999999.0,
+                "minimum": 1000000.0,
+                "description": "Código IBGE do município (7 dígitos)."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Municipio"
+          },
+          "cAtivSN": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]{2}$",
+                "description": "Código da atividade do Simples (GET /referencias/atividades)."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cativsn"
+          },
+          "premissasDas": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PremissasDasDaEmpresa"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cargaAtualPct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMaximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cargaatualpct"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "EmpresaConfiguracaoRequisicao",
+        "description": "Só os campos enviados mudam. O CNPJ não muda: outro CNPJ é outra empresa. `premissasDas: null` volta aos\nvalores da simulação; `cargaAtualPct: null` apaga a carga informada."
+      },
       "EmpresaNoPainel": {
         "properties": {
           "empresa": {
@@ -5001,6 +6500,42 @@
           "alertaMaisRecente"
         ],
         "title": "EmpresaNoPainel"
+      },
+      "EmpresaResposta": {
+        "properties": {
+          "empresa": {
+            "$ref": "#/components/schemas/EmpresaResumo"
+          },
+          "atividade": {
+            "$ref": "#/components/schemas/AtividadeDaEmpresa"
+          },
+          "cenario": {
+            "$ref": "#/components/schemas/CenarioEmpresa"
+          },
+          "premissasDasOrigem": {
+            "type": "string",
+            "enum": [
+              "simulacao",
+              "usuario"
+            ],
+            "title": "Premissasdasorigem",
+            "description": "simulacao: valores de exemplo, rotulados; usuario: informados nas configurações."
+          },
+          "aviso": {
+            "type": "string",
+            "title": "Aviso"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "empresa",
+          "atividade",
+          "cenario",
+          "premissasDasOrigem",
+          "aviso"
+        ],
+        "title": "EmpresaResposta"
       },
       "EmpresaResumo": {
         "properties": {
@@ -5519,6 +7054,122 @@
           "cClassTrib"
         ],
         "title": "ImpostoSeletivoEntrada"
+      },
+      "ItemAlteracaoRequisicao": {
+        "properties": {
+          "cnpj": {
+            "type": "string",
+            "pattern": "^[0-9A-Z]{12}[0-9]{2}$",
+            "title": "Cnpj",
+            "description": "14 posições, sem pontos, barra nem traço: as 12 primeiras com dígitos ou letras maiúsculas (CNPJ alfanumérico, IN RFB 2.229/2024) e as 2 últimas com os dígitos verificadores."
+          },
+          "descricao": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1,
+                "description": "Como a empresa chama o produto."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao"
+          },
+          "margemAlvoPct": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "exclusiveMaximum": 100.0,
+                    "exclusiveMinimum": 0.0
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "description": "Margem que a empresa quer no item, em %."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Margemalvopct"
+          },
+          "cnpjFornecedor": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9A-Z]{12}[0-9]{2}$",
+                "description": "14 posições, sem pontos, barra nem traço: as 12 primeiras com dígitos ou letras maiúsculas (CNPJ alfanumérico, IN RFB 2.229/2024) e as 2 últimas com os dígitos verificadores."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cnpjfornecedor"
+          },
+          "codigoFornecedor": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 60,
+                "minLength": 1,
+                "description": "cProd do item na NF-e do fornecedor (casa a nota com o item)."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codigofornecedor"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cnpj"
+        ],
+        "title": "ItemAlteracaoRequisicao",
+        "description": "Só os campos enviados mudam. NCM e unidade não mudam (o histórico de custo é dessa NCM e dessa unidade): um\nitem com outra NCM é outro item. Preço e classificação têm rotas próprias, com o histórico."
+      },
+      "ItemArquivadoResposta": {
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "title": "Itemid"
+          },
+          "arquivadoEm": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Arquivadoem"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "itemId",
+          "arquivadoEm"
+        ],
+        "title": "ItemArquivadoResposta",
+        "description": "O item saiu do catálogo; custos, preços, classificações e alertas dele ficam no histórico."
+      },
+      "ItemArquivarRequisicao": {
+        "properties": {
+          "cnpj": {
+            "type": "string",
+            "pattern": "^[0-9A-Z]{12}[0-9]{2}$",
+            "title": "Cnpj",
+            "description": "14 posições, sem pontos, barra nem traço: as 12 primeiras com dígitos ou letras maiúsculas (CNPJ alfanumérico, IN RFB 2.229/2024) e as 2 últimas com os dígitos verificadores."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cnpj"
+        ],
+        "title": "ItemArquivarRequisicao"
       },
       "ItemBase": {
         "properties": {
@@ -6243,6 +7894,110 @@
         "title": "ItemNotaSemPar",
         "description": "Item que não casou com o catálogo: vira pergunta ao usuário (plano 11.3)."
       },
+      "ItemNovoRequisicao": {
+        "properties": {
+          "cnpj": {
+            "type": "string",
+            "pattern": "^[0-9A-Z]{12}[0-9]{2}$",
+            "title": "Cnpj",
+            "description": "14 posições, sem pontos, barra nem traço: as 12 primeiras com dígitos ou letras maiúsculas (CNPJ alfanumérico, IN RFB 2.229/2024) e as 2 últimas com os dígitos verificadores."
+          },
+          "descricao": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Descricao",
+            "description": "Como a empresa chama o produto."
+          },
+          "ncm": {
+            "type": "string",
+            "pattern": "^[0-9]{8}$",
+            "title": "Ncm"
+          },
+          "cClassTrib": {
+            "type": "string",
+            "pattern": "^[0-9]{6}$",
+            "title": "Cclasstrib"
+          },
+          "unidade": {
+            "type": "string",
+            "enum": [
+              "UN",
+              "KG"
+            ],
+            "title": "Unidade"
+          },
+          "cnpjFornecedor": {
+            "type": "string",
+            "pattern": "^[0-9A-Z]{12}[0-9]{2}$",
+            "title": "Cnpjfornecedor",
+            "description": "14 posições, sem pontos, barra nem traço: as 12 primeiras com dígitos ou letras maiúsculas (CNPJ alfanumérico, IN RFB 2.229/2024) e as 2 últimas com os dígitos verificadores."
+          },
+          "codigoFornecedor": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Codigofornecedor",
+            "description": "cProd do item na NF-e do fornecedor (casa a nota com o item)."
+          },
+          "precoVenda": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1000000000.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Precovenda",
+            "description": "Preço de venda por unidade (vUnCom)."
+          },
+          "margemAlvoPct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMaximum": 100.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Margemalvopct",
+            "description": "Margem que a empresa quer no item, em %."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cnpj",
+          "descricao",
+          "ncm",
+          "cClassTrib",
+          "unidade",
+          "cnpjFornecedor",
+          "codigoFornecedor",
+          "precoVenda",
+          "margemAlvoPct"
+        ],
+        "title": "ItemNovoRequisicao",
+        "description": "Um item novo no catálogo. A classificação precisa ser uma das válidas para a NCM nos dados abertos do motor\nRR (GET /busca/ncm), e o CST é o da fundamentação oficial, como na correção (P3)."
+      },
+      "ItemResposta": {
+        "properties": {
+          "item": {
+            "$ref": "#/components/schemas/ItemCatalogoEstado"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "item"
+        ],
+        "title": "ItemResposta"
+      },
       "LadoHibrido": {
         "properties": {
           "precoCliente": {
@@ -6424,6 +8179,53 @@
           "simples_nacional"
         ],
         "title": "Motor"
+      },
+      "MunicipioReferencia": {
+        "properties": {
+          "codigo": {
+            "type": "integer",
+            "title": "Codigo",
+            "description": "Código IBGE."
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "codigo",
+          "nome"
+        ],
+        "title": "MunicipioReferencia"
+      },
+      "MunicipiosResposta": {
+        "properties": {
+          "uf": {
+            "type": "string",
+            "title": "Uf"
+          },
+          "municipios": {
+            "items": {
+              "$ref": "#/components/schemas/MunicipioReferencia"
+            },
+            "type": "array",
+            "title": "Municipios"
+          },
+          "fonte": {
+            "type": "string",
+            "title": "Fonte"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "uf",
+          "municipios",
+          "fonte"
+        ],
+        "title": "MunicipiosResposta"
       },
       "NfeImportarResposta": {
         "properties": {
@@ -6612,7 +8414,7 @@
           "aviso": {
             "type": "string",
             "title": "Aviso",
-            "description": "Dados fictícios de demonstração (P10)."
+            "description": "Na demonstração e nos espaços, dados fictícios (P10); na empresa da conta, o aviso de simulação."
           }
         },
         "additionalProperties": false,
@@ -7112,6 +8914,44 @@
         ],
         "title": "PremissasDas",
         "description": "Linha de alíquotas efetivas do Simples do contribuinte (premissa rotulada, P8 e ADR 0001)."
+      },
+      "PremissasDasDaEmpresa": {
+        "properties": {
+          "pCBSSN": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMaximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Pcbssn"
+          },
+          "pIBSSN": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMaximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Pibssn"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "pCBSSN",
+          "pIBSSN"
+        ],
+        "title": "PremissasDasDaEmpresa",
+        "description": "As alíquotas efetivas de CBS e de IBS do Simples, da apuração da própria empresa (P8)."
       },
       "PresetAliquotas": {
         "properties": {
@@ -7851,6 +9691,52 @@
         "additionalProperties": false,
         "type": "object",
         "title": "Tributos"
+      },
+      "UfReferencia": {
+        "properties": {
+          "sigla": {
+            "type": "string",
+            "title": "Sigla"
+          },
+          "nome": {
+            "type": "string",
+            "title": "Nome"
+          },
+          "codigo": {
+            "type": "integer",
+            "title": "Codigo"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "sigla",
+          "nome",
+          "codigo"
+        ],
+        "title": "UfReferencia"
+      },
+      "UfsResposta": {
+        "properties": {
+          "ufs": {
+            "items": {
+              "$ref": "#/components/schemas/UfReferencia"
+            },
+            "type": "array",
+            "title": "Ufs"
+          },
+          "fonte": {
+            "type": "string",
+            "title": "Fonte"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "ufs",
+          "fonte"
+        ],
+        "title": "UfsResposta"
       },
       "Versoes": {
         "properties": {

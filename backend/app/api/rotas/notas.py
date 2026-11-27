@@ -31,6 +31,7 @@ from app.api.dependencias import (
     so_no_modo_real,
 )
 from app.classificacao.candidatos import classificacoes_da_ncm
+from app.cnpj import PADRAO_CNPJ
 from app.contrato import (
     PADRAO_ID_ITEM,
     AlertasResposta,
@@ -50,7 +51,9 @@ from app.nfe.importacao import agora_utc, importar_nota
 rotas = APIRouter(tags=["notas"])
 
 TIPOS_XML = {"application/xml", "text/xml", "application/octet-stream", ""}
-CNPJ = Annotated[str, Query(pattern=r"^[0-9]{14}$", description="CNPJ da empresa (14 dígitos).")]
+CNPJ = Annotated[
+    str, Query(pattern=PADRAO_CNPJ, description="CNPJ da empresa: 14 posições, sem pontos, barra nem traço.")
+]
 
 
 @rotas.post("/nfe/importar", response_model=NfeImportarResposta, responses=respostas.NFE)
@@ -85,7 +88,7 @@ async def nfe_importar(
 def listar_alertas(
     cfg: Cfg,
     response: Response,
-    cnpj: Annotated[str | None, Query(pattern=r"^[0-9]{14}$", description="Só os desta empresa.")] = None,
+    cnpj: Annotated[str | None, Query(pattern=PADRAO_CNPJ, description="Só os desta empresa.")] = None,
     abertos: Annotated[
         bool | None, Query(description="true: só os sem preço aplicado; false: só os aplicados.")
     ] = None,
@@ -200,7 +203,7 @@ def catalogo(
         return mocks.carregar().catalogo
     estado = abrir_estado(cfg, espaco, sessao)
     estado.exigir_empresa(cnpj)
-    return consultas.catalogo(estado.repositorio, cnpj)
+    return consultas.catalogo(estado.repositorio, cnpj, estado.aviso)
 
 
 @rotas.get("/notas", response_model=NotasResposta, responses=respostas.ESTADO)
@@ -219,7 +222,7 @@ def listar_notas(
         return mocks.carregar().notas
     estado = abrir_estado(cfg, espaco, sessao)
     estado.exigir_empresa(cnpj)
-    return consultas.notas(estado.repositorio, cnpj, limite)
+    return consultas.notas(estado.repositorio, cnpj, limite, estado.aviso)
 
 
 @rotas.get("/contador/painel", response_model=PainelContadorResposta, responses=respostas.ESPACO)
@@ -232,4 +235,4 @@ def contador_painel(
         marcar_mock(response)
         return mocks.carregar().contador_painel
     estado = abrir_estado(cfg, espaco, sessao)
-    return consultas.painel(estado.repositorio, estado.cnpjs)
+    return consultas.painel(estado.repositorio, estado.cnpjs, estado.aviso)

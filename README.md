@@ -69,6 +69,8 @@ Com `CONTAAI_TOKEN_DEMO` definido, as rotas que mudam a demonstração compartil
 
 **Contas (C1, [ADR 0015](docs/adr/0015-contas.md)), só no modo real.** `POST /contas` cria a conta, com o aceite da versão atual dos termos de uso (`termosAceitos`), e devolve o segredo do segundo fator (TOTP, para qualquer aplicativo autenticador). `POST /contas/ativar` confirma o primeiro código e devolve 10 códigos de recuperação. Para entrar, use `POST /sessoes` (e-mail e senha) e depois `POST /sessoes/codigo`. A sessão anda num cookie `HttpOnly` de mesma origem, por isso a tela fala com a API em `/api`, pelo proxy do Vite. Com a sessão, as rotas de estado leem o banco da organização da pessoa, e a demonstração segue aberta para quem não entrou. Uma conta bloqueada depois de 100 tentativas erradas só volta pelo servidor: `uv run python -m app.contas desbloquear <e-mail>`.
 
+**Empresa própria (C3-B, [ADR 0017](docs/adr/0017-empresa-propria.md)), só no modo real.** Com a sessão, `POST /empresas` cadastra a empresa da conta. O CNPJ pode ser numérico ou alfanumérico, sempre com o dígito verificador certo. A UF, o município e a atividade do Simples vêm de `GET /referencias/ufs`, `/municipios?uf=` e `/atividades`, que leem os motores. `PATCH /empresas/{cnpj}` muda as configurações, inclusive as alíquotas efetivas do Simples da empresa. O catálogo ganhou `POST /catalogo/itens`, `PATCH /catalogo/{item_id}` e `POST /catalogo/{item_id}/arquivar`. Na demonstração e nos espaços, os CNPJs fictícios continuam valendo.
+
 `GET /cenarios/presets` (valores de 2027 com fonte) e `GET /saude` (estado e versões dos motores) são reais nos dois modos. O CORS libera só `http://localhost:3000` e `http://127.0.0.1:3000`; para outra origem, use `CONTAAI_CORS_ORIGENS='["http://..."]'`.
 
 ### Tela
@@ -134,7 +136,7 @@ No Linux e no macOS, o [Makefile](Makefile) tem atalhos para os mesmos comandos:
 ## Documentos
 
 - [Como contribuir](CONTRIBUTING.md): fluxo de branches, PRs e revisão
-- [Plano v2.1](docs/plano-v2.1.md): a ordem das etapas (3b e C1 feitas; C2 em andamento; depois empresa própria, 3c e entrega), com as decisões do usuário
+- [Plano v2.1](docs/plano-v2.1.md): a ordem das etapas (3b, C1 e C2 feitas; C3, a empresa própria, em andamento; depois 3c e entrega), com as decisões do usuário
 - [ADR 0001](docs/adr/0001-lado-tradicional-do-simples.md): lado "Simples tradicional" da decisão de regime
 - [ADR 0002](docs/adr/0002-motores-em-containers.md): motores em containers, segurança e custos
 - [ADR 0003](docs/adr/0003-contrato-da-api.md): contrato da API, fórmulas de preço, margem e regimes, e achados da investigação
@@ -151,6 +153,7 @@ No Linux e no macOS, o [Makefile](Makefile) tem atalhos para os mesmos comandos:
 - [ADR 0014](docs/adr/0014-telas-notas-e-regime.md): telas de Notas (envio do XML, recibo e notas importadas) e de Regime (régua do crédito, caixa, empate e premissas), PR 3b
 - [ADR 0015](docs/adr/0015-contas.md): contas com segundo fator (TOTP), sessão em cookie, tentativas, CSRF, um banco de estado por organização e o CNPJ como permissão, C1
 - [ADR 0016](docs/adr/0016-telas-de-entrada.md): telas de entrada, a conta na tela, o cookie só onde precisa, a demonstração para quem tem conta, termos e privacidade, C2
+- [ADR 0017](docs/adr/0017-empresa-propria.md): a empresa própria no backend, o CNPJ alfanumérico, as referências dos motores e o catálogo editável, C3-B
 - [Segurança](docs/seguranca.md): o que o projeto protege, como, e o que está em aberto; para relatar uma vulnerabilidade, [SECURITY.md](SECURITY.md)
 - [Contrato OpenAPI](docs/contrato/openapi.json): o que frontend e agente consomem
 - [Dados de demonstração](data/demo/README.md): distribuidora, carteira do contador, cliente B2B, notas de compra fictícias e sementes do estado
@@ -172,7 +175,7 @@ Etapa 4 (recorrência) concluída no backend: leitor seguro da NF-e, casamento c
 
 Antes da Etapa 5: espaço de avaliação por visitante (ADR 0010) e o contrato para a tela, com as proteções do navegador e os testes de segurança (ADR 0011).
 
-Etapa 5 (interface) em andamento: a fundação do frontend está pronta (ADR 0012): projeto e CI, cliente tipado do contrato, espaço de avaliação e modo, tokens e fontes, shell e segurança da tela. PR 3a (Painel, Catálogo e explicação lateral) pronto ([ADR 0013](docs/adr/0013-telas-painel-e-catalogo.md)), e PR 3b (Notas e Regime) também ([ADR 0014](docs/adr/0014-telas-notas-e-regime.md)). Contas no backend (C1) prontas ([ADR 0015](docs/adr/0015-contas.md)). Telas de entrada (C2) prontas: a C2a (página inicial, rotas, a conta na tela, termos e privacidade), a C2b (criar conta, entrar, o menu da conta e Sua conta) e a C2c (notas de exemplo para baixar na tela de Notas) ([ADR 0016](docs/adr/0016-telas-de-entrada.md)). Próximo: a C3, dados da própria empresa, pelo [plano v2.1](docs/plano-v2.1.md).
+Etapa 5 (interface) em andamento: a fundação do frontend está pronta (ADR 0012): projeto e CI, cliente tipado do contrato, espaço de avaliação e modo, tokens e fontes, shell e segurança da tela. PR 3a (Painel, Catálogo e explicação lateral) pronto ([ADR 0013](docs/adr/0013-telas-painel-e-catalogo.md)), e PR 3b (Notas e Regime) também ([ADR 0014](docs/adr/0014-telas-notas-e-regime.md)). Contas no backend (C1) prontas ([ADR 0015](docs/adr/0015-contas.md)). Telas de entrada (C2) prontas: a C2a (página inicial, rotas, a conta na tela, termos e privacidade), a C2b (criar conta, entrar, o menu da conta e Sua conta) e a C2c (notas de exemplo para baixar na tela de Notas) ([ADR 0016](docs/adr/0016-telas-de-entrada.md)). A C3 (dados da própria empresa) está em andamento: o backend tem o cadastro, as configurações e o catálogo editável (C3-B, etapas 1 a 5, [ADR 0017](docs/adr/0017-empresa-propria.md)); faltam os clientes B2B, a exclusão e os dados para baixar, e as telas (C3a e C3b), pelo [plano v2.1](docs/plano-v2.1.md).
 
 ## Créditos e licenças
 

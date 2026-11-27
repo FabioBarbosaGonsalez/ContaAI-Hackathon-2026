@@ -31,7 +31,8 @@ PADROES: dict[str, str] = {
     r"^[0-9]{6}$": "Use exatamente 6 dígitos, sem pontos nem traços.",
     r"^[0-9]{8}$": "Use exatamente 8 dígitos, sem pontos nem traços.",
     r"^[0-9]{9}$": "Use exatamente 9 dígitos, sem pontos nem traços.",
-    r"^[0-9]{14}$": "Use exatamente 14 dígitos, sem pontos nem traços.",
+    r"^[0-9A-Z]{12}[0-9]{2}$": "Use o CNPJ com 14 posições, sem pontos, barra nem traço: as 12 primeiras com "
+    "dígitos ou letras maiúsculas e as 2 últimas com dígitos.",
     r"^[A-Z]{2}$": "Use a sigla da UF com 2 letras maiúsculas (ex.: SP).",
     r"^(REG|VSN)-[0-9]{3}$": "Use um código de erro dos motores, como REG-011 ou VSN-015.",
     r"^[0-9a-f]{32}$": "Use o id do espaço de avaliação: 32 caracteres de 0 a 9 e de a a f.",

@@ -35,7 +35,8 @@ Por isso entram três etapas de contas (C1 a C3) entre o 3b e o 3c. O 3c depende
 | B0: aceite dos termos (antes das telas da C2) | PR #22, revisão no ADR 0015 |
 | C2a: página inicial, rotas, a conta na tela, termos e privacidade | PR #23, ADR 0016 |
 | C2b: criar conta, entrar, o menu da conta e Sua conta | PR #24, seção da C2b no ADR 0016 |
-| C2c: notas de exemplo e o fechamento da C2 | seção da C2c no ADR 0016 |
+| C2c: notas de exemplo e o fechamento da C2 | PR #25, seção da C2c no ADR 0016 |
+| C3-B, etapas 1 a 5: CNPJ alfanumérico, migração 0003, referências, empresa da conta e catálogo editável | ADR 0017 |
 
 ## A ordem
 
@@ -44,7 +45,7 @@ Por isso entram três etapas de contas (C1 a C3) entre o 3b e o 3c. O 3c depende
 | 1 | **3b** (feito) | Telas de Notas e de Regime | `GET /notas` (feito) |
 | 2 | **C1** (feito) | Contas no backend | 3b |
 | 3 | **C2** (feito) | Telas de entrada | C1 |
-| 4 | **C3** | Dados da própria empresa | C1 e C2 |
+| 4 | **C3** (em andamento) | Dados da própria empresa | C1 e C2 |
 | 5 | **3c** | Contador, seletor de empresa e chat | C1 a C3 |
 | 6 | **E6** | Hospedagem, HTTPS, testes de ponta a ponta, vídeo e pitch | todas |
 
@@ -420,12 +421,75 @@ Achados do mapa:
 - catálogo e clientes B2B editáveis;
 - o CNPJ fixo do 3a passa a ser o da empresa da conta.
 
-**Inconsistência registrada:** o P10 diz "só dados fictícios". Com a empresa própria, entram dados reais. Antes do código é preciso decidir:
-- se o P10 passa a valer só para a demonstração;
-- como guardar e apagar os dados de cada empresa;
-- a validação do dígito verificador do CNPJ. Os CNPJs da demo têm dígito inválido de propósito ([ADR 0008](adr/0008-nfe-historico-e-alertas.md)) e continuam aceitos só nela.
+**Decisões do usuário (2026-11-27):**
+1. O P10 ("só dados fictícios") vale para a demonstração e os espaços. No ambiente próprio, cada pessoa põe os dados reais dela.
+2. O dígito verificador do CNPJ é exigido nas empresas reais. A demo continua aceitando os CNPJs dela, que têm dígito inválido de propósito ([ADR 0008](adr/0008-nfe-historico-e-alertas.md)).
+3. As notas de exemplo da tela somem fora da demonstração (a API recusa, com 422, a nota de outro destinatário).
+4. **Excluir a conta:**
+   - a exclusão é imediata e definitiva;
+   - antes dela, a pessoa pode baixar os dados em JSON (LGPD, art. 18 V);
+   - ao subir, a API apaga os bancos de organização que não existem mais;
+   - os logs não guardam dado pessoal;
+   - o contador perde o acesso quando a empresa sai.
+5. **Backups (E6):** um por dia, cifrados e fora do servidor, guardados por 30 dias, com restauração testada. Uma organização excluída nunca volta por um backup, e a Privacidade diz o prazo.
+6. **Mapa da C3-B:**
+   - o CNPJ alfanumérico entra já;
+   - o cenário da empresa real usa as premissas rotuladas da simulação;
+   - quem não é do Simples é recusado no cadastro;
+   - o item é arquivado em vez de apagado;
+   - o mesmo CNPJ pode estar em duas contas.
 
-**Achado da C2c:** as notas de exemplo da tela são da Serra Azul. Na empresa própria, a API recusa a nota de outro destinatário (422). Decidir se a seção some fora da demonstração e do espaço.
+**Fontes da exclusão:**
+- **LGPD, art. 16:** "Os dados pessoais serão eliminados após o término de seu tratamento". A exceção do inciso I é a "obrigação legal ou regulatória pelo controlador".
+- **Ajuste SINIEF 07/05, cláusula décima:** "O emitente deverá manter a NF-e em arquivo digital, sob sua guarda e responsabilidade"; o §2º estende ao destinatário.
+- **CTN:** o art. 195, parágrafo único, manda conservar os comprovantes "até que ocorra a prescrição".
+- **Conclusão:** a guarda é do contribuinte. O ContaAI não guarda o XML (só o sha256 e o recibo), então a exclusão pode apagar tudo. A tela avisa: "Guarde suas notas: o ContaAI não é o seu arquivo fiscal".
+
+**Divisão:** C3-B (backend), C3a (a primeira vez e o cadastro da empresa) e C3b (configurações, catálogo e clientes editáveis).
+
+### C3-B: o backend, em 10 etapas
+
+| # | Etapa | Situação |
+|---|---|---|
+| 1 | Conferências: leiaute da NF-e para o CNPJ alfanumérico, a fonte dos municípios e as atividades do Simples | feita |
+| 2 | Validação do CNPJ numérico e alfanumérico (`app/cnpj.py`) | feita |
+| 3 | Migração 0003: CNPJ com letras e item arquivado | feita |
+| 4 | Empresa: `POST /empresas`, `GET` e `PATCH /empresas/{cnpj}` e as referências | feita |
+| 5 | Catálogo editável: criar, alterar e arquivar o item | feita |
+| 6 | Clientes B2B: criar, alterar e excluir, com o CNPJ validado | a fazer |
+| 7 | Exclusão e dados (LGPD): `GET /conta/dados`, limpeza dos bancos órfãos ao subir, logs sem dado pessoal e excluir a empresa sem excluir a conta | a fazer |
+| 8 | Papéis: só o dono cadastra, configura e exclui a empresa; dono e membro editam o catálogo e os clientes | feita nas rotas da empresa e do catálogo; falta a exclusão (etapa 7) |
+| 9 | Proteções: limites, o erro 500 com os cabeçalhos de segurança ([ADR 0009](adr/0009-camada-http-e-erros.md)) | limites feitos; falta o 500 |
+| 10 | Contrato, mock e documentação | contrato e documentação das etapas 1 a 5 feitos; fecha no fim |
+
+**Feito nas etapas 1 a 5** ([ADR 0017](adr/0017-empresa-propria.md)):
+- **Conferências:**
+  - a NT 2026.004 v1.01 da NF-e torna alfanuméricos o CNPJ do emitente e o do destinatário, em produção desde 01/07/2026;
+  - os municípios e as UFs vêm do motor RR (código do IBGE), e as atividades do motor SN.
+- **CNPJ:** um padrão só, `^[0-9A-Z]{12}[0-9]{2}$`, e o dígito pelo cálculo do Serpro (o exemplo do manual, 12ABC34501DE35, é teste).
+- **Migração 0003:**
+  - achado: reconstruir `empresas` com as chaves estrangeiras ligadas apagava itens e notas em cascata;
+  - o `migrar` passou a seguir o procedimento da documentação do SQLite.
+- **Referências:** `GET /referencias/ufs`, `/municipios?uf=` e `/atividades`.
+  - Sobram 01 e 02 (anexo I) e 03 e 04 (anexo II): admissíveis na NF-e, com anexo e sem fator R.
+  - O "EX" (exterior) sai da lista.
+- **Empresa:**
+  - `POST /empresas` (dono), `GET` e `PATCH /empresas/{cnpj}`;
+  - as premissas do DAS da própria empresa (P8) e a volta à simulação;
+  - na empresa da conta, o aviso de simulação no lugar do de dados fictícios.
+- **Catálogo:**
+  - `POST /catalogo/itens`, `PATCH /catalogo/{item_id}` e `POST /catalogo/{item_id}/arquivar`;
+  - itens com Imposto Seletivo ficam para depois, porque não há fonte oficial consultável para a classificação do IS e os litros.
+- **Segurança:**
+  - o limite de corpo e o limite por IP passaram a valer para o PATCH;
+  - o guarda de SQL pegou uma f-string na linha seguinte ao `execute(`.
+- **Saída da C3 no backend:** conferida no modo real com os motores oficiais. A conta nova cadastra a empresa, cria o item, importa as notas e vê o alerta, e a demonstração não muda.
+
+**Para a C3a e a C3b:**
+- o cliente da tela mandar o cookie da sessão para `/empresas` e `/referencias/`;
+- as notas de exemplo saírem fora da demonstração;
+- o formulário converter o CNPJ para maiúsculas.
+- cadastrar o par de um item sem par a partir da nota (ficou do 3b), agora que o catálogo é editável.
 
 **Saída:** uma conta nova cadastra a empresa, importa uma nota e vê o alerta, sem tocar nos dados da demo.
 

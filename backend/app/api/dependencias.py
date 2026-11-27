@@ -20,7 +20,7 @@ from app.contas.servico import Contas, SessaoAtiva
 from app.motores.cache import CacheRespostas
 from app.motores.cliente import ClienteMotores
 from app.motores.dados_abertos import CacheConsultas, DadosAbertos
-from app.nfe.consultas import NaoEncontrado
+from app.nfe.consultas import AVISO_DEMO, AVISO_EMPRESA_PROPRIA, NaoEncontrado
 from app.nfe.importacao import agora_utc
 from app.persistencia.banco import Banco
 from app.persistencia.espacos import PADRAO_ID, Espaco, Espacos
@@ -121,6 +121,15 @@ class Estado:
     @property
     def na_demo(self) -> bool:
         return self.espaco is None and self.sessao is None
+
+    @property
+    def na_empresa_propria(self) -> bool:
+        """O banco da organização de quem entrou: dados reais, o CNPJ precisa do dígito certo (C3-B, ADR 0017)."""
+        return self.espaco is None and self.sessao is not None
+
+    @property
+    def aviso(self) -> str:
+        return AVISO_EMPRESA_PROPRIA if self.na_empresa_propria else AVISO_DEMO
 
     def exigir_empresa(self, cnpj: str) -> None:
         """CNPJ fora do alcance de quem chama: o mesmo 404 de uma empresa que não existe, para não dizer quais

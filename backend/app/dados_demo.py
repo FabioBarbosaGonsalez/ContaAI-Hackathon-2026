@@ -9,6 +9,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.cnpj import PADRAO_CNPJ
 from app.contrato import PADRAO_ID_ITEM
 
 PASTA_DEMO = Path(__file__).resolve().parents[2] / "data" / "demo"
@@ -29,7 +30,7 @@ class AtividadeSimples(_Modelo):
 
 class Empresa(_Modelo):
     razaoSocial: str
-    cnpj: str = Field(pattern=r"^[0-9]{14}$")
+    cnpj: str = Field(pattern=PADRAO_CNPJ)
     regimeAtual: Literal["simples_tradicional", "simples_hibrido"]
     uf: str = Field(pattern=r"^[A-Z]{2}$")
     municipio: int
@@ -54,6 +55,9 @@ class PremissasDasDemo(_Modelo):
     pCBSSN: Decimal
     pIBSSN: Decimal
     fonte: str
+    # simulacao: os valores de exemplo do cenário (rotulados). usuario: informados nas configurações da empresa
+    # própria (C3-B, ADR 0017), que saem da apuração do Simples dela (P8).
+    origem: Literal["simulacao", "usuario"] = "simulacao"
 
 
 class Cenario(_Modelo):
@@ -64,6 +68,9 @@ class Cenario(_Modelo):
     premissasDas: PremissasDasDemo
     cargaAtualPct: Decimal | None
     cargaAtualNota: str
+    # demonstracao: o cenário de data/demo. empresa_propria: o mesmo cenário rotulado como simulação, copiado no
+    # cadastro da empresa da conta (C3-B, ADR 0017); muda só o rótulo das premissas impressas.
+    origem: Literal["demonstracao", "empresa_propria"] = "demonstracao"
 
 
 class ImpostoSeletivoDemo(_Modelo):
@@ -83,11 +90,11 @@ class ItemCatalogo(_Modelo):
     classificacaoFonte: str
     impostoSeletivo: ImpostoSeletivoDemo | None
     unidade: Literal["UN", "KG"]
-    cnpjFornecedor: str = Field(pattern=r"^[0-9]{14}$", description="O código do fornecedor só é único dentro dele.")
+    cnpjFornecedor: str = Field(pattern=PADRAO_CNPJ, description="O código do fornecedor só é único dentro dele.")
     codigoFornecedor: str = Field(min_length=1, max_length=60)
     precoVenda: Decimal = Field(gt=0)
     margemAlvoPct: Decimal = Field(gt=0, lt=100)
-    papelNaDemo: str
+    papelNaDemo: str | None = None  # só nos itens da demonstração (data/demo)
 
 
 class Distribuidora(_Modelo):
@@ -102,7 +109,7 @@ class Distribuidora(_Modelo):
 
 class Cliente(_Modelo):
     razaoSocial: str
-    cnpj: str = Field(pattern=r"^[0-9]{14}$")
+    cnpj: str = Field(pattern=PADRAO_CNPJ)
     regime: Literal["regime_regular"]
     uf: str = Field(pattern=r"^[A-Z]{2}$")
     municipio: int
