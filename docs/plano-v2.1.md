@@ -41,6 +41,7 @@ Por isso entram três etapas de contas (C1 a C3) entre o 3b e o 3c. O 3c depende
 | C3a: a primeira vez, o cadastro da empresa e as telas com a empresa da conta | PR #28, ADR 0018 |
 | C3b, etapas 1 a 5: o item a partir da nota (backend), as configurações da empresa, excluir a empresa e baixar os dados | PR #29, seção da C3b no ADR 0018 e revisão no ADR 0017 |
 | C3b2, etapas 6a a 10: o fornecedor no catálogo e o recibo de uma nota gravada (backend); cadastrar, alterar e arquivar o item; o item a partir da nota; os clientes empresa | PR #30, seção da C3b2 no ADR 0018 e revisão da C3b2 no ADR 0017 |
+| Varredura depois da C3: o aviso da troca de anexo em `/empresa`, os CNPJs dos testes registrados, o achado do chat para o 3c e o README em dia | seção "Varredura depois da C3" no ADR 0018 |
 
 ## A ordem
 
@@ -789,6 +790,8 @@ Achados do mapa:
 **Regras:**
 - o contador só sugere (decisão 3);
 - a IA não faz conta nem decide a classificação sozinha (P2 e P3).
+
+**Achado da varredura depois da C3 (2026-11-28):** com `CONTAAI_TOKEN_DEMO` definido, o `POST /chat` exige o token de todo mundo (`app/api/rotas/agente.py`), mas a tela não manda o token na conta (`frontend/src/sessao/middleware.ts`): quem entrou com a conta receberia 401. Recomendação: na conta, o chat vale pela sessão e pela cota por usuário; o token fica só para a demonstração e os espaços, que não têm quem identificar.
 
 **A verificar antes de ligar a IA:**
 - o nível gratuito do Gemini: termos e uso dos dados;
