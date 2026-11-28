@@ -23,6 +23,8 @@ export type NotaImportada = Esquemas['NotaImportada'];
 export type ClienteB2B = Esquemas['ClienteB2BEstado'];
 export type PedidoDeRegime = Esquemas['RegimeCompararRequisicao'];
 export type Comparacao = Esquemas['RegimeCompararResposta'];
+export type ReciboDaNota = Esquemas['ReciboDaNotaResposta'];
+export type LinhaSemPar = Esquemas['ItemNotaSemPar'];
 
 type ItemCarrinho = Esquemas['CarrinhoRequisicao']['itens'][number];
 

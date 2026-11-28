@@ -397,7 +397,7 @@ Ficou do 3b cadastrar o par de um item sem par a partir da nota. O mapa da C3b a
 - **Conferências no negativo:** sem a conferência da unidade e sem a troca conferida do recibo, um teste falha. A primeira versão do teste da troca trocava o próprio método e não pegava a falta da conferência; o teste direto no banco foi escrito por isso.
 - **No modo real, com os motores oficiais:** a linha guarda o crédito da nota (0,3649 por unidade na nota de exemplo); o item nasce com o custo de 3,50 e esse crédito; a nota seguinte (4,10) gera o alerta; a linha cadastrada não entra de novo; e, sem o grupo IBSCBS, o crédito vem do motor RR (0,3115).
 - Frases dos padrões novos (série e número da nota) em `mensagens.py`, o OpenAPI reexportado e os tipos da tela. No modo mock, a rota continua 501 (inventário da etapa 10), com o mesmo limite por IP e os mesmos papéis.
-- A tela usa `daNota` na etapa 8 da C3b (C3b2).
+- A tela usa `daNota` na etapa 8 da C3b (feito na C3b2, seção da C3b2 no [ADR 0018](0018-telas-da-empresa-propria.md)).
 
 ## Revisão da C3b2: o fornecedor no catálogo e o recibo de uma nota gravada (2026-11-28)
 

@@ -5,8 +5,8 @@
 //   fica com a marca e um botão de menu, e os destinos vão para uma folha de tela cheia;
 // - nas páginas públicas (C2, ADR 0016): só a marca, Entrar e o caminho para a demonstração, sem os destinos do
 //   app. Quem entrou vê o caminho ao Painel e o menu da conta (C2b, etapa 9);
-// - a página da conta (C2b), o cadastro da empresa (C3a) e as configurações da empresa (C3b) usam a barra do app,
-//   sem marcar nenhum destino.
+// - a página da conta (C2b), o cadastro da empresa (C3a), as configurações da empresa (C3b) e os clientes empresa
+//   (C3b2) usam a barra do app, sem marcar nenhum destino.
 
 import { useRef, type ReactNode } from 'react';
 import './shell.css';
@@ -18,11 +18,21 @@ import { Marca } from './Marca.tsx';
 import { MenuDaConta } from './MenuDaConta.tsx';
 import { Link, useCaminho } from './navegacao.tsx';
 import { CadastroDaEmpresa } from '../telas/CadastroDaEmpresa.tsx';
+import { Clientes } from '../telas/Clientes.tsx';
 import { ConfiguracoesDaEmpresa } from '../telas/ConfiguracoesDaEmpresa.tsx';
 import { Conta } from '../telas/Conta.tsx';
 import { NaoEncontrada, PAGINAS, PAGINAS_PUBLICAS, PrimeiraVez } from './paginas.tsx';
 import { Rodape } from './Rodape.tsx';
-import { ROTAS, ehPaginaDaConta, ehPaginaDaEmpresa, ehPaginaDoCadastro, rotaDe, rotaPublicaDe } from './rotas.ts';
+import {
+  ROTAS,
+  ROTA_DOS_CLIENTES,
+  ehPaginaDaConta,
+  ehPaginaDaEmpresa,
+  ehPaginaDoCadastro,
+  ehPaginaDosClientes,
+  rotaDe,
+  rotaPublicaDe,
+} from './rotas.ts';
 import { StatusSessao } from './StatusSessao.tsx';
 
 function Destinos({ atual, aoEscolher }: { atual: string | null; aoEscolher?: () => void }) {
@@ -169,6 +179,15 @@ export function Shell() {
     return (
       <ShellDoApp caminho={caminho} atual={null}>
         {ehPaginaDaConta(caminho) ? <Conta /> : ehPaginaDoCadastro(caminho) ? <CadastroDaEmpresa /> : <ConfiguracoesDaEmpresa />}
+      </ShellDoApp>
+    );
+  }
+
+  // Os clientes empresa: dados da empresa da tela, como as páginas da barra, mas fora dela (C3b2).
+  if (ehPaginaDosClientes(caminho)) {
+    return (
+      <ShellDoApp caminho={caminho} atual={null}>
+        {empresa.tipo === 'sem-empresa' ? <PrimeiraVez titulo={ROTA_DOS_CLIENTES.nome} dono={empresa.papel === 'dono'} /> : <Clientes />}
       </ShellDoApp>
     );
   }

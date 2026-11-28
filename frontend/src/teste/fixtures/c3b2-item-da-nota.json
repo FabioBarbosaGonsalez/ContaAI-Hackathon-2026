@@ -1,0 +1,36 @@
+{
+  "item": {
+    "id": "item-adb199628b0c",
+    "descricao": "Chocolate ao leite 90 g",
+    "ncm": "18063210",
+    "nbs": null,
+    "cst": "000",
+    "cClassTrib": "000001",
+    "impostoSeletivo": null,
+    "unidade": "UN",
+    "fornecedor": {
+      "cnpj": "AB12CD34EF5602",
+      "codigo": "AE-CHO-90"
+    },
+    "ncmDescricaoOficial": "Chocolate e outras preparações alimentícias que contenham cacau - Não recheados - Chocolate",
+    "classificacaoFonte": "Escolhida no cadastro do item em 2026-11-28 (UTC), com a confirmação do usuário (P3): 000001 (Situações tributadas integralmente pelo IBS e CBS.), válida para a NCM nos dados abertos do motor RR em 2027-03-16.",
+    "margemAlvoPct": "20",
+    "precoVenda": "4.20",
+    "custoAtual": {
+      "data": "2027-03-15T09:00:00-03:00",
+      "notaNumero": "1001",
+      "custoUnitario": "3.50",
+      "creditoCompraUnitario": "0.3649",
+      "fonteCredito": "nfe"
+    },
+    "historicoCusto": [
+      {
+        "data": "2027-03-15T09:00:00-03:00",
+        "notaNumero": "1001",
+        "custoUnitario": "3.50",
+        "creditoCompraUnitario": "0.3649",
+        "fonteCredito": "nfe"
+      }
+    ]
+  }
+}

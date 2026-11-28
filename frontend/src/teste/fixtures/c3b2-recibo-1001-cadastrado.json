@@ -1,0 +1,76 @@
+{
+  "importadaEm": "2026-11-28T03:59:24.765618Z",
+  "recibo": {
+    "simulado": false,
+    "avisoSimulacao": null,
+    "premissas": [
+      {
+        "nome": "Nota de homologação",
+        "valor": "tpAmb 2: sem valor fiscal",
+        "fonte": "Campo ide/tpAmb da própria nota. As notas da demonstração são fictícias (data/demo)."
+      }
+    ],
+    "jaImportada": false,
+    "nota": {
+      "serie": "1",
+      "numero": "1001",
+      "dataEmissao": "2027-03-15T09:00:00-03:00",
+      "emitente": {
+        "cnpj": "AB12CD34EF5602",
+        "nome": "Atacado Exemplo Ltda (fictício)"
+      },
+      "destinatario": {
+        "cnpj": "12ABC34501DE35",
+        "nome": "Distribuidora Serra Azul ME (fictícia)"
+      },
+      "homologacao": true,
+      "temGrupoIbsCbs": true
+    },
+    "itensCasados": [],
+    "itensSemPar": [
+      {
+        "nItem": 1,
+        "codigoFornecedor": "AE-CRV-350",
+        "ncm": "22030000",
+        "descricaoNota": "Cerveja de malte, lata 350 ml",
+        "motivo": "Código do produto deste fornecedor sem cadastro no catálogo.",
+        "causa": "semCadastro",
+        "unidade": "UN",
+        "quantidade": "1440",
+        "custoUnitario": "3.05",
+        "valorTotal": "4392.00",
+        "creditoCompraUnitario": "0.2715",
+        "itemCadastrado": null
+      },
+      {
+        "nItem": 2,
+        "codigoFornecedor": "AE-CHO-90",
+        "ncm": "18063210",
+        "descricaoNota": "Chocolate não recheado, barra 90 g",
+        "motivo": "Código do produto deste fornecedor sem cadastro no catálogo.",
+        "causa": "semCadastro",
+        "unidade": "UN",
+        "quantidade": "800",
+        "custoUnitario": "3.50",
+        "valorTotal": "2800.00",
+        "creditoCompraUnitario": "0.3649",
+        "itemCadastrado": "item-adb199628b0c"
+      },
+      {
+        "nItem": 3,
+        "codigoFornecedor": "AE-BIS-140",
+        "ncm": "19053100",
+        "descricaoNota": "Biscoito doce, pacote 140 g",
+        "motivo": "Código do produto deste fornecedor sem cadastro no catálogo.",
+        "causa": "semCadastro",
+        "unidade": "UN",
+        "quantidade": "2600",
+        "custoUnitario": "3.10",
+        "valorTotal": "8060.00",
+        "creditoCompraUnitario": "0.2759",
+        "itemCadastrado": null
+      }
+    ],
+    "alertas": []
+  }
+}

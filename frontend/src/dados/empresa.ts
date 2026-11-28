@@ -19,6 +19,7 @@ import {
   type ClienteB2B,
   type Comparacao,
   type Notas,
+  type ReciboDaNota,
   type ReciboNota,
   type Regime,
 } from './pedidos.ts';
@@ -132,6 +133,34 @@ export function useNotas(pedir = true): EstadoRecurso<Notas> {
   const chave = pedir ? daEmpresa : null;
   return useRecurso(chave, (sinal) =>
     chamar(api.GET('/notas', { params: { query: { cnpj } }, signal: sinal })),
+  );
+}
+
+/** Uma nota gravada, pelo que a identifica para a empresa: o fornecedor, a série e o número. */
+export interface ChaveDaNota {
+  cnpjEmitente: string;
+  serie: string;
+  numero: string;
+}
+
+/**
+ * O recibo gravado de uma nota já importada (GET /notas/{cnpj_emitente}/{serie}/{numero}, C3b), sem enviar o XML de
+ * novo. Com a chave null, nenhum pedido sai.
+ */
+export function useReciboDaNota(nota: ChaveDaNota | null): EstadoRecurso<ReciboDaNota> {
+  const { api } = useSessao();
+  const { chave: daEmpresa, cnpj } = useChaveDaEmpresa('recibo');
+  const chave = nota && daEmpresa ? `${daEmpresa}:${nota.cnpjEmitente}:${nota.serie}:${nota.numero}` : null;
+  return useRecurso(chave, (sinal) =>
+    chamar(
+      api.GET('/notas/{cnpj_emitente}/{serie}/{numero}', {
+        params: {
+          path: { cnpj_emitente: nota?.cnpjEmitente ?? '', serie: nota?.serie ?? '', numero: nota?.numero ?? '' },
+          query: { cnpj },
+        },
+        signal: sinal,
+      }),
+    ),
   );
 }
 

@@ -1,0 +1,6 @@
+{
+  "type": "about:blank",
+  "title": "Conflict",
+  "status": 409,
+  "detail": "Este cliente já está cadastrado nesta empresa."
+}

@@ -13,7 +13,7 @@ import { useRecurso } from '../dados/recurso.ts';
 import { useSessao } from '../sessao/contexto.tsx';
 import { Carregando, FalhaNoBloco } from './comum.tsx';
 
-function useDialogo(aberto: boolean) {
+export function useDialogo(aberto: boolean) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     const dialogo = ref.current;
@@ -38,13 +38,15 @@ interface PropsMolde {
   titulo: string;
   aoFechar: () => void;
   children: ReactNode;
+  /** Os formulários do catálogo e dos clientes: mais largos que os diálogos de um campo só. */
+  largo?: boolean;
 }
 
-function Molde({ aberto, titulo, aoFechar, children }: PropsMolde) {
+export function Molde({ aberto, titulo, aoFechar, children, largo = false }: PropsMolde) {
   const ref = useDialogo(aberto);
   const idTitulo = useId();
   return (
-    <dialog ref={ref} className="dialogo" aria-labelledby={idTitulo} onClose={aoFechar}>
+    <dialog ref={ref} className={largo ? 'dialogo dialogo--largo' : 'dialogo'} aria-labelledby={idTitulo} onClose={aoFechar}>
       <h2 id={idTitulo}>{titulo}</h2>
       {aberto && children}
     </dialog>

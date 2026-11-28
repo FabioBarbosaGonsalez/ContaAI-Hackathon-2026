@@ -1,0 +1,36 @@
+{
+  "item": {
+    "id": "arroz-5kg",
+    "descricao": "Arroz polido não parboilizado, pacote 5 kg",
+    "ncm": "10063021",
+    "nbs": null,
+    "cst": "200",
+    "cClassTrib": "200003",
+    "impostoSeletivo": null,
+    "unidade": "UN",
+    "fornecedor": {
+      "cnpj": "71604258000156",
+      "codigo": "AE-ARZ-5"
+    },
+    "ncmDescricaoOficial": "Arroz semibranqueado ou branqueado, mesmo polido ou brunido (glaciado*) - Não parboilizado - Polido ou brunido",
+    "classificacaoFonte": "Exemplo oficial (docs/exemplos.md). Redução específica do produto confirmada nos dados abertos: Anexo I da LC 214/2025, redução de 100%.",
+    "margemAlvoPct": "20",
+    "precoVenda": "27.90",
+    "custoAtual": {
+      "data": "2027-03-02T09:00:00-03:00",
+      "notaNumero": "1001",
+      "custoUnitario": "21.50",
+      "creditoCompraUnitario": "0.0000",
+      "fonteCredito": "motor"
+    },
+    "historicoCusto": [
+      {
+        "data": "2027-03-02T09:00:00-03:00",
+        "notaNumero": "1001",
+        "custoUnitario": "21.50",
+        "creditoCompraUnitario": "0.0000",
+        "fonteCredito": "motor"
+      }
+    ]
+  }
+}
