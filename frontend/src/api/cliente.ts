@@ -127,6 +127,17 @@ function erroDeEnvio(erro: unknown): ErroApi {
  * ```
  */
 export async function chamar<T>(pedido: Promise<Resultado<T>>): Promise<Resposta<T>> {
+  const { dados, mock } = await chamarComCabecalhos(pedido);
+  return { dados, mock };
+}
+
+/**
+ * Como `chamar`, e também os cabeçalhos da resposta (o Content-Disposition do arquivo dos dados da conta). Um
+ * cabeçalho só chega ao JavaScript, numa origem diferente, se a API o expõe no CORS.
+ */
+export async function chamarComCabecalhos<T>(
+  pedido: Promise<Resultado<T>>,
+): Promise<Resposta<T> & { cabecalhos: Headers }> {
   let resultado: Resultado<T>;
   try {
     resultado = await pedido;
@@ -144,5 +155,9 @@ export async function chamar<T>(pedido: Promise<Resultado<T>>): Promise<Resposta
     });
   }
   // Com resposta 2xx, o openapi-fetch sempre preenche `data` (com o corpo JSON lido).
-  return { dados: resultado.data as T, mock: response.headers.get(CABECALHO_MOCK) === '1' };
+  return {
+    dados: resultado.data as T,
+    mock: response.headers.get(CABECALHO_MOCK) === '1',
+    cabecalhos: response.headers,
+  };
 }

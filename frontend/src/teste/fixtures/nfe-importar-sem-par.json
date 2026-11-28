@@ -56,14 +56,28 @@
       "codigoFornecedor": "AE-REF-2L",
       "ncm": "22021000",
       "descricaoNota": "Refrigerante de cola, garrafa 2 L",
-      "motivo": "Código do produto deste fornecedor sem cadastro no catálogo."
+      "motivo": "Código do produto deste fornecedor sem cadastro no catálogo.",
+      "causa": "semCadastro",
+      "unidade": "UN",
+      "quantidade": "240",
+      "custoUnitario": "6.20",
+      "valorTotal": "1488.00",
+      "creditoCompraUnitario": null,
+      "itemCadastrado": null
     },
     {
       "nItem": 3,
       "codigoFornecedor": "AE-BIS-140",
       "ncm": "19059090",
       "descricaoNota": "Biscoito doce, pacote 140 g",
-      "motivo": "NCM da nota diferente da do cadastro (19053100): confira a classificação."
+      "motivo": "NCM da nota diferente da do cadastro (19053100): confira a classificação.",
+      "causa": "ncm",
+      "unidade": "UN",
+      "quantidade": "100",
+      "custoUnitario": "3.10",
+      "valorTotal": "310.00",
+      "creditoCompraUnitario": null,
+      "itemCadastrado": null
     }
   ],
   "alertas": []

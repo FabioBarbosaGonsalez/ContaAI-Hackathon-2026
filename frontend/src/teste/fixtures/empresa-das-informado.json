@@ -1,0 +1,42 @@
+{
+  "empresa": {
+    "cnpj": "12ABC34501DE35",
+    "razaoSocial": "Mercearia Exemplo Comércio Ltda",
+    "regimeAtual": "simples_hibrido",
+    "uf": "RS",
+    "municipio": 4314902,
+    "municipioNome": "Porto Alegre",
+    "dataCenario": "2027-03-16"
+  },
+  "atividade": {
+    "cAtivSN": "01",
+    "descricao": "Revenda de mercadorias, venda de mercadorias industrializadas pelo contribuinte",
+    "anexo": "I",
+    "fonte": "GET /calculadora/simples-nacional/atividades?data=2027-03-16&tpDoc=55 (motor SN 1.0.2)"
+  },
+  "cenario": {
+    "descricao": "Simulação de março de 2027",
+    "operacao": {
+      "data": "2027-03-16",
+      "uf": "RS",
+      "municipio": 4314902,
+      "aliquotasNominais": {
+        "cbs": "8.8",
+        "ibsEstadual": "0.05",
+        "ibsMunicipal": "0.05",
+        "impostoSeletivoAdValorem": "10.0",
+        "fonte": "Simulação do ContaAI: entradas do exemplo oficial da calculadora RR"
+      },
+      "premissasDas": {
+        "anexo": "I",
+        "cAtivSN": "01",
+        "pCBSSN": "1.2",
+        "pIBSSN": "0.1",
+        "fonte": "Configurações da empresa"
+      }
+    },
+    "cargaAtualPct": null
+  },
+  "premissasDasOrigem": "usuario",
+  "aviso": "Dados cadastrados pela sua empresa. Os resultados são simulações com as calculadoras oficiais: não são apuração fiscal e não substituem o contador."
+}

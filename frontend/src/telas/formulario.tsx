@@ -361,8 +361,8 @@ export function BotaoCopiar({ texto, rotulo }: { texto: string; rotulo: string }
  * Entrega um texto como arquivo para salvar, sem servidor: um Blob na memória, um link `blob:` com `download`,
  * um clique, e o endereço do Blob é revogado logo depois (o arquivo tem os códigos de recuperação).
  */
-export function baixarTexto(nomeDoArquivo: string, texto: string): void {
-  const url = URL.createObjectURL(new Blob([texto], { type: 'text/plain;charset=utf-8' }));
+export function baixarTexto(nomeDoArquivo: string, texto: string, tipo = 'text/plain;charset=utf-8'): void {
+  const url = URL.createObjectURL(new Blob([texto], { type: tipo }));
   const link = document.createElement('a');
   link.href = url;
   link.download = nomeDoArquivo;

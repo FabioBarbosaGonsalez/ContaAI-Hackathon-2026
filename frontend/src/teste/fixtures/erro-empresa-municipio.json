@@ -1,0 +1,6 @@
+{
+  "type": "about:blank",
+  "title": "Unprocessable Entity",
+  "status": 422,
+  "detail": "Município não encontrado nesta UF nos dados abertos do motor RR."
+}

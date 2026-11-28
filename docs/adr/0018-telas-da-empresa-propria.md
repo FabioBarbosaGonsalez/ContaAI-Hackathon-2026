@@ -1,6 +1,6 @@
 # ADR 0018: as telas da empresa própria, a primeira vez e o cadastro da empresa (C3a)
 
-- Status: aceito (C3a; a C3b, configurações, catálogo e clientes editáveis, entra numa seção do fim)
+- Status: aceito (C3a; a C3b entra em seções do fim: as etapas 1 a 5 estão feitas, as 6 a 9 vêm na C3b2)
 - Data: 2026-11-27
 - Etapa: C3a do [plano v2.1](../plano-v2.1.md), depois do backend da C3-B ([ADR 0017](0017-empresa-propria.md))
 - Código:
@@ -11,6 +11,7 @@
   - `frontend/src/shell/` (`rotas.ts` com `/empresa/nova`, `paginas.tsx` com a `PrimeiraVez`, `Shell.tsx`);
   - `frontend/src/telas/Painel.tsx`, `Catalogo.tsx`, `Notas.tsx`, `Dialogos.tsx`, `Explicacao.tsx` e `Privacidade.tsx`;
   - `frontend/src/api/cliente.ts` (o tempo limite que não depende da cópia da `Request`);
+  - C3b, etapas 3 a 5: `frontend/src/telas/ConfiguracoesDaEmpresa.tsx`, `camposDaEmpresa.tsx` (os campos divididos com o cadastro), `Conta.tsx` (baixar os dados), `regrasDeEntrada.ts` (a alíquota do DAS e o CNPJ da confirmação), `frontend/src/sessao/conta.ts` (`excluirEmpresa`, `baixarDados`, `nomeDoArquivo`), `frontend/src/api/cliente.ts` (`chamarComCabecalhos`), `frontend/src/shell/` (`/empresa`, o menu da conta e a `acao` da `Pagina`) e `Painel.tsx`;
   - testes: `frontend/src/telas/empresa.test.tsx` e as fixtures `*-empresa-nova.json`, `empresa-cadastrada.json`, `erro-empresa-*.json`, `erro-nota-outro-destinatario.json` e `referencias-*.json`.
 
 ## Contexto
@@ -131,3 +132,42 @@ O mapa, gravado no plano antes do código, achou:
 - **Fica para a C3b:** os itens e os clientes (até lá, a empresa nova não tem como ver um alerta), as configurações, baixar os dados, excluir a empresa e o par de um item sem par a partir da nota.
 - **Fica para o 3c:** o seletor de empresa (e, com ele, mais de uma empresa por conta) e o membro de verdade.
 - **Para o usuário decidir:** os termos de uso não falam do cadastro da empresa. Uma regra como "cadastre só a empresa que você representa" muda os termos, pede uma versão nova (o contrato aceita só a versão atual) e um novo aceite.
+
+## C3b, etapas 1 a 5: as configurações, a exclusão da empresa e o arquivo dos dados (2026-11-28)
+
+O mapa e as decisões estão no [plano v2.1](../plano-v2.1.md) ("C3b"). O backend do item a partir da nota, que vai no mesmo PR, está na revisão do [ADR 0017](0017-empresa-propria.md).
+
+**As configurações da empresa (`/empresa`):**
+- **Onde:** fora da barra, como `/conta` e `/empresa/nova`. Os caminhos são o menu da conta (só com empresa) e um link abaixo do título do Painel (só na empresa da conta; a demonstração não tem configurações). A `Pagina` ganhou a prop `acao` para esse link.
+- **A página é da conta:** quem estava vendo a demonstração volta aos dados da conta ao abri-la, como no cadastro. As rotas `/empresas` levam o cookie de qualquer forma (`ROTAS_DA_EMPRESA`).
+- **Os campos** (regime, UF, município e atividade) saíram do cadastro para `camposDaEmpresa.tsx`, e as duas páginas usam os mesmos. As listas continuam vindo dos motores, com a fonte impressa.
+- **O `PATCH` leva só o que mudou,** com a UF e o município juntos, como o contrato pede (`mudancasDosDados`). Salvar sem mudar nada diz "Nada mudou" e não chama a API. A resposta é a empresa nova: a página passa a mostrá-la, e os formulários recomeçam com os valores gravados.
+- **As alíquotas do DAS** (`pCBSSN` e `pIBSSN`), com a origem à vista: os valores de exemplo da simulação, rotulados, ou os informados. "Voltar aos valores da simulação" manda `premissasDas: null`. O texto diz o que elas fazem (entram no Simples tradicional, também na comparação do Regime) e manda conferir com o contador; onde o empresário encontra os valores segue não verificado ([ADR 0001](0001-lado-tradicional-do-simples.md)).
+- **Um "Salvar" por bloco,** no pé dele (app-screens §8.2: um modelo de gravação por tela).
+- **O membro** vê os dados, sem formulários e sem a exclusão (a API recusa com 403 de qualquer forma). As alíquotas aparecem como foram informadas, sem arredondar.
+- **A carga atual** (`cargaAtualPct`) fica de fora: nenhuma tela a mostra, e o carrinho da tela não a envia. Um campo sem efeito confundiria.
+
+**Excluir a empresa:**
+- a última seção da página, com a consequência em palavras (o catálogo, as notas, os custos, os preços, os alertas e os clientes empresa saem na hora e de vez) e o aviso "Guarde suas notas: o ContaAI não é o seu arquivo fiscal", com a fonte da guarda (Ajuste SINIEF 07/05, cláusula décima);
+- a confirmação pede o CNPJ da empresa (com ou sem a pontuação, em minúsculas também) e a senha. A tela confere o CNPJ antes de enviar; o backend confere de novo;
+- `SessaoConta.excluirEmpresa`: no 204, a conta deixa de ter o CNPJ sem esperar outro `GET /conta`, e as telas voltam à primeira vez. O 401 tanto é a senha errada quanto a sessão que acabou: a tela pergunta de novo quem entrou, como na exclusão da conta. O 404 também relê a conta (outra aba pode ter excluído).
+
+**Baixar os seus dados (Sua conta):**
+- a senha de novo; o texto do JSON é salvo como a API o mandou (`parseAs: 'text'`), sem reformatar, como `application/json`;
+- o nome vem do `Content-Disposition` (`chamarComCabecalhos`), conferido por `nomeDoArquivo`: só letras, dígitos, ponto, hífen e sublinhado, terminando em `.json`. Fora disso, `contaai-dados.json`;
+- o `Content-Disposition` não precisa ir ao `expose_headers` do CORS: o cookie da sessão só anda na mesma origem (`allow_credentials=False`), então esse pedido nunca é lido de outra origem.
+
+**A Privacidade:** os direitos levam a baixar os dados (Sua conta) e a excluir a empresa (Configurações da empresa, só o dono); o que fica guardado inclui as alíquotas do DAS informadas; o prazo da empresa passou a ser "até o dono excluir a empresa, e no máximo enquanto a organização existir". A data da política (27/11/2026) não mudou: o texto anterior era do mesmo dia.
+
+**Achados:**
+- **a fonte das alíquotas terminava em ".."** quando o texto da API já tinha ponto. Achado pelo teste;
+- **a alíquota aparecia duas vezes,** arredondada embaixo do campo ("1,16%" ao lado de "1,1612"). Achado nas capturas; agora aparece só no campo, e a visão do membro mostra o valor inteiro;
+- **o link do Painel e um "Ir ao Painel" no pé das configurações** saíam no azul do navegador. O do Painel usa o link dos blocos; o outro saiu (repetia a barra).
+
+**Consequências:**
+- **Testes:** tela com 556 (eram 531): `configuracoes.test.tsx` (22) e as regras novas. Lint, tipos, build, `npm run seguranca`, `contrato:checar` e `npm audit` ok. Backend com 715 testes (eram 697) e 97% de cobertura, 54 golden, `pip-audit` sem vulnerabilidades. Nenhuma dependência nova.
+- **Conferências no negativo:** sem o nome conferido do arquivo, sem o "Nada mudou", sem a UF com o município e sem a conta perder o CNPJ depois da exclusão, um teste falha em cada caso. Os arquivos voltaram depois de cada conferência.
+- **Fixtures gravadas da API real** (motores oficiais, banco temporário, conta do domínio `.test`, CNPJ do exemplo do Serpro): `empresa-configurada.json`, `empresa-das-*.json`, `erro-empresa-municipio.json`, `erro-empresa-excluir-cnpj.json`, `erro-senha-errada.json` e `conta-dados.json`. `nfe-importar-empresa-nova.json` e `nfe-importar-sem-par.json` foram gravadas de novo com os campos novos das linhas sem par; fora esses campos, são iguais às de antes (conferido).
+- **Conferido no Chrome 158**, com o build no `vite preview` (a CSP real) e a API real atrás do proxy `/api`, por um roteiro do DevTools Protocol que cria a conta e a empresa pela própria página: o link do Painel e do menu, salvar os dados, as alíquotas e a volta à simulação, baixar os dados (um download só, com o nome e o conteúdo da API e sem a senha), excluir a empresa e a primeira vez depois. Sem violação da CSP, sem rolagem lateral em 1440, 768 e 390 px e sem nada no armazenamento do navegador.
+- **O portão da skill** (crítica em `.taste-skill/app/critica-c3b1.md`): o inspetor dá 0 FAIL; o único aviso é o aviso curto centrado das páginas da conta sem conta, o mesmo de antes. O lint dá 0 FAIL e os 6 avisos de antes.
+- **Fica para a C3b2:** criar, alterar e arquivar itens, o par a partir da nota na tela de Notas e os clientes. Até lá, a empresa nova ainda não chega ao alerta pela tela.

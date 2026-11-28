@@ -68,7 +68,10 @@ export function Privacidade() {
               </ul>
               <p>Quando você cadastra a empresa, ficam guardados também, no espaço da sua organização:</p>
               <ul>
-                <li>o CNPJ, a razão social, o regime no Simples, a UF, o município e a atividade;</li>
+                <li>
+                  o CNPJ, a razão social, o regime no Simples, a UF, o município, a atividade e as alíquotas do DAS que
+                  você informar nas configurações;
+                </li>
                 <li>os itens do catálogo, os preços, os custos, as classificações e os alertas;</li>
                 <li>
                   das notas de compra importadas: o emitente, a série, o número, a data, o resumo SHA-256 do arquivo e o
@@ -165,8 +168,8 @@ export function Privacidade() {
               <ul>
                 <li>A conta e os dados dela: até você excluir a conta.</li>
                 <li>
-                  A empresa e os dados dela: enquanto a organização existir. A exclusão da conta da única pessoa da
-                  organização apaga a organização e tudo o que ela guarda.
+                  A empresa e os dados dela: até o dono excluir a empresa, e no máximo enquanto a organização existir. A
+                  exclusão da conta da única pessoa da organização apaga a organização e tudo o que ela guarda.
                 </li>
                 <li>
                   Um cadastro sem o segundo fator confirmado: deixa de valer {R.pendenteMin} minutos depois do cadastro, ou
@@ -188,6 +191,14 @@ export function Privacidade() {
               </p>
               <ul>
                 <li>ver os seus dados: em “Sua conta”, no menu da conta (o botão com o seu e-mail, na barra);</li>
+                <li>
+                  baixar os seus dados: em “Sua conta”, com a senha. O arquivo (JSON) tem os dados da conta e os das
+                  empresas da sua organização, e diz o que fica de fora;
+                </li>
+                <li>
+                  excluir a empresa: em “Configurações da empresa”, no mesmo menu, com a senha e o CNPJ digitado. Só o
+                  dono da organização exclui. A exclusão apaga a empresa e os dados dela na hora;
+                </li>
                 <li>
                   excluir a conta: em “Sua conta”, com a senha. A exclusão apaga a conta na hora e, se você for a única
                   pessoa da organização, também a organização e os dados dela.

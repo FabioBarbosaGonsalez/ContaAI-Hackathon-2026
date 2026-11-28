@@ -8,13 +8,15 @@ interface PropsPagina {
   titulo: string;
   /** Uma frase cinza sobre os dados da página (opcional). */
   subtitulo?: string;
+  /** Um link ao lado dos dados da página, abaixo do título (opcional): ex. as configurações da empresa no Painel. */
+  acao?: ReactNode;
   children?: ReactNode;
 }
 
 /** Na primeira página aberta, o foco fica onde o navegador o pôs; só as navegações seguintes o movem. */
 let primeiraPagina = true;
 
-export function Pagina({ titulo, subtitulo, children }: PropsPagina) {
+export function Pagina({ titulo, subtitulo, acao, children }: PropsPagina) {
   const refTitulo = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
@@ -34,6 +36,7 @@ export function Pagina({ titulo, subtitulo, children }: PropsPagina) {
           {titulo}
         </h1>
         {subtitulo !== undefined && <p className="pagina__subtitulo">{subtitulo}</p>}
+        {acao !== undefined && <p className="pagina__acao">{acao}</p>}
       </div>
       {children}
     </>

@@ -10,7 +10,9 @@ import {
   PADRAO_CNPJ,
   PADRAO_RECUPERACAO,
   RAZAO_SOCIAL_MAXIMA,
+  FRASE_DA_ALIQUOTA,
   conferirCnpj,
+  conferirCnpjDaConfirmacao,
   conferirCodigo,
   conferirEmail,
   conferirOrganizacao,
@@ -19,6 +21,7 @@ import {
   conferirSenhaAtual,
   conferirSenhaNova,
   digitosVerificadoresDoCnpj,
+  lerAliquotaDoDas,
   normalizarCnpj,
   normalizarCodigo,
   normalizarRecuperacao,
@@ -178,5 +181,24 @@ describe('razão social (C3a)', () => {
     expect(conferirRazaoSocial('😀'.repeat(RAZAO_SOCIAL_MAXIMA))).toBeNull(); // taste-skill-ignore: dado de teste (pontos de código)
     expect(conferirRazaoSocial('a'.repeat(RAZAO_SOCIAL_MAXIMA + 1))).toMatch(/no máximo 150/u);
     expect(conferirRazaoSocial('Empresa\tTeste')).toBe('Use só texto, sem caracteres de controle.');
+  });
+});
+
+describe('as alíquotas do DAS e a confirmação da exclusão (C3b)', () => {
+  it('a alíquota: de 0 a menos de 100, até 4 casas, com vírgula ou ponto e o % no fim', () => {
+    expect(lerAliquotaDoDas('1,1612')).toBe('1.1612');
+    expect(lerAliquotaDoDas(' 0.1 % ')).toBe('0.1');
+    expect(lerAliquotaDoDas('0')).toBe('0');
+    expect(lerAliquotaDoDas('99,9999')).toBe('99.9999');
+    for (const fora of ['', '100', '-1', '1,23456', 'abc', '1,2,3', '١']) {
+      expect(lerAliquotaDoDas(fora), fora).toBeNull();
+    }
+    expect(FRASE_DA_ALIQUOTA).toMatch(/até 4 casas/u);
+  });
+
+  it('o CNPJ digitado vale com ou sem a pontuação e em minúsculas, e só o da empresa', () => {
+    expect(conferirCnpjDaConfirmacao('12.abc.345/01de-35', '12ABC34501DE35')).toBeNull();
+    expect(conferirCnpjDaConfirmacao('', '12ABC34501DE35')).toBe('Digite o CNPJ da empresa para confirmar.');
+    expect(conferirCnpjDaConfirmacao('11222333000181', '12ABC34501DE35')).toBe('O CNPJ digitado não é o desta empresa.');
   });
 });

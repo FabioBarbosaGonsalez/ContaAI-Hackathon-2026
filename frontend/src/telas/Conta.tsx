@@ -2,8 +2,9 @@
 //
 // - Os dados vêm só do estado da sessão (o GET /conta que a tela já fez): a página não pede nada à API para
 //   mostrar. O e-mail, a organização e os CNPJs vão como texto (o React escapa).
-// - "Ver os seus dados" e "excluir a conta" são os direitos que a política de privacidade aponta para cá (LGPD,
-//   art. 18). A página não diz que mostra tudo o que é guardado: a lista completa está na política.
+// - "Ver os seus dados", "baixar os seus dados" (C3b) e "excluir a conta" são os direitos que a política de
+//   privacidade aponta para cá (LGPD, art. 18). A página não diz que mostra tudo o que é guardado: a lista completa
+//   está na política, e o arquivo baixado diz o que fica de fora (`naoIncluido`).
 // - Sair e sair de todos os aparelhos levam à página inicial, sem deixar esta página no voltar.
 // - Excluir pede a senha de novo e a confirmação de que não dá para desfazer (o backend só exige a senha; a caixa
 //   evita o clique por engano). O 401 da API vale tanto para a senha errada quanto para a sessão que acabou: a
@@ -21,7 +22,15 @@ import { Pagina } from '../shell/Pagina.tsx';
 import { ROTA_DA_CONTA } from '../shell/rotas.ts';
 import { PortaDaConta } from './PortaDaConta.tsx';
 import { TituloDoPasso } from './SegundoFator.tsx';
-import { AvisoDeFalha, CaixaDeMarcar, CampoSenha, falhaDe, rotuloDoEnvio, useEspera } from './formulario.tsx';
+import {
+  AvisoDeFalha,
+  CaixaDeMarcar,
+  CampoSenha,
+  baixarTexto,
+  falhaDe,
+  rotuloDoEnvio,
+  useEspera,
+} from './formulario.tsx';
 import { REGRAS_DA_CONTA, dataDaVersao } from './legal.ts';
 import { conferirSenhaAtual } from './regrasDeEntrada.ts';
 import './conta.css';
@@ -124,6 +133,127 @@ function Avisos({ eventos }: { eventos: readonly Evento[] }) {
           ))}
         </ul>
       )}
+    </section>
+  );
+}
+
+export const FRASE_ARQUIVO_BAIXADO = 'O arquivo foi baixado. Guarde-o num lugar seguro: ele tem os seus dados.';
+
+/**
+ * Baixar os seus dados (C3b, etapa 5): o JSON do POST /conta/dados, salvo com o nome que a API manda. A senha é
+ * pedida de novo (o arquivo tem dados pessoais) e some do campo depois do envio, dê certo ou não.
+ */
+function BaixarDados({ email }: { email: string }) {
+  const sessao = useSessao();
+  const [aberto, setAberto] = useState(false);
+  const [senha, setSenha] = useState('');
+  const [erro, setErro] = useState<string | null>(null);
+  const [falha, setFalha] = useState<string | null>(null);
+  const [aviso, setAviso] = useState<string | null>(null);
+  const [enviando, setEnviando] = useState(false);
+  const espera = useEspera();
+  const refSenha = useRef<HTMLInputElement>(null);
+  const refAbrir = useRef<HTMLButtonElement>(null);
+
+  const fechar = () => {
+    setAberto(false);
+    setSenha('');
+    setErro(null);
+    setFalha(null);
+    setTimeout(() => {
+      refAbrir.current?.focus();
+    }, 0);
+  };
+
+  const enviar = async (evento: SubmitEvent<HTMLFormElement>) => {
+    evento.preventDefault();
+    if (enviando || espera.aguardando) {
+      return;
+    }
+    const novo = conferirSenhaAtual(senha);
+    setErro(novo);
+    if (novo !== null) {
+      setFalha(null);
+      refSenha.current?.focus();
+      return;
+    }
+    setEnviando(true);
+    setFalha(null);
+    try {
+      const arquivo = await sessao.conta.baixarDados(sessao.api, senha);
+      baixarTexto(arquivo.nome, arquivo.texto, 'application/json;charset=utf-8');
+      setSenha('');
+      setAberto(false);
+      setAviso(FRASE_ARQUIVO_BAIXADO);
+      setEnviando(false);
+      setTimeout(() => {
+        refAbrir.current?.focus();
+      }, 0);
+    } catch (e) {
+      const { texto, esperaS } = falhaDe(e);
+      if (esperaS !== null) {
+        espera.iniciar(esperaS);
+      }
+      setSenha('');
+      setFalha(texto);
+      setEnviando(false);
+    }
+  };
+
+  return (
+    <section className="conta__secao" aria-labelledby="conta-baixar">
+      <h2 id="conta-baixar">Baixar os seus dados</h2>
+      <p>
+        Um arquivo JSON com os dados da conta e os das empresas da sua organização, como o ContaAI os guarda. O próprio
+        arquivo diz o que fica de fora, como a senha e o segredo do segundo fator.
+      </p>
+      {aberto ? (
+        <form className="formulario" noValidate onSubmit={(e) => void enviar(e)}>
+          <AvisoDeFalha texto={falha} />
+          <input type="email" name="email" autoComplete="username" value={email} readOnly hidden />
+          <CampoSenha
+            ref={refSenha}
+            rotulo="Senha"
+            name="senha"
+            autoComplete="current-password"
+            value={senha}
+            erro={erro}
+            ajuda="A senha de novo: o arquivo tem os seus dados."
+            onChange={(e) => {
+              setSenha(e.target.value);
+              setErro(null);
+            }}
+          />
+          <p className="conta__acoes">
+            <button type="submit" className="botao-principal" disabled={enviando || espera.aguardando}>
+              {rotuloDoEnvio(enviando, espera.restanteMs, 'Preparando…', 'Baixar o arquivo')}
+            </button>
+            <button type="button" className="botao-secundario" disabled={enviando} onClick={fechar}>
+              Cancelar
+            </button>
+          </p>
+        </form>
+      ) : (
+        <p>
+          <button
+            ref={refAbrir}
+            type="button"
+            className="botao-secundario"
+            onClick={() => {
+              setAberto(true);
+              setAviso(null);
+              setTimeout(() => {
+                refSenha.current?.focus();
+              }, 0);
+            }}
+          >
+            Baixar os seus dados…
+          </button>
+        </p>
+      )}
+      <p className="campo__ajuda" role="status">
+        {aviso}
+      </p>
     </section>
   );
 }
@@ -313,6 +443,7 @@ function ConteudoDaConta({ aoExcluir }: { aoExcluir: () => void }) {
         <Dados conta={conta} />
         <SegundoFator conta={conta} />
         <Avisos eventos={conta.eventos} />
+        <BaixarDados email={conta.email} />
       </div>
       <Sessao conta={conta} />
       <div className="cadastro__principal">

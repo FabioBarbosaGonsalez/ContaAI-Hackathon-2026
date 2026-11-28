@@ -12,7 +12,7 @@
 //   O segredo do segundo fator e os códigos de recuperação voltam a quem chamou e não ficam aqui: o componente
 //   os guarda na memória dele, e eles somem quando a pessoa sai do passo (plano v2.1, C2b, etapa 4).
 
-import { chamar, type ClienteApi } from '../api/cliente.ts';
+import { chamar, chamarComCabecalhos, type ClienteApi } from '../api/cliente.ts';
 import type { components } from '../api/esquema.gen.ts';
 import { ErroApi } from '../api/problema.ts';
 import type { SessaoModo } from './modo.ts';
@@ -52,6 +52,25 @@ export type EstadoConta =
   | { tipo: 'encerrada' }
   /** O GET /conta falhou por outro motivo (rede, 5xx). A tela segue como quem não tem conta. */
   | { tipo: 'erro'; erro: ErroApi };
+
+/** O arquivo dos dados da conta, pronto para salvar. */
+export interface ArquivoDosDados {
+  nome: string;
+  texto: string;
+}
+
+/** O nome que a tela usa quando o Content-Disposition falta ou não tem o formato esperado. */
+export const NOME_DO_ARQUIVO_PADRAO = 'contaai-dados.json';
+
+/**
+ * O nome do arquivo do Content-Disposition (`attachment; filename="contaai-dados-2026-11-27.json"`). Só letras,
+ * dígitos, ponto, hífen e sublinhado, terminando em .json: nenhum caminho nem caractere estranho vira nome.
+ */
+export function nomeDoArquivo(cabecalho: string | null): string {
+  const achado = /filename="([A-Za-z0-9._-]{1,100}\.json)"/u.exec(cabecalho ?? '');
+  const nome = achado?.[1];
+  return nome !== undefined && !nome.startsWith('.') ? nome : NOME_DO_ARQUIVO_PADRAO;
+}
 
 type Ouvinte = () => void;
 
@@ -262,6 +281,56 @@ export class SessaoConta {
       this.mudar({ tipo: 'conectada', conta: { ...atual.conta, empresas }, naDemo: false });
     }
     return resposta;
+  }
+
+  /**
+   * Exclui a empresa da conta (POST /empresas/{cnpj}/excluir, ADR 0017, etapa 7), com a senha e o CNPJ digitado de
+   * novo. No 204, a conta deixa de ter o CNPJ sem esperar outro GET /conta, e a tela volta à primeira vez. Como em
+   * `excluir`, o 401 tanto é a senha errada quanto a sessão que acabou: a tela pergunta de novo quem entrou.
+   * 403: só o dono exclui; 404: a empresa já não está na conta; 422: o CNPJ digitado não é o da empresa; 429: espera.
+   */
+  async excluirEmpresa(cliente: ClienteApi, cnpj: string, senha: string, cnpjConfirmacao: string): Promise<void> {
+    try {
+      await chamar(
+        cliente.POST('/empresas/{cnpj}/excluir', {
+          params: { path: { cnpj } },
+          body: { senha, cnpjConfirmacao },
+        }),
+      );
+    } catch (erro) {
+      if (erro instanceof ErroApi && erro.status === 401 && this.estado.tipo === 'conectada') {
+        await this.consultar(cliente);
+      }
+      if (erro instanceof ErroApi && erro.status === 404 && this.estado.tipo === 'conectada') {
+        await this.consultar(cliente); // outra aba pode ter excluído: a conta é lida de novo
+      }
+      throw erro;
+    }
+    const atual = this.estado;
+    if (atual.tipo === 'conectada') {
+      const empresas = atual.conta.empresas.filter((c) => c !== cnpj);
+      this.versao += 1;
+      this.mudar({ tipo: 'conectada', conta: { ...atual.conta, empresas }, naDemo: false });
+    }
+  }
+
+  /**
+   * O arquivo com os seus dados (POST /conta/dados, LGPD, art. 18 II e V), com a senha de novo. Volta o texto do
+   * JSON como a API o mandou (sem reformatar) e o nome do arquivo do Content-Disposition, conferido. O estado não
+   * muda. O 401 é tratado como em `excluir`. 429: espera.
+   */
+  async baixarDados(cliente: ClienteApi, senha: string): Promise<ArquivoDosDados> {
+    try {
+      const { dados, cabecalhos } = await chamarComCabecalhos(
+        cliente.POST('/conta/dados', { body: { senha }, parseAs: 'text' }),
+      );
+      return { nome: nomeDoArquivo(cabecalhos.get('Content-Disposition')), texto: dados };
+    } catch (erro) {
+      if (erro instanceof ErroApi && erro.status === 401 && this.estado.tipo === 'conectada') {
+        await this.consultar(cliente);
+      }
+      throw erro;
+    }
   }
 
   /** A sessão começou: a tela passa a mostrar os dados da conta (e não os da demonstração). */
