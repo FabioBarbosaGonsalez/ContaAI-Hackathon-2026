@@ -89,7 +89,7 @@ Os números do plano, do inventário e do teste de referência (`test_regime_gol
 
 - **Itens sem par:** a tela mostra o motivo, mas não há rota para casar um item da nota com um do catálogo. Cadastrar o par fica para a C3 (catálogo editável).
 - **Notas de exemplo:** a banca precisa de um XML para importar. As notas fictícias estão em `data/demo/notas`. Oferecê-las para baixar na tela fica para a C2, junto da página inicial da demonstração. **Resolvido na C2c:** a tela de Notas oferece os três XML para baixar, da mesma pasta, sem cópia ([ADR 0016](0016-telas-de-entrada.md), seção da C2c).
-- **Recibo de uma nota antiga:** o `GET /notas` traz só o resumo. Rever o recibo inteiro de uma nota já importada exigiria uma rota nova.
+- **Recibo de uma nota antiga:** o `GET /notas` traz só o resumo. Rever o recibo inteiro de uma nota já importada exigiria uma rota nova. **Resolvido no backend da C3b2:** `GET /notas/{cnpj_emitente}/{serie}/{numero}` devolve o recibo gravado ([ADR 0017](0017-empresa-propria.md), revisão da C3b2); a tela entra na etapa 8 da C3b.
 
 ## Revisão de 2026-11-26: menos texto na tela (pedido do usuário)
 

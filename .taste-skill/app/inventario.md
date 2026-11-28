@@ -99,7 +99,7 @@ Valores do cenário de demonstração (simulação de março de 2027, premissas 
   - a mesma nota de novo: "já importada", com o recibo da primeira vez (`jaImportada`);
   - alertas gerados;
   - desde a C2c, as três notas de exemplo para baixar (fictícias, de `data/demo/notas`), no bloco de importar.
-- **Dados:** `POST /nfe/importar` (o recibo) e, desde o PR 3b, `GET /notas?cnpj=` (as notas já importadas, da emissão mais recente para a mais antiga, com as contagens de itens e de alertas abertos).
+- **Dados:** `POST /nfe/importar` (o recibo) e, desde o PR 3b, `GET /notas?cnpj=` (as notas já importadas, da emissão mais recente para a mais antiga, com as contagens de itens e de alertas abertos). Desde a C3b2, `GET /notas/{cnpj_emitente}/{serie}/{numero}?cnpj=` devolve o recibo gravado de uma nota, sem o XML.
 
 ### Explicação (painel lateral)
 - **Pergunta:** por que este item paga isso?

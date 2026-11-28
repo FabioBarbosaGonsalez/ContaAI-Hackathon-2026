@@ -71,6 +71,14 @@ class NotaListada:
 
 
 @dataclass(frozen=True)
+class NotaGravada:
+    """Uma nota com o recibo já gravado."""
+
+    importada_em: datetime
+    recibo_json: str
+
+
+@dataclass(frozen=True)
 class AlertaRegistro:
     alerta: Alerta
     nota_id: int
@@ -506,6 +514,18 @@ class Sessao:
             NotaListada(datetime.fromisoformat(r["importada_em"]), r["recibo_json"], r["gerados"], r["abertos"])
             for r in linhas
         ]
+
+    def nota_gravada(self, cnpj: str, cnpj_emitente: str, serie: str, numero: str) -> NotaGravada | None:
+        """A nota desta empresa, deste emitente, com esta série e este número. Sem recibo ainda, fica de fora (como
+        em `notas`)."""
+        linha = self._c.execute(
+            "SELECT importada_em, recibo_json FROM notas WHERE cnpj = ? AND cnpj_emitente = ? AND serie = ?"
+            " AND numero = ? AND recibo_json <> '{}'",
+            (cnpj, cnpj_emitente, serie, numero),
+        ).fetchone()
+        if linha is None:
+            return None
+        return NotaGravada(datetime.fromisoformat(linha["importada_em"]), linha["recibo_json"])
 
     def gravar_recibo(self, nota_id: int, recibo_json: str) -> None:
         """O recibo é gravado na mesma transação da nota, depois de montado (ele cita os alertas criados)."""

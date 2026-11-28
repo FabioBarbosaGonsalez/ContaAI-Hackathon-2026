@@ -44,6 +44,7 @@ from app.contrato import (
     NfeImportarResposta,
     NotasResposta,
     PainelContadorResposta,
+    ReciboDaNotaResposta,
 )
 from app.nfe import consultas
 from app.nfe.importacao import agora_utc, importar_nota
@@ -225,6 +226,53 @@ def listar_notas(
     estado = abrir_estado(cfg, espaco, sessao)
     estado.exigir_empresa(cnpj)
     return consultas.notas(estado.repositorio, cnpj, limite, estado.aviso)
+
+
+CnpjEmitente = Annotated[str, Path(pattern=PADRAO_CNPJ, description="CNPJ do fornecedor que emitiu a nota.")]
+SerieDaNota = Annotated[str, Path(pattern=r"^[0-9]{1,3}$", description="Série da nota (serie).")]
+NumeroDaNota = Annotated[str, Path(pattern=r"^[1-9][0-9]{0,8}$", description="Número da nota (nNF).")]
+RECIBO: respostas.Respostas = {
+    **respostas.ESTADO,
+    404: {
+        "description": "Empresa não encontrada, espaço de avaliação inexistente ou expirado "
+        "(/problemas/espaco-inexistente), ou nota deste fornecedor com esta série e este número que a empresa não "
+        "importou."
+    },
+}
+
+
+@rotas.get("/notas/{cnpj_emitente}/{serie}/{numero}", response_model=ReciboDaNotaResposta, responses=RECIBO)
+def recibo_da_nota(
+    cfg: Cfg,
+    response: Response,
+    cnpj_emitente: CnpjEmitente,
+    serie: SerieDaNota,
+    numero: NumeroDaNota,
+    cnpj: CNPJ,
+    espaco: EspacoId = None,
+    sessao: SessaoCookie = None,
+) -> ReciboDaNotaResposta:
+    """O recibo de uma nota já importada, sem enviar o XML de novo: as linhas sem par dela se cadastram a partir
+    daqui (POST /catalogo/itens com `daNota`). Não chama os motores nem grava."""
+    if cfg.modo == "mock":
+        marcar_mock(response)
+        achado = next(
+            (
+                r
+                for r in mocks.carregar().recibos
+                if (r.recibo.nota.emitente.cnpj, r.recibo.nota.serie, r.recibo.nota.numero)
+                == (cnpj_emitente, serie, numero)
+                and r.recibo.nota.destinatario is not None
+                and r.recibo.nota.destinatario.cnpj == cnpj
+            ),
+            None,
+        )
+        if achado is None:
+            raise consultas.NaoEncontrado("Nota não encontrada para este fornecedor, com esta série e este número.")
+        return achado
+    estado = abrir_estado(cfg, espaco, sessao)
+    estado.exigir_empresa(cnpj)
+    return consultas.recibo_da_nota(estado.repositorio, cnpj, cnpj_emitente, serie, numero)
 
 
 @rotas.get("/contador/painel", response_model=PainelContadorResposta, responses=respostas.ESPACO)

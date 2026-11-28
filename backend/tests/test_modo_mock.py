@@ -34,6 +34,7 @@ SERVIDAS_PELO_MOCK = {
     ("GET", "/alertas"),
     ("GET", "/catalogo"),
     ("GET", "/notas"),
+    ("GET", "/notas/{cnpj_emitente}/{serie}/{numero}"),
     ("GET", "/contador/painel"),
     ("GET", "/busca/ncm"),
     ("GET", "/explicar/{item_id}"),

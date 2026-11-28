@@ -1,0 +1,250 @@
+[
+  {
+    "importadaEm": "2027-03-16T12:00:00Z",
+    "recibo": {
+      "simulado": true,
+      "avisoSimulacao": "Simulação de 2027 com alíquotas efetivas do Simples assumidas (CBS 1,1612%, IBS 0,0129%)",
+      "premissas": [
+        {
+          "nome": "Nota de homologação",
+          "valor": "tpAmb 2: sem valor fiscal",
+          "fonte": "Campo ide/tpAmb da própria nota. As notas da demonstração são fictícias (data/demo)."
+        }
+      ],
+      "jaImportada": false,
+      "nota": {
+        "serie": "1",
+        "numero": "1002",
+        "dataEmissao": "2027-03-16T09:00:00-03:00",
+        "emitente": {
+          "cnpj": "71604258000156",
+          "nome": "Atacado Exemplo Ltda (fictício)"
+        },
+        "destinatario": {
+          "cnpj": "36817420000113",
+          "nome": "Distribuidora Serra Azul ME (fictícia)"
+        },
+        "homologacao": true,
+        "temGrupoIbsCbs": true
+      },
+      "itensCasados": [
+        {
+          "nItem": 1,
+          "itemId": "cerveja-lata",
+          "codigoFornecedor": "AE-CRV-350",
+          "ncm": "22030000",
+          "descricaoNota": "Cerveja de malte, lata 350 ml",
+          "quantidade": "1440",
+          "custoAnterior": "2.60",
+          "custoNovo": "3.05",
+          "variacaoPct": "17.31",
+          "atualizaCusto": true,
+          "creditoCompraUnitario": "0.2715",
+          "fonteCredito": "nfe"
+        },
+        {
+          "nItem": 2,
+          "itemId": "chocolate-barra",
+          "codigoFornecedor": "AE-CHO-90",
+          "ncm": "18063210",
+          "descricaoNota": "Chocolate não recheado, barra 90 g",
+          "quantidade": "800",
+          "custoAnterior": "4.10",
+          "custoNovo": "4.10",
+          "variacaoPct": "0.00",
+          "atualizaCusto": true,
+          "creditoCompraUnitario": "0.3649",
+          "fonteCredito": "nfe"
+        },
+        {
+          "nItem": 3,
+          "itemId": "biscoito-pacote",
+          "codigoFornecedor": "AE-BIS-140",
+          "ncm": "19053100",
+          "descricaoNota": "Biscoito doce, pacote 140 g",
+          "quantidade": "2600",
+          "custoAnterior": "3.10",
+          "custoNovo": "3.10",
+          "variacaoPct": "0.00",
+          "atualizaCusto": true,
+          "creditoCompraUnitario": "0.2759",
+          "fonteCredito": "nfe"
+        }
+      ],
+      "itensSemPar": [],
+      "alertas": [
+        {
+          "simulado": true,
+          "avisoSimulacao": "Simulação de 2027 com alíquotas efetivas do Simples assumidas (CBS 1,1612%, IBS 0,0129%)",
+          "premissas": [
+            {
+              "nome": "Alíquotas nominais de 2027",
+              "valor": "CBS 8,8% · IBS estadual 0,05% · IBS municipal 0,05%",
+              "fonte": "Cenário de demonstração (data/demo): entradas do exemplo oficial da calculadora RR. Informadas pelo usuário (P6). Não são alíquotas oficiais."
+            },
+            {
+              "nome": "Alíquotas efetivas do Simples (anexo I, atividade 01)",
+              "valor": "CBS 1,1612% · IBS 0,0129%",
+              "fonte": "Cenário de demonstração (data/demo): valores de exemplo do esquema do motor SN. Informadas pelo usuário: saem da apuração do Simples do contribuinte (P8, ADR 0001)."
+            },
+            {
+              "nome": "Crédito das compras no Simples tradicional",
+              "valor": "não aproveitado: entra no custo",
+              "fonte": "LC 214/2025, art. 47, §9º, I: o optante do Simples não se credita de IBS e CBS."
+            },
+            {
+              "nome": "ICMS",
+              "valor": "fora das contas",
+              "fonte": "Simplificação do produto. Em 2027 o ICMS ainda existe e é deduzido da base do IBS/CBS (docs/exemplos.md da calculadora RR)."
+            },
+            {
+              "nome": "Método do preço-alvo",
+              "valor": "lote de 100 unidades por avaliação; menor preço em centavos com margem ≥ alvo",
+              "fonte": "Plano, seção 11.1, e ADR 0005. Os tributos de cada avaliação vêm do motor."
+            },
+            {
+              "nome": "Margem do alerta",
+              "valor": "regime atual da empresa, preço de venda atual e data do cenário; lote de 100 unidades por item",
+              "fonte": "Plano, seção 11.3, e ADR 0008. Os tributos vêm do motor; o alerta sai quando a margem cai e fica abaixo do alvo do item."
+            }
+          ],
+          "id": "alerta-735e6471cedbb22a",
+          "cnpj": "36817420000113",
+          "itemId": "cerveja-lata",
+          "descricaoItem": "Cerveja de malte, lata 350 ml",
+          "regime": "simples_tradicional",
+          "margemAntesPct": "24.12",
+          "margemDepoisPct": "11.19",
+          "margemAlvoPct": "15",
+          "custoAnterior": "2.60",
+          "custoNovo": "3.05",
+          "precoAtual": "3.79",
+          "precoSugerido": "3.97",
+          "motivoSemPreco": null,
+          "origem": {
+            "tipo": "nfe",
+            "numero": "1002",
+            "dataEmissao": "2027-03-16T09:00:00-03:00",
+            "emitente": "Atacado Exemplo Ltda (fictício)"
+          },
+          "criadoEm": "2027-03-16T12:00:00Z",
+          "aplicadoEm": null
+        }
+      ]
+    }
+  },
+  {
+    "importadaEm": "2027-03-16T12:00:00Z",
+    "recibo": {
+      "simulado": true,
+      "avisoSimulacao": "Simulação de 2027: crédito das compras com alíquotas assumidas",
+      "premissas": [
+        {
+          "nome": "Alíquotas nominais de 2027 (crédito das compras)",
+          "valor": "CBS 8.8% · IBS estadual 0.05% · IBS municipal 0.05%",
+          "fonte": "Cenário de demonstração (data/demo): entradas do exemplo oficial da calculadora RR. Não são alíquotas oficiais (P6)."
+        },
+        {
+          "nome": "Crédito da compra sem grupo IBSCBS na nota",
+          "valor": "calculado no motor RR sobre o custo, na data da nota: Arroz polido não parboilizado, pacote 5 kg, Cerveja de malte, lata 350 ml, Chocolate não recheado, barra 90 g, Biscoito doce, pacote 140 g, Carne bovina desossada, resfriada (kg)",
+          "fonte": "Hipótese de fornecedor no regime regular (plano, E3), com as alíquotas do cenário da empresa."
+        },
+        {
+          "nome": "Nota de homologação",
+          "valor": "tpAmb 2: sem valor fiscal",
+          "fonte": "Campo ide/tpAmb da própria nota. As notas da demonstração são fictícias (data/demo)."
+        }
+      ],
+      "jaImportada": false,
+      "nota": {
+        "serie": "1",
+        "numero": "1001",
+        "dataEmissao": "2027-03-02T09:00:00-03:00",
+        "emitente": {
+          "cnpj": "71604258000156",
+          "nome": "Atacado Exemplo Ltda (fictício)"
+        },
+        "destinatario": {
+          "cnpj": "36817420000113",
+          "nome": "Distribuidora Serra Azul ME (fictícia)"
+        },
+        "homologacao": true,
+        "temGrupoIbsCbs": false
+      },
+      "itensCasados": [
+        {
+          "nItem": 1,
+          "itemId": "arroz-5kg",
+          "codigoFornecedor": "AE-ARZ-5",
+          "ncm": "10063021",
+          "descricaoNota": "Arroz polido não parboilizado, pacote 5 kg",
+          "quantidade": "500",
+          "custoAnterior": null,
+          "custoNovo": "21.50",
+          "variacaoPct": null,
+          "atualizaCusto": true,
+          "creditoCompraUnitario": "0.0000",
+          "fonteCredito": "motor"
+        },
+        {
+          "nItem": 2,
+          "itemId": "cerveja-lata",
+          "codigoFornecedor": "AE-CRV-350",
+          "ncm": "22030000",
+          "descricaoNota": "Cerveja de malte, lata 350 ml",
+          "quantidade": "1440",
+          "custoAnterior": null,
+          "custoNovo": "2.60",
+          "variacaoPct": null,
+          "atualizaCusto": true,
+          "creditoCompraUnitario": "0.2314",
+          "fonteCredito": "motor"
+        },
+        {
+          "nItem": 3,
+          "itemId": "chocolate-barra",
+          "codigoFornecedor": "AE-CHO-90",
+          "ncm": "18063210",
+          "descricaoNota": "Chocolate não recheado, barra 90 g",
+          "quantidade": "800",
+          "custoAnterior": null,
+          "custoNovo": "4.10",
+          "variacaoPct": null,
+          "atualizaCusto": true,
+          "creditoCompraUnitario": "0.3649",
+          "fonteCredito": "motor"
+        },
+        {
+          "nItem": 4,
+          "itemId": "biscoito-pacote",
+          "codigoFornecedor": "AE-BIS-140",
+          "ncm": "19053100",
+          "descricaoNota": "Biscoito doce, pacote 140 g",
+          "quantidade": "2600",
+          "custoAnterior": null,
+          "custoNovo": "3.10",
+          "variacaoPct": null,
+          "atualizaCusto": true,
+          "creditoCompraUnitario": "0.2759",
+          "fonteCredito": "motor"
+        },
+        {
+          "nItem": 5,
+          "itemId": "carne-bovina-kg",
+          "codigoFornecedor": "AE-CRN-KG",
+          "ncm": "02013000",
+          "descricaoNota": "Carne bovina desossada, resfriada (kg)",
+          "quantidade": "120",
+          "custoAnterior": null,
+          "custoNovo": "31.00",
+          "variacaoPct": null,
+          "atualizaCusto": true,
+          "creditoCompraUnitario": null,
+          "fonteCredito": null
+        }
+      ],
+      "itensSemPar": [],
+      "alertas": []
+    }
+  }
+]

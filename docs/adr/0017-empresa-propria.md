@@ -1,9 +1,9 @@
 # ADR 0017: a empresa própria no backend, o CNPJ alfanumérico, o catálogo e os clientes editáveis (C3-B)
 
-- Status: aceito (etapas 1 a 10 da C3-B; as etapas 1 a 5 no PR #26, as 6 a 10 no PR #27; revisão da C3b, o item a partir da nota, no fim)
+- Status: aceito (etapas 1 a 10 da C3-B; as etapas 1 a 5 no PR #26, as 6 a 10 no PR #27; revisão da C3b, o item a partir da nota, e a da C3b2, o fornecedor no catálogo e o recibo de uma nota gravada, no fim)
 - Data: 2026-11-27
 - Etapa: C3-B do plano v2.1 (as telas vêm na C3a e na C3b)
-- Código: `backend/app/cnpj.py`, `backend/app/cadastro.py`, `backend/app/api/rotas/empresa.py`, `backend/app/persistencia/migracoes/0003_empresa_propria.sql`, `backend/app/persistencia/banco.py` (`migrar`), `backend/app/persistencia/repositorio.py` (`trocar_recibo`, C3b), `backend/app/nfe/importacao.py` (`creditos_pelo_motor` e as linhas sem par, C3b), `backend/app/motores/dados_abertos.py` (UF, município e atividade), `backend/app/empresa.py` (rótulos das premissas), `backend/app/contas/servico.py` (`vincular_empresa`), `backend/app/api/middlewares.py`, `frontend/src/dados/formatar.ts`, `frontend/src/api/rotas.ts`, `backend/app/dados_da_conta.py`, `backend/app/api/registro.py`, `backend/app/api/dependencias.py` (papéis), `backend/app/api/problemas.py` (o 500), `backend/tests/test_cnpj.py`, `test_migracao_0003.py`, `test_clientes_b2b.py`, `test_empresa_propria.py`, `test_empresa_golden.py`, `test_exclusao_e_dados.py`, `test_papeis.py`, `test_erro_interno.py`, `test_modo_mock.py` e `test_par_da_nota.py` (C3b)
+- Código: `backend/app/cnpj.py`, `backend/app/cadastro.py`, `backend/app/api/rotas/empresa.py`, `backend/app/persistencia/migracoes/0003_empresa_propria.sql`, `backend/app/persistencia/banco.py` (`migrar`), `backend/app/persistencia/repositorio.py` (`trocar_recibo`, C3b), `backend/app/nfe/importacao.py` (`creditos_pelo_motor` e as linhas sem par, C3b), `backend/app/motores/dados_abertos.py` (UF, município e atividade), `backend/app/empresa.py` (rótulos das premissas), `backend/app/contas/servico.py` (`vincular_empresa`), `backend/app/api/middlewares.py`, `frontend/src/dados/formatar.ts`, `frontend/src/api/rotas.ts`, `backend/app/dados_da_conta.py`, `backend/app/api/registro.py`, `backend/app/api/dependencias.py` (papéis), `backend/app/api/problemas.py` (o 500), `backend/tests/test_cnpj.py`, `test_migracao_0003.py`, `test_clientes_b2b.py`, `test_empresa_propria.py`, `test_empresa_golden.py`, `test_exclusao_e_dados.py`, `test_papeis.py`, `test_erro_interno.py`, `test_modo_mock.py`, `test_par_da_nota.py` (C3b) e `test_recibo_da_nota.py` (C3b2); `backend/app/nfe/consultas.py` (`recibo_da_nota`, C3b2)
 
 ## Contexto
 
@@ -398,3 +398,23 @@ Ficou do 3b cadastrar o par de um item sem par a partir da nota. O mapa da C3b a
 - **No modo real, com os motores oficiais:** a linha guarda o crédito da nota (0,3649 por unidade na nota de exemplo); o item nasce com o custo de 3,50 e esse crédito; a nota seguinte (4,10) gera o alerta; a linha cadastrada não entra de novo; e, sem o grupo IBSCBS, o crédito vem do motor RR (0,3115).
 - Frases dos padrões novos (série e número da nota) em `mensagens.py`, o OpenAPI reexportado e os tipos da tela. No modo mock, a rota continua 501 (inventário da etapa 10), com o mesmo limite por IP e os mesmos papéis.
 - A tela usa `daNota` na etapa 8 da C3b (C3b2).
+
+## Revisão da C3b2: o fornecedor no catálogo e o recibo de uma nota gravada (2026-11-28)
+
+O mapa das etapas 6 a 9 da C3b (as telas do catálogo, do par da nota e dos clientes) achou dois buracos no backend. O usuário escolheu fechar os dois antes das telas (A1 e B1, no [plano v2.1](../plano-v2.1.md), "C3b").
+
+**Os achados:**
+- **o `GET /catalogo` não dizia o fornecedor do item.** O `PATCH /catalogo/{item_id}` muda o CNPJ e o código do fornecedor, mas a resposta do item não os trazia (eles ficam em `codigos_fornecedor`). A tela de alterar não teria o valor atual para mostrar;
+- **o recibo de uma nota antiga só voltava com o XML.** O `GET /notas` traz as contagens, não as linhas. Cadastrar uma linha sem par depois dependia de a pessoa ter guardado o arquivo e importá-lo de novo (o recibo volta com `jaImportada`).
+
+**Decisão:**
+- **`fornecedor` em cada item** (`ItemCatalogoEstado.fornecedor`, com `cnpj` e `codigo`): no `GET /catalogo` e em toda resposta que traz o item (criar, alterar, corrigir a classificação). Na demonstração, os fornecedores e os códigos são os fictícios das sementes.
+- **`GET /notas/{cnpj_emitente}/{serie}/{numero}?cnpj=`** devolve `importadaEm` e o recibo gravado (`NfeImportarResposta`), sem chamar os motores e sem gravar. As linhas sem par que já viraram item citam o item (`itemCadastrado`). Os alertas vêm com o `aplicadoEm` atual, porque o recibo gravado guarda o estado do momento da importação. O `jaImportada` fica como foi gravado (falso): a leitura não é uma importação.
+- **Quem lê:** as mesmas regras do `GET /notas`. Uma nota de outra empresa, de outro fornecedor, de outra série ou de outra conta recebe o 404 de uma nota que não existe. Uma nota ainda sem recibo fica de fora, como na lista. Os padrões da série e do número são os do `daNota`.
+- **Os inventários:** sem limite por IP (lê o banco, como o `GET /notas`, com o motivo em `test_erro_interno.py`); servida pelo mock (`test_modo_mock.py`), com o recibo de cada nota do `notas.json` em `notas-recibos.json`, gerado pelos motores (`gerar_mocks.py`). A tela a declara entre as rotas com o header do espaço.
+
+**Consequências:**
+- `tests/test_recibo_da_nota.py` (19): o recibo igual ao da importação, os alertas no estado atual, as linhas sem par de uma nota antiga, a linha cadastrada a partir da leitura (sem o XML), os 404 (nota que não existe, outra série, outro emitente, outra empresa, outro espaço e outra conta), os 422 do caminho, o mock (cada nota da lista tem o recibo, e o da nota mais recente é o do mock da importação) e o fornecedor no catálogo (das sementes, e o alterado pelo `PATCH`). Backend com 734 testes (eram 715) e 97% de cobertura; tela com 556; ruff, format, mypy, `contrato:checar`, lint, build e `npm run seguranca` ok. Nenhuma dependência nova.
+- Os mocks gerados de novo pelos motores: muda só o `catalogo.json` (o fornecedor) e entra o `notas-recibos.json`; os outros saem iguais byte a byte (golden 54).
+- **No modo real, com os motores oficiais (uvicorn):** o recibo lido da nota 2 é igual ao da importação; depois de aplicar o alerta, a leitura traz o `aplicadoEm`; a nota que não existe e a de outra empresa dão 404; a resposta sai com `no-store`, `nosniff` e o CORS da tela; o catálogo traz o fornecedor dos cinco itens.
+- O OpenAPI reexportado e os tipos da tela. A fixture `catalogo.json` da tela ganhou só o campo novo (o resto confere byte a byte com o da gravação), com os mesmos valores do mock.

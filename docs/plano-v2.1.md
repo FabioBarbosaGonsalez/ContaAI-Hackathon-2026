@@ -40,6 +40,7 @@ Por isso entram três etapas de contas (C1 a C3) entre o 3b e o 3c. O 3c depende
 | C3-B, etapas 6 a 10: clientes B2B editáveis, o arquivo dos dados, excluir a empresa, os bancos órfãos, os logs sem dado pessoal, os papéis, o erro 500 com os cabeçalhos e o inventário do mock | PR #27, seções das etapas 6 a 10 no ADR 0017 |
 | C3a: a primeira vez, o cadastro da empresa e as telas com a empresa da conta | PR #28, ADR 0018 |
 | C3b, etapas 1 a 5: o item a partir da nota (backend), as configurações da empresa, excluir a empresa e baixar os dados | PR #29, seção da C3b no ADR 0018 e revisão no ADR 0017 |
+| C3b, etapa 6a: o fornecedor no catálogo e o recibo de uma nota gravada (backend) | branch `feat/c3b2-catalogo` (o PR sai no fim da C3b2), revisão da C3b2 no ADR 0017 |
 
 ## A ordem
 
@@ -707,6 +708,7 @@ Achados do mapa:
 | 3 | A página `/empresa` (configurações): razão social, regime, UF e município, atividade e as alíquotas do DAS | C3b1 | feita |
 | 4 | Excluir a empresa: a senha, o CNPJ digitado e o aviso de guardar as notas; a conta volta à primeira vez | C3b1 | feita |
 | 5 | Sua conta: baixar os dados; a Privacidade com os direitos novos | C3b1 | feita |
+| 6a | Backend: o fornecedor de cada item no catálogo e o recibo de uma nota gravada (`GET /notas/{cnpj_emitente}/{serie}/{numero}`) | C3b2 | feita |
 | 6 | Catálogo: criar o item (NCM, classificação válida, unidade, fornecedor, preço e margem) | C3b2 | a fazer |
 | 7 | Catálogo: alterar e arquivar; o 409 do item em uso leva aos clientes | C3b2 | a fazer |
 | 8 | Notas: "Cadastrar este item" numa linha sem par, com o cadastro preenchido e o custo da nota | C3b2 | a fazer |
@@ -741,6 +743,21 @@ Achados do mapa:
 - **a alíquota do DAS aparecia arredondada** ("1,16%") ao lado do valor do campo ("1,1612"). Achado nas capturas; agora aparece uma vez e sem arredondar;
 - **a carga atual** (`cargaAtualPct`) não entra na tela de configurações: nenhuma tela a mostra, e o carrinho da tela não a envia (`dados.test.ts`). Um campo sem efeito confundiria;
 - **o `Content-Disposition` não precisa ir ao CORS** (`expose_headers`): o cookie da sessão só anda na mesma origem (`allow_credentials=False`), então o arquivo dos dados é sempre lido na mesma origem.
+
+**Decisões do usuário (2026-11-28), no mapa da C3b2:**
+- **A1:** o `GET /catalogo` traz o fornecedor de cada item (CNPJ e código), para a tela de alterar mostrar o atual;
+- **B1:** uma rota lê o recibo de uma nota gravada, e a lista das notas leva a ele. Cadastrar uma linha sem par não depende de guardar o XML;
+- um PR só para a C3b2 (etapas 6a a 10), com o backend num commit separado, antes das telas.
+
+**Achados no mapa da C3b2 (no código, antes de começar):**
+- **o catálogo não dizia o fornecedor do item** (A). O `PATCH` muda o fornecedor, mas a resposta não o trazia. Resolvido na etapa 6a;
+- **as linhas sem par de uma nota antiga** só apareciam importando o XML de novo (B). Resolvido na etapa 6a;
+- **o item novo aceita só UN e KG** (C), sem conversão. Na etapa 8, uma linha da nota em outra unidade não mostra "Cadastrar este item": mostra por quê. O mesmo vale para a linha de outra causa (`repetido`, `ncm`, `unidade`, `monofasico`), a de recibo anterior à C3b e o código que aparece mais de uma vez na nota, que a API recusa;
+- **arquivar não tem volta** (D): não há rota para desarquivar, o id do item nunca volta a ser usado, e o código do fornecedor fica livre para um item novo. Na etapa 7, a confirmação diz isso antes do clique.
+
+**Feito na etapa 6a** (revisão da C3b2 no [ADR 0017](adr/0017-empresa-propria.md)):
+- **o fornecedor no item** (`fornecedor`, com `cnpj` e `codigo`), no `GET /catalogo` e em toda resposta que traz o item;
+- **`GET /notas/{cnpj_emitente}/{serie}/{numero}?cnpj=`:** o recibo gravado e `importadaEm`, com os alertas no estado atual. As regras de acesso são as do `GET /notas` (404 para a nota de outra empresa, outro fornecedor ou outra conta), sem limite por IP (lê o banco) e servida pelo mock (`notas-recibos.json`, dos motores).
 
 **Saída das etapas 1 a 5, conferida no Chrome com a API real:** a conta muda os dados e as alíquotas da empresa, baixa os dados e exclui a empresa, e volta à primeira vez. Nas três larguras, sem violação da CSP, sem rolagem lateral e sem nada guardado no navegador.
 

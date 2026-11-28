@@ -55,7 +55,7 @@ A nota 2 gera o alerta da cerveja: margem de 24,12% para 11,19%, alvo de 15%, pr
 
 - `data/demo/notas/nfe-item-sem-par.xml`: um código sem cadastro e um com NCM diferente da do cadastro;
 - a mesma nota de novo: volta o recibo da primeira importação (`jaImportada`), sem gravar nada;
-- `GET /catalogo?cnpj=36817420000113`, `GET /notas?cnpj=36817420000113`, `GET /alertas`, `POST /alertas/{id}/aplicar` e `GET /contador/painel`;
+- `GET /catalogo?cnpj=36817420000113`, `GET /notas?cnpj=36817420000113`, o recibo de uma nota já importada (`GET /notas/71604258000156/1/1001?cnpj=36817420000113`), `GET /alertas`, `POST /alertas/{id}/aplicar` e `GET /contador/painel`;
 - `POST /demo/restaurar`: volta tudo às sementes (pela documentação em `/docs` também).
 
 **Espaço de avaliação (para a banca testar tudo sem afetar ninguém).** `POST /espacos` cria uma cópia própria dos dados fictícios e devolve um `id`. Enviado no header `X-ContaAI-Espaco`, ele faz as rotas de notas, alertas, catálogo, painel, restauração e chat usarem só aquele espaço. Dentro do espaço, importar, aplicar e restaurar não pedem o token da demo. O espaço vale 2 horas desde a criação (`CONTAAI_ESPACO_VALIDADE_MIN`), e o servidor guarda no máximo 50 ao mesmo tempo (`CONTAAI_ESPACOS_MAX`) ([ADR 0010](docs/adr/0010-espacos-de-avaliacao.md)).
