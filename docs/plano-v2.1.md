@@ -39,7 +39,7 @@ Por isso entram três etapas de contas (C1 a C3) entre o 3b e o 3c. O 3c depende
 | C3-B, etapas 1 a 5: CNPJ alfanumérico, migração 0003, referências, empresa da conta e catálogo editável | PR #26, ADR 0017 |
 | C3-B, etapas 6 a 10: clientes B2B editáveis, o arquivo dos dados, excluir a empresa, os bancos órfãos, os logs sem dado pessoal, os papéis, o erro 500 com os cabeçalhos e o inventário do mock | PR #27, seções das etapas 6 a 10 no ADR 0017 |
 | C3a: a primeira vez, o cadastro da empresa e as telas com a empresa da conta | PR #28, ADR 0018 |
-| C3b, etapas 1 a 5: o item a partir da nota (backend), as configurações da empresa, excluir a empresa e baixar os dados | PR da C3b1, seção da C3b no ADR 0018 e revisão no ADR 0017 |
+| C3b, etapas 1 a 5: o item a partir da nota (backend), as configurações da empresa, excluir a empresa e baixar os dados | PR #29, seção da C3b no ADR 0018 e revisão no ADR 0017 |
 
 ## A ordem
 
