@@ -29,12 +29,13 @@ import asyncio
 import hashlib
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from decimal import ROUND_HALF_UP, Decimal
 
 from app.contrato import (
     Alerta,
     CarrinhoRequisicao,
+    CausaSemPar,
     Emitente,
     ItemNotaCasado,
     ItemNotaSemPar,
@@ -125,28 +126,52 @@ def _casar(s: Sessao, nota: NotaLida) -> tuple[list[_Casado], list[ItemNotaSemPa
     vistos: set[str] = set()
     for item in nota.itens:
         cat = s.item_por_codigo(cnpj, nota.emitente.cnpj, item.cProd)
+        monofasico = item.ibscbs is not None and item.ibscbs.monofasico
+        causa: CausaSemPar | None = None
         motivo = None
-        if cat is None:
-            motivo = "Código do produto deste fornecedor sem cadastro no catálogo."
+        if cat is None and monofasico:
+            causa, motivo = "monofasico", MOTIVO_MONOFASICO
+        elif cat is None:
+            causa, motivo = "semCadastro", "Código do produto deste fornecedor sem cadastro no catálogo."
         elif cat.id in vistos:
-            motivo = "O mesmo produto aparece mais de uma vez na nota: confira com o fornecedor."
+            causa, motivo = "repetido", "O mesmo produto aparece mais de uma vez na nota: confira com o fornecedor."
         elif cat.ncm != item.ncm:
-            motivo = f"NCM da nota diferente da do cadastro ({cat.ncm}): confira a classificação."
+            causa, motivo = "ncm", f"NCM da nota diferente da do cadastro ({cat.ncm}): confira a classificação."
         elif cat.unidade != item.uCom.upper():
+            causa = "unidade"
             motivo = f"Unidade da nota diferente da do cadastro ({cat.unidade}): sem conversão automática."
-        elif item.ibscbs is not None and item.ibscbs.monofasico:
-            motivo = "Tributação monofásica (gIBSCBSMono): ainda não suportada."
-        if motivo is not None or cat is None:
-            sem_par.append(
-                ItemNotaSemPar(
-                    nItem=item.nItem, codigoFornecedor=item.cProd, ncm=item.ncm, descricaoNota=item.xProd, motivo=motivo
-                )
-            )
+        elif monofasico:
+            causa, motivo = "monofasico", MOTIVO_MONOFASICO
+        if causa is not None or cat is None:
+            sem_par.append(_sem_par(item, causa, motivo))
             continue
         vistos.add(cat.id)
         anterior = s.custo_atual(cnpj, cat.id)
         casados.append(_Casado(item, cat, anterior, anterior is None or anterior.data <= nota.dataEmissao))
     return casados, sem_par
+
+
+MOTIVO_MONOFASICO = "Tributação monofásica (gIBSCBSMono): ainda não suportada."
+
+
+def _sem_par(item: ItemLido, causa: CausaSemPar | None, motivo: str | None) -> ItemNotaSemPar:
+    """A linha sem par com o que o cadastro a partir da nota precisa (C3b): o custo e o crédito da própria nota."""
+    credito = None
+    if item.ibscbs is not None and not item.ibscbs.monofasico:
+        credito = (item.ibscbs.credito / item.qCom).quantize(C4, ROUND_HALF_UP)
+    return ItemNotaSemPar(
+        nItem=item.nItem,
+        codigoFornecedor=item.cProd,
+        ncm=item.ncm,
+        descricaoNota=item.xProd,
+        motivo=motivo,
+        causa=causa,
+        unidade=item.uCom.upper(),
+        quantidade=item.qCom,
+        custoUnitario=item.vUnCom,
+        valorTotal=item.vProd,
+        creditoCompraUnitario=credito,
+    )
 
 
 async def _creditos(
@@ -161,19 +186,33 @@ async def _creditos(
             pelo_motor.append(c)
     if not pelo_motor:
         return []
-    data = nota.dataEmissao.date()
+    creditos = await creditos_pelo_motor(
+        motores, reg, nota.dataEmissao.date(), [(c.cat, c.lido.qCom, c.lido.vProd) for c in pelo_motor]
+    )
+    for c, credito in zip(pelo_motor, creditos, strict=True):
+        if credito is not None:
+            c.credito, c.fonte = credito, "motor"
+    return [c.cat for c in pelo_motor]
+
+
+async def creditos_pelo_motor(
+    motores: ClienteMotores, reg: EmpresaRegistro, data: date, linhas: list[tuple[ItemCatalogo, Decimal, Decimal]]
+) -> list[Decimal | None]:
+    """Crédito por unidade de cada linha (item, qCom, vProd) sem o grupo IBSCBS na nota: o motor RR sobre o custo,
+    na data da nota, com as alíquotas do cenário da empresa (hipótese de fornecedor no regime regular). Vazio quando
+    o motor não calcula a linha. Também serve ao item cadastrado a partir da nota (C3b)."""
     op = Operacao(**operacao_da_empresa(reg.empresa, reg.cenario, data))
     calculo = await motores.regime_regular(
-        [Linha(item_base(c.cat), c.lido.qCom, c.lido.vProd) for c in pelo_motor],
+        [Linha(item_base(cat), qcom, vprod) for cat, qcom, vprod in linhas],
         data,
         reg.empresa.uf,
         reg.empresa.municipio,
         aliquotas_premissa(op),
     )
-    for c, lei in zip(pelo_motor, calculo.itens, strict=True):
-        if lei.calculado:
-            c.credito, c.fonte = (lei.tributo_cbs_ibs() / c.lido.qCom).quantize(C4, ROUND_HALF_UP), "motor"
-    return [c.cat for c in pelo_motor]
+    return [
+        (lei.tributo_cbs_ibs() / qcom).quantize(C4, ROUND_HALF_UP) if lei.calculado else None
+        for (_, qcom, _), lei in zip(linhas, calculo.itens, strict=True)
+    ]
 
 
 async def margens(

@@ -386,7 +386,8 @@ export interface paths {
         /**
          * Criar Item
          * @description Um item novo, com a classificação escolhida entre as válidas para a NCM (P3) e o primeiro preço de venda.
-         *     Itens com Imposto Seletivo ainda não entram (ADR 0017).
+         *     Itens com Imposto Seletivo ainda não entram (ADR 0017). Com `daNota`, o item nasce de uma linha sem par de uma
+         *     nota já importada, e o custo dela entra no histórico (C3b).
          */
         post: operations["criar_item_catalogo_itens_post"];
         delete?: never;
@@ -2480,7 +2481,9 @@ export interface components {
         };
         /**
          * ItemNotaSemPar
-         * @description Item que não casou com o catálogo: vira pergunta ao usuário (plano 11.3).
+         * @description Item que não casou com o catálogo: vira pergunta ao usuário (plano 11.3). Desde a C3b, o recibo guarda também
+         *     a unidade, a quantidade, o custo e o crédito da linha, para o item ser cadastrado a partir da nota com o custo
+         *     dela (POST /catalogo/itens com `daNota`). Nos recibos anteriores, esses campos ficam vazios.
          */
         ItemNotaSemPar: {
             /** Nitem */
@@ -2499,6 +2502,41 @@ export interface components {
              * @description Por que não casou (código sem cadastro, NCM ou unidade).
              */
             motivo?: string | null;
+            /**
+             * Causa
+             * @description semCadastro: o código deste fornecedor não está no catálogo (o único caso que se cadastra a partir da nota); repetido, ncm, unidade e monofasico: o item existe, ou a tributação não é suportada. Vazio nos recibos anteriores à C3b.
+             */
+            causa?: ("semCadastro" | "repetido" | "ncm" | "unidade" | "monofasico") | null;
+            /**
+             * Unidade
+             * @description uCom da nota, em maiúsculas.
+             */
+            unidade?: string | null;
+            /**
+             * Quantidade
+             * @description qCom da nota.
+             */
+            quantidade?: string | null;
+            /**
+             * Custounitario
+             * @description vUnCom da nota.
+             */
+            custoUnitario?: string | null;
+            /**
+             * Valortotal
+             * @description vProd da nota.
+             */
+            valorTotal?: string | null;
+            /**
+             * Creditocompraunitario
+             * @description Do grupo IBSCBS da linha (vCBS + vIBS ÷ qCom); vazio sem o grupo.
+             */
+            creditoCompraUnitario?: string | null;
+            /**
+             * Itemcadastrado
+             * @description Id do item cadastrado a partir desta linha (o custo dela entrou no histórico).
+             */
+            itemCadastrado?: string | null;
         };
         /**
          * ItemNovoRequisicao
@@ -2545,6 +2583,8 @@ export interface components {
              * @description Margem que a empresa quer no item, em %.
              */
             margemAlvoPct: number | string;
+            /** @description O item nasce de uma linha sem par de uma nota já importada (do fornecedor `cnpjFornecedor`): o custo daquela linha entra no histórico. O código, a NCM e a unidade precisam ser os da linha. */
+            daNota?: components["schemas"]["ParDaNota"] | null;
         };
         /** ItemResposta */
         ItemResposta: {
@@ -2737,7 +2777,10 @@ export interface components {
             importadaEm: string;
             /** Itenscasados */
             itensCasados: number;
-            /** Itenssempar */
+            /**
+             * Itenssempar
+             * @description Itens sem par que ainda não foram cadastrados a partir da nota.
+             */
             itensSemPar: number;
             /** Alertasgerados */
             alertasGerados: number;
@@ -2867,6 +2910,21 @@ export interface components {
             empresas: components["schemas"]["EmpresaNoPainel"][];
             /** Aviso */
             aviso: string;
+        };
+        /**
+         * ParDaNota
+         * @description A linha da nota de onde o item nasce. A nota é a do fornecedor do item, com esta série e este número.
+         */
+        ParDaNota: {
+            /** Serie */
+            serie: string;
+            /** Numero */
+            numero: string;
+            /**
+             * Nitem
+             * @description nItem da linha (de 1 a 990, leiaute da NF-e 4.00).
+             */
+            nItem: number;
         };
         /** PrecoAlvoRequisicao */
         PrecoAlvoRequisicao: {
@@ -5494,7 +5552,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
-            /** @description Empresa ou alerta não encontrado, ou espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente). */
+            /** @description Empresa ou item não encontrado, espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente), ou (com `daNota`) nota deste fornecedor ou linha sem par que não existe. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -5503,7 +5561,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
-            /** @description Código do fornecedor já em outro item, limite de itens, ou nada a mudar. */
+            /** @description Código do fornecedor já em outro item, limite de itens, nada a mudar, ou (com `daNota`) linha já cadastrada ou nota que mudou durante o cadastro. */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -5530,7 +5588,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
-            /** @description NCM fora dos dados abertos, NCM com Imposto Seletivo, classificação que não vale para a NCM, CNPJ do fornecedor com dígito errado (na empresa da conta), ou entrada fora do contrato. */
+            /** @description NCM fora dos dados abertos, NCM com Imposto Seletivo, classificação que não vale para a NCM, CNPJ do fornecedor com dígito errado (na empresa da conta), entrada fora do contrato, ou (com `daNota`) linha que não é de código sem cadastro, de recibo anterior à C3b, repetida na nota, ou com código, NCM ou unidade diferentes. */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -5642,7 +5700,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
-            /** @description Empresa ou alerta não encontrado, ou espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente). */
+            /** @description Empresa ou item não encontrado, espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente), ou (com `daNota`) nota deste fornecedor ou linha sem par que não existe. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -5651,7 +5709,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
-            /** @description Código do fornecedor já em outro item, limite de itens, ou nada a mudar. */
+            /** @description Código do fornecedor já em outro item, limite de itens, nada a mudar, ou (com `daNota`) linha já cadastrada ou nota que mudou durante o cadastro. */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -5678,7 +5736,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problema"];
                 };
             };
-            /** @description NCM fora dos dados abertos, NCM com Imposto Seletivo, classificação que não vale para a NCM, CNPJ do fornecedor com dígito errado (na empresa da conta), ou entrada fora do contrato. */
+            /** @description NCM fora dos dados abertos, NCM com Imposto Seletivo, classificação que não vale para a NCM, CNPJ do fornecedor com dígito errado (na empresa da conta), entrada fora do contrato, ou (com `daNota`) linha que não é de código sem cadastro, de recibo anterior à C3b, repetida na nota, ou com código, NCM ou unidade diferentes. */
             422: {
                 headers: {
                     [name: string]: unknown;

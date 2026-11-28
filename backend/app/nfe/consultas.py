@@ -148,7 +148,7 @@ def notas(repo: Repositorio, cnpj: str, limite: int, aviso: str = AVISO_DEMO) ->
                 nota=recibo.nota,
                 importadaEm=n.importada_em,
                 itensCasados=len(recibo.itensCasados),
-                itensSemPar=len(recibo.itensSemPar),
+                itensSemPar=sum(1 for i in recibo.itensSemPar if i.itemCadastrado is None),
                 alertasGerados=n.alertas_gerados,
                 alertasAbertos=n.alertas_abertos,
             )
