@@ -39,6 +39,7 @@ Por isso entram três etapas de contas (C1 a C3) entre o 3b e o 3c. O 3c depende
 | C3-B, etapas 1 a 5: CNPJ alfanumérico, migração 0003, referências, empresa da conta e catálogo editável | PR #26, ADR 0017 |
 | C3-B, etapas 6 a 10: clientes B2B editáveis, o arquivo dos dados, excluir a empresa, os bancos órfãos, os logs sem dado pessoal, os papéis, o erro 500 com os cabeçalhos e o inventário do mock | PR #27, seções das etapas 6 a 10 no ADR 0017 |
 | C3a: a primeira vez, o cadastro da empresa e as telas com a empresa da conta | PR #28, ADR 0018 |
+| C3b, etapas 1 a 5: o item a partir da nota (backend), as configurações da empresa, excluir a empresa e baixar os dados | PR #29, seção da C3b no ADR 0018 e revisão no ADR 0017 |
 
 ## A ordem
 
@@ -635,17 +636,17 @@ Achados do mapa:
 - **os dois README e o cabeçalho do ADR 0017 paravam na etapa 6,** e a tabela do `backend/README.md` não tinha `app/contas/`, `app/cnpj.py`, `app/cadastro.py`, `app/dados_da_conta.py` nem `app/api/registro.py`;
 - **o "Onde estamos" deste plano** não tinha as etapas 8 a 10.
 
-**Para a C3a e a C3b** (os itens feitos na C3a estão marcados):
+**Para a C3a e a C3b** (os itens feitos estão marcados):
 - feito na C3a: o cliente da tela manda o cookie da sessão para `/empresas` (sempre) e para `/referencias/` (na conta, como as outras rotas de dados; a rota é pública);
-- a tela de Sua conta: baixar os dados (`POST /conta/dados`, com a senha) e salvar o arquivo com o nome do `Content-Disposition`;
-- a tela de configurações: excluir a empresa, com a senha e o CNPJ digitado, e o aviso de guardar as notas. Feito na C3a: `POST /empresas/{cnpj}/excluir` já está nas rotas de entrada, e a regra de `rotas.test.ts` aceita as rotas que sempre levam o cookie;
-- a Privacidade, na seção dos direitos: baixar os dados e excluir a empresa, quando a tela delas existir. Feito na C3a: o que a empresa guarda e o que vai às calculadoras;
+- feito na C3b (etapa 5): a tela de Sua conta baixa os dados (`POST /conta/dados`, com a senha) e salva o arquivo com o nome do `Content-Disposition`;
+- feito na C3b (etapa 4): a tela de configurações exclui a empresa, com a senha e o CNPJ digitado, e o aviso de guardar as notas. Feito na C3a: `POST /empresas/{cnpj}/excluir` já está nas rotas de entrada, e a regra de `rotas.test.ts` aceita as rotas que sempre levam o cookie;
+- feito na C3b (etapa 5): a Privacidade, na seção dos direitos, leva a baixar os dados e a excluir a empresa. Feito na C3a: o que a empresa guarda e o que vai às calculadoras;
 - feito na C3a: as notas de exemplo saem fora da demonstração;
 - feito na C3a: o formulário converte o CNPJ para maiúsculas e tira a pontuação;
-- cadastrar o par de um item sem par a partir da nota (ficou do 3b), agora que o catálogo é editável;
+- cadastrar o par de um item sem par a partir da nota (ficou do 3b), agora que o catálogo é editável. Feito na C3b (etapa 2): o backend (`daNota`); a tela entra na etapa 8;
 - a tela de clientes: criar, alterar e excluir, e o 409 do item em uso levando aos clientes da lista.
 
-**Saída:** uma conta nova cadastra a empresa, importa uma nota e vê o alerta, sem tocar nos dados da demo.
+**Saída:** uma conta nova cadastra a empresa e os itens, importa duas notas do mesmo fornecedor e vê o alerta, sem tocar nos dados da demo. São duas notas porque o alerta só nasce quando a margem cai em relação a um custo anterior ([ADR 0008](adr/0008-nfe-historico-e-alertas.md); `app/nfe/importacao.py`). A frase antiga ("importa uma nota e vê o alerta") foi corrigida no mapa da C3b.
 
 ### C3a: a primeira vez e o cadastro da empresa, em 10 etapas
 
@@ -696,6 +697,52 @@ Achados do mapa:
 **Saída da C3a, conferida no Chrome com a API real:** a conta nova cadastra a empresa pela tela, vê o Painel, o Catálogo, o Regime e as Notas dela, importa uma nota (sem itens, tudo fica sem par), e a demonstração não muda. Ver o alerta depende dos itens, que entram pela C3b.
 
 **Para decidir (usuário):** os termos de uso não falam do cadastro da empresa. Uma regra como "cadastre só a empresa que você representa" muda os termos e pede uma versão nova e um novo aceite.
+
+### C3b: configurações, catálogo e clientes, em 10 etapas
+
+| # | Etapa | PR | Situação |
+|---|---|---|---|
+| 1 | Conferências: o contrato das rotas novas, o 409 do item em uso, o 501 no modo mock e quem grava em cada modo | todos | feita para a C3b1 |
+| 2 | Backend: a unidade, o custo e o crédito dos itens sem par no recibo, e o item a partir da nota (`daNota`) | C3b1 | feita |
+| 3 | A página `/empresa` (configurações): razão social, regime, UF e município, atividade e as alíquotas do DAS | C3b1 | feita |
+| 4 | Excluir a empresa: a senha, o CNPJ digitado e o aviso de guardar as notas; a conta volta à primeira vez | C3b1 | feita |
+| 5 | Sua conta: baixar os dados; a Privacidade com os direitos novos | C3b1 | feita |
+| 6 | Catálogo: criar o item (NCM, classificação válida, unidade, fornecedor, preço e margem) | C3b2 | a fazer |
+| 7 | Catálogo: alterar e arquivar; o 409 do item em uso leva aos clientes | C3b2 | a fazer |
+| 8 | Notas: "Cadastrar este item" numa linha sem par, com o cadastro preenchido e o custo da nota | C3b2 | a fazer |
+| 9 | Clientes empresa em página própria: criar, alterar e excluir; a compra mensal com os itens ativos | C3b2 | a fazer |
+| 10 | Verificação, varredura, documentação, commit e PR, e os servidores abertos | cada PR | feita para a C3b1 |
+
+**Decisões do usuário (2026-11-27):**
+- três PRs (C3b-B, C3b1 e C3b2). Para as etapas 1 a 5 o usuário pediu um PR só: o backend do par da nota (C3b-B) e as telas da C3b1 vão juntos, em commits separados;
+- **o item a partir da nota nasce com o custo dela** (o recibo passa a guardar a unidade, o custo e o crédito da linha sem par);
+- os clientes ficam numa página própria, fora da barra, com links do Regime e do 409 do item em uso;
+- as configurações ficam em `/empresa`, com links no menu da conta e no Painel;
+- a meta da C3 diz duas notas (acima);
+- fica para depois: a regra "cadastre só a empresa que você representa" nos termos (pede versão nova e novo aceite).
+
+**Achados no mapa (no código, antes de começar):**
+- **a meta da C3** dizia "importa uma nota e vê o alerta". O alerta pede um custo anterior (`importacao.py`, "sem histórico não há antes");
+- **o item sem par não trazia a unidade** (`uCom`), que o item novo exige e que o casamento confere;
+- **cadastrar o item depois não pegava o custo daquela nota:** reimportar a mesma nota devolve o recibo antigo (`jaImportada`), e o XML não fica guardado;
+- **não há rota que liste só os clientes:** eles vêm no `GET /catalogo` (`clientesB2B`), e a tela usa essa lista;
+- **editar itens e clientes vale também na demonstração com o token e no espaço,** pela mesma regra de gravação da tela (`useGravacao`).
+
+**Feito nas etapas 1 a 5:**
+- **backend do par da nota** (revisão no [ADR 0017](adr/0017-empresa-propria.md)): cada linha sem par do recibo guarda a causa (`semCadastro`, `repetido`, `ncm`, `unidade` ou `monofasico`), a unidade, a quantidade, o custo, o valor e o crédito da nota. `POST /catalogo/itens` aceita `daNota` (série, número e nItem de uma nota do fornecedor do item): o item nasce com o custo da linha, e a linha passa a citar o item. Sem o grupo IBSCBS, o crédito vem do motor RR na data da nota, como na importação;
+- **as configurações da empresa** (`/empresa`, [ADR 0018](adr/0018-telas-da-empresa-propria.md)): os dados (só o que mudou vai no `PATCH`), as alíquotas do DAS (e a volta aos valores da simulação) e a exclusão da empresa. O membro vê os dados, sem os formulários;
+- **baixar os dados** em Sua conta, com a senha, salvo como a API mandou e com o nome conferido do `Content-Disposition`;
+- **a Privacidade:** os direitos novos, as alíquotas do DAS entre o que fica guardado e o prazo da empresa ("até o dono excluir a empresa").
+
+**Achados nas etapas 1 a 5:**
+- **a linha monofásica sem cadastro dizia "código sem cadastro".** Cadastrar o item não faria a nota casar (a tributação monofásica não é suportada). Agora a causa é `monofasico`;
+- **o `GET /notas` contava os itens sem par do recibo gravado.** Agora conta só os que ainda não viraram item;
+- **a fonte das alíquotas terminava em ".."** quando o texto da API já tinha ponto. Achado pelo teste;
+- **a alíquota do DAS aparecia arredondada** ("1,16%") ao lado do valor do campo ("1,1612"). Achado nas capturas; agora aparece uma vez e sem arredondar;
+- **a carga atual** (`cargaAtualPct`) não entra na tela de configurações: nenhuma tela a mostra, e o carrinho da tela não a envia (`dados.test.ts`). Um campo sem efeito confundiria;
+- **o `Content-Disposition` não precisa ir ao CORS** (`expose_headers`): o cookie da sessão só anda na mesma origem (`allow_credentials=False`), então o arquivo dos dados é sempre lido na mesma origem.
+
+**Saída das etapas 1 a 5, conferida no Chrome com a API real:** a conta muda os dados e as alíquotas da empresa, baixa os dados e exclui a empresa, e volta à primeira vez. Nas três larguras, sem violação da CSP, sem rolagem lateral e sem nada guardado no navegador.
 
 ## 3c: contador, seletor de empresa e chat
 

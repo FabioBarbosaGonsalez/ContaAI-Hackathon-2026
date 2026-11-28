@@ -169,3 +169,23 @@ export function conferirRecuperacao(codigo: string): string | null {
     ? null
     : 'O código de recuperação tem 13 letras e números, em três grupos, como XXXX-XXXX-XXXXX.';
 }
+
+/**
+ * Uma alíquota efetiva do DAS (pCBSSN ou pIBSSN), em %: de 0 a menos de 100, com até 4 casas (o contrato:
+ * `PorcentagemEntrada`, ge=0, lt=100, decimal_places=4). Aceita a vírgula e o "%" no fim. Fora disso, null.
+ */
+export function lerAliquotaDoDas(texto: string): string | null {
+  const limpo = texto.trim().replace(/\s*%$/u, '').replace(',', '.');
+  return /^\d{1,2}(\.\d{1,4})?$/u.test(limpo) ? limpo : null;
+}
+
+export const FRASE_DA_ALIQUOTA = 'Use um percentual de 0 a 99,9999, com até 4 casas depois da vírgula.';
+
+/** O CNPJ digitado para confirmar a exclusão é o da empresa (sem a pontuação e em maiúsculas)? */
+export function conferirCnpjDaConfirmacao(texto: string, cnpj: string): string | null {
+  const valor = normalizarCnpj(texto);
+  if (valor === '') {
+    return 'Digite o CNPJ da empresa para confirmar.';
+  }
+  return valor === cnpj ? null : 'O CNPJ digitado não é o desta empresa.';
+}

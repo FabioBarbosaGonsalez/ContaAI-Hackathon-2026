@@ -152,10 +152,19 @@ describe('a privacidade com a empresa da conta (C3a)', () => {
     await montar('/privacidade');
     const texto = document.body.textContent;
     expect(texto).toMatch(/Quando você cadastra a empresa, ficam guardados também/u);
-    expect(texto).toMatch(/o CNPJ, a razão social, o regime no Simples, a UF, o município e a atividade/u);
+    expect(texto).toMatch(/o CNPJ, a razão social, o regime no Simples, a UF, o município, a atividade e as alíquotas do DAS/u);
     expect(texto).toMatch(/O arquivo XML não é guardado/u);
     expect(texto).toMatch(/nunca o CNPJ, a razão social ou um dado pessoal/u);
-    expect(texto).toMatch(/A empresa e os dados dela: enquanto a organização existir/u);
+    expect(texto).toMatch(/A empresa e os dados dela: até o dono excluir a empresa, e no máximo enquanto a organização existir/u);
+  });
+});
+
+describe('a privacidade com as telas da C3b', () => {
+  it('os direitos levam a baixar os dados e a excluir a empresa, onde as telas estão', async () => {
+    await montar('/privacidade');
+    const texto = document.body.textContent;
+    expect(texto).toMatch(/baixar os seus dados: em “Sua conta”, com a senha/u);
+    expect(texto).toMatch(/excluir a empresa: em “Configurações da empresa”, no mesmo menu, com a senha e o CNPJ digitado/u);
   });
 });
 

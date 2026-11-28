@@ -15,7 +15,15 @@
 import { useId, useState } from 'react';
 import { chamar } from '../api/cliente.ts';
 import { ErroApi } from '../api/problema.ts';
-import { catalogoVazio, useAlertasAbertos, useCalculo, useCatalogo, useGravacao, useNotas } from '../dados/empresa.ts';
+import {
+  catalogoVazio,
+  useAlertasAbertos,
+  useCalculo,
+  useCatalogo,
+  useEmpresaDaTela,
+  useGravacao,
+  useNotas,
+} from '../dados/empresa.ts';
 import { cnpj, dataDoDocumento, inteiro, noMeioDaFrase, porcentagem, reais } from '../dados/formatar.ts';
 import {
   abaixoDoAlvo,
@@ -30,6 +38,7 @@ import {
 import { useSessao } from '../sessao/contexto.tsx';
 import { Link } from '../shell/navegacao.tsx';
 import { Pagina } from '../shell/Pagina.tsx';
+import { ROTA_DA_EMPRESA } from '../shell/rotas.ts';
 import { Bloco, BotaoGravar, Carregando, escalaDeMargens, FalhaNoBloco, ListaDePremissas, MargemContraAlvo } from './comum.tsx';
 import { CorrigirClassificacao, type PedidoDeCorrecao } from './Dialogos.tsx';
 import { Explicacao, type PedidoDeExplicacao } from './Explicacao.tsx';
@@ -397,6 +406,9 @@ function PainelSemItens({ catalogo }: { catalogo: Catalogo }) {
 }
 
 export function Painel() {
+  // Na empresa da conta, o caminho às configurações (C3b). A demonstração não tem configurações.
+  const daConta = useEmpresaDaTela().tipo === 'conta';
+  const acao = daConta ? { acao: <Link para={ROTA_DA_EMPRESA.caminho}>{ROTA_DA_EMPRESA.nome}</Link> } : {};
   const catalogo = useCatalogo();
   const calculo = useCalculo(catalogo.dados, catalogo.dados?.empresa.regimeAtual ?? null);
   const alertas = useAlertasAbertos();
@@ -424,14 +436,18 @@ export function Painel() {
   if (catalogo.dados !== undefined && catalogoVazio(catalogo.dados)) {
     // Sem cálculo, a frase de simulação é a descrição do cenário da empresa (como no Regime antes da resposta).
     return (
-      <Pagina titulo="Painel" subtitulo={`${catalogo.dados.empresa.razaoSocial} · ${catalogo.dados.cenario.descricao}`}>
+      <Pagina
+        titulo="Painel"
+        subtitulo={`${catalogo.dados.empresa.razaoSocial} · ${catalogo.dados.cenario.descricao}`}
+        {...acao}
+      >
         <PainelSemItens catalogo={catalogo.dados} />
       </Pagina>
     );
   }
 
   return (
-    <Pagina titulo="Painel" {...(subtitulo ? { subtitulo } : {})}>
+    <Pagina titulo="Painel" {...(subtitulo ? { subtitulo } : {})} {...acao}>
       <div className="grade">
         {!semAlerta && (
           <BlocoAlerta

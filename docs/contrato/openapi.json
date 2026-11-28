@@ -2571,7 +2571,7 @@
           "empresa"
         ],
         "summary": "Criar Item",
-        "description": "Um item novo, com a classificação escolhida entre as válidas para a NCM (P3) e o primeiro preço de venda.\nItens com Imposto Seletivo ainda não entram (ADR 0017).",
+        "description": "Um item novo, com a classificação escolhida entre as válidas para a NCM (P3) e o primeiro preço de venda.\nItens com Imposto Seletivo ainda não entram (ADR 0017). Com `daNota`, o item nasce de uma linha sem par de uma\nnota já importada, e o custo dela entra no histórico (C3b).",
         "operationId": "criar_item_catalogo_itens_post",
         "parameters": [
           {
@@ -2632,7 +2632,7 @@
             }
           },
           "422": {
-            "description": "NCM fora dos dados abertos, NCM com Imposto Seletivo, classificação que não vale para a NCM, CNPJ do fornecedor com dígito errado (na empresa da conta), ou entrada fora do contrato.",
+            "description": "NCM fora dos dados abertos, NCM com Imposto Seletivo, classificação que não vale para a NCM, CNPJ do fornecedor com dígito errado (na empresa da conta), entrada fora do contrato, ou (com `daNota`) linha que não é de código sem cadastro, de recibo anterior à C3b, repetida na nota, ou com código, NCM ou unidade diferentes.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2672,7 +2672,7 @@
             }
           },
           "404": {
-            "description": "Empresa ou alerta não encontrado, ou espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente).",
+            "description": "Empresa ou item não encontrado, espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente), ou (com `daNota`) nota deste fornecedor ou linha sem par que não existe.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2712,7 +2712,7 @@
             }
           },
           "409": {
-            "description": "Código do fornecedor já em outro item, limite de itens, ou nada a mudar.",
+            "description": "Código do fornecedor já em outro item, limite de itens, nada a mudar, ou (com `daNota`) linha já cadastrada ou nota que mudou durante o cadastro.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2843,7 +2843,7 @@
             }
           },
           "422": {
-            "description": "NCM fora dos dados abertos, NCM com Imposto Seletivo, classificação que não vale para a NCM, CNPJ do fornecedor com dígito errado (na empresa da conta), ou entrada fora do contrato.",
+            "description": "NCM fora dos dados abertos, NCM com Imposto Seletivo, classificação que não vale para a NCM, CNPJ do fornecedor com dígito errado (na empresa da conta), entrada fora do contrato, ou (com `daNota`) linha que não é de código sem cadastro, de recibo anterior à C3b, repetida na nota, ou com código, NCM ou unidade diferentes.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2883,7 +2883,7 @@
             }
           },
           "404": {
-            "description": "Empresa ou alerta não encontrado, ou espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente).",
+            "description": "Empresa ou item não encontrado, espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente), ou (com `daNota`) nota deste fornecedor ou linha sem par que não existe.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -2923,7 +2923,7 @@
             }
           },
           "409": {
-            "description": "Código do fornecedor já em outro item, limite de itens, ou nada a mudar.",
+            "description": "Código do fornecedor já em outro item, limite de itens, nada a mudar, ou (com `daNota`) linha já cadastrada ou nota que mudou durante o cadastro.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -9954,7 +9954,98 @@
               }
             ],
             "title": "Motivo",
-            "description": "Por que não casou (código sem cadastro, NCM ou unidade)."
+            "description": "Por que não casou, em português (código sem cadastro, item repetido, NCM, unidade ou tributação monofásica; o código da causa está em `causa`)."
+          },
+          "causa": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "semCadastro",
+                  "repetido",
+                  "ncm",
+                  "unidade",
+                  "monofasico"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Causa",
+            "description": "semCadastro: o código deste fornecedor não está no catálogo (o único caso que se cadastra a partir da nota); repetido, ncm, unidade e monofasico: o item existe, ou a tributação não é suportada. Vazio nos recibos anteriores à C3b."
+          },
+          "unidade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unidade",
+            "description": "uCom da nota, em maiúsculas."
+          },
+          "quantidade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantidade",
+            "description": "qCom da nota."
+          },
+          "custoUnitario": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Custounitario",
+            "description": "vUnCom da nota."
+          },
+          "valorTotal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valortotal",
+            "description": "vProd da nota."
+          },
+          "creditoCompraUnitario": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Creditocompraunitario",
+            "description": "Do grupo IBSCBS da linha (vCBS + vIBS ÷ qCom); vazio sem o grupo."
+          },
+          "itemCadastrado": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Itemcadastrado",
+            "description": "Id do item cadastrado a partir desta linha (o custo dela entrou no histórico)."
           }
         },
         "additionalProperties": false,
@@ -9965,7 +10056,7 @@
           "descricaoNota"
         ],
         "title": "ItemNotaSemPar",
-        "description": "Item que não casou com o catálogo: vira pergunta ao usuário (plano 11.3)."
+        "description": "Item que não casou com o catálogo: vira pergunta ao usuário (plano 11.3). Desde a C3b, o recibo guarda também\na unidade, a quantidade, o custo e o crédito da linha, para o item ser cadastrado a partir da nota com o custo\ndela (POST /catalogo/itens com `daNota`). Nos recibos anteriores, esses campos ficam vazios."
       },
       "ItemNovoRequisicao": {
         "properties": {
@@ -10040,6 +10131,17 @@
             ],
             "title": "Margemalvopct",
             "description": "Margem que a empresa quer no item, em %."
+          },
+          "daNota": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ParDaNota"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "O item nasce de uma linha sem par de uma nota já importada (do fornecedor `cnpjFornecedor`): o custo daquela linha entra no histórico. O código, a NCM e a unidade precisam ser os da linha."
           }
         },
         "additionalProperties": false,
@@ -10441,7 +10543,8 @@
           "itensSemPar": {
             "type": "integer",
             "minimum": 0.0,
-            "title": "Itenssempar"
+            "title": "Itenssempar",
+            "description": "Itens sem par que ainda não foram cadastrados a partir da nota."
           },
           "alertasGerados": {
             "type": "integer",
@@ -10731,6 +10834,36 @@
         ],
         "title": "PainelContadorResposta",
         "description": "Painel do contador (D1): as empresas da carteira, a que tem mais alertas abertos primeiro."
+      },
+      "ParDaNota": {
+        "properties": {
+          "serie": {
+            "type": "string",
+            "pattern": "^[0-9]{1,3}$",
+            "title": "Serie"
+          },
+          "numero": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,8}$",
+            "title": "Numero"
+          },
+          "nItem": {
+            "type": "integer",
+            "maximum": 990.0,
+            "minimum": 1.0,
+            "title": "Nitem",
+            "description": "nItem da linha (de 1 a 990, leiaute da NF-e 4.00)."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "serie",
+          "numero",
+          "nItem"
+        ],
+        "title": "ParDaNota",
+        "description": "A linha da nota de onde o item nasce. A nota é a do fornecedor do item, com esta série e este número."
       },
       "PrecoAlvoRequisicao": {
         "properties": {

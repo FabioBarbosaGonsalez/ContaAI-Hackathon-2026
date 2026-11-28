@@ -523,14 +523,39 @@ class ItemNotaCasado(_Modelo):
     fonteCredito: Literal["nfe", "motor"] | None
 
 
+CausaSemPar = Literal["semCadastro", "repetido", "ncm", "unidade", "monofasico"]
+
+
 class ItemNotaSemPar(_Modelo):
-    """Item que não casou com o catálogo: vira pergunta ao usuário (plano 11.3)."""
+    """Item que não casou com o catálogo: vira pergunta ao usuário (plano 11.3). Desde a C3b, o recibo guarda também
+    a unidade, a quantidade, o custo e o crédito da linha, para o item ser cadastrado a partir da nota com o custo
+    dela (POST /catalogo/itens com `daNota`). Nos recibos anteriores, esses campos ficam vazios."""
 
     nItem: int | None = None
     codigoFornecedor: str
     ncm: str
     descricaoNota: str = Field(description="xProd da nota: texto do fornecedor, tratado como dado não confiável.")
-    motivo: str | None = Field(default=None, description="Por que não casou (código sem cadastro, NCM ou unidade).")
+    motivo: str | None = Field(
+        default=None,
+        description="Por que não casou, em português (código sem cadastro, item repetido, NCM, unidade ou tributação "
+        "monofásica; o código da causa está em `causa`).",
+    )
+    causa: CausaSemPar | None = Field(
+        default=None,
+        description="semCadastro: o código deste fornecedor não está no catálogo (o único caso que se cadastra a "
+        "partir da nota); repetido, ncm, unidade e monofasico: o item existe, ou a tributação não é suportada. Vazio "
+        "nos recibos anteriores à C3b.",
+    )
+    unidade: str | None = Field(default=None, description="uCom da nota, em maiúsculas.")
+    quantidade: Decimal | None = Field(default=None, description="qCom da nota.")
+    custoUnitario: Decimal | None = Field(default=None, description="vUnCom da nota.")
+    valorTotal: Decimal | None = Field(default=None, description="vProd da nota.")
+    creditoCompraUnitario: Decimal | None = Field(
+        default=None, description="Do grupo IBSCBS da linha (vCBS + vIBS ÷ qCom); vazio sem o grupo."
+    )
+    itemCadastrado: str | None = Field(
+        default=None, description="Id do item cadastrado a partir desta linha (o custo dela entrou no histórico)."
+    )
 
 
 class OrigemAlerta(_Modelo):
@@ -687,7 +712,7 @@ class NotaImportada(_Modelo):
     nota: NotaResumo
     importadaEm: datetime = Field(description="Quando a nota entrou no sistema (UTC).")
     itensCasados: int = Field(ge=0)
-    itensSemPar: int = Field(ge=0)
+    itensSemPar: int = Field(ge=0, description="Itens sem par que ainda não foram cadastrados a partir da nota.")
     alertasGerados: int = Field(ge=0)
     alertasAbertos: int = Field(ge=0, description="Alertas desta nota ainda sem o preço sugerido aplicado.")
 
@@ -1346,6 +1371,14 @@ class EmpresaResposta(_Modelo):
     aviso: str
 
 
+class ParDaNota(_Modelo):
+    """A linha da nota de onde o item nasce. A nota é a do fornecedor do item, com esta série e este número."""
+
+    serie: str = Field(pattern=r"^[0-9]{1,3}$")
+    numero: str = Field(pattern=r"^[1-9][0-9]{0,8}$")
+    nItem: int = Field(ge=1, le=990, description="nItem da linha (de 1 a 990, leiaute da NF-e 4.00).")
+
+
 class ItemNovoRequisicao(_Modelo):
     """Um item novo no catálogo. A classificação precisa ser uma das válidas para a NCM nos dados abertos do motor
     RR (GET /busca/ncm), e o CST é o da fundamentação oficial, como na correção (P3)."""
@@ -1359,6 +1392,11 @@ class ItemNovoRequisicao(_Modelo):
     codigoFornecedor: CodigoDoFornecedor
     precoVenda: PrecoDeVenda
     margemAlvoPct: MargemAlvo
+    daNota: ParDaNota | None = Field(
+        default=None,
+        description="O item nasce de uma linha sem par de uma nota já importada (do fornecedor `cnpjFornecedor`): o "
+        "custo daquela linha entra no histórico. O código, a NCM e a unidade precisam ser os da linha.",
+    )
 
 
 class ItemAlteracaoRequisicao(_Modelo):

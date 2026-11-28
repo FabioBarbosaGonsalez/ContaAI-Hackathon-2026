@@ -31,6 +31,8 @@ PADROES: dict[str, str] = {
     r"^[0-9]{6}$": "Use exatamente 6 dígitos, sem pontos nem traços.",
     r"^[0-9]{8}$": "Use exatamente 8 dígitos, sem pontos nem traços.",
     r"^[0-9]{9}$": "Use exatamente 9 dígitos, sem pontos nem traços.",
+    r"^[0-9]{1,3}$": "Use a série da nota: de 1 a 3 dígitos.",
+    r"^[1-9][0-9]{0,8}$": "Use o número da nota: de 1 a 9 dígitos, sem zero à esquerda.",
     r"^[0-9A-Z]{12}[0-9]{2}$": "Use o CNPJ com 14 posições, sem pontos, barra nem traço: as 12 primeiras com "
     "dígitos ou letras maiúsculas e as 2 últimas com dígitos.",
     r"^[A-Z]{2}$": "Use a sigla da UF com 2 letras maiúsculas (ex.: SP).",

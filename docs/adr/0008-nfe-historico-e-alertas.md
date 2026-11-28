@@ -266,3 +266,7 @@ A migração `0001_inicial.sql` foi editada no pacote A (datas, `CHECK` e índic
   - os alertas dele saem das listas, do painel e da contagem de abertos de cada nota;
   - aplicar um alerta dele responde 409.
 - **Os CNPJs fictícios** continuam com o dígito inválido de propósito. Fora da demonstração e dos espaços, a API exige o dígito certo, então nenhum deles entra como empresa própria (`tests/test_cnpj.py`).
+
+## Revisão da C3b: as linhas sem par no recibo (2026-11-28)
+
+As linhas sem par do recibo passam a guardar a causa, a unidade, a quantidade, o custo, o valor e o crédito da nota, para o item ser cadastrado a partir dela com o custo dessa nota. A linha cadastrada passa a citar o item, e o `GET /notas` conta só as linhas sem par que ainda não viraram item. A linha monofásica sem cadastro diz agora a causa certa. Os detalhes estão na revisão da C3b no [ADR 0017](0017-empresa-propria.md).

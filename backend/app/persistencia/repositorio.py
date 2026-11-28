@@ -511,6 +511,15 @@ class Sessao:
         """O recibo é gravado na mesma transação da nota, depois de montado (ele cita os alertas criados)."""
         self._c.execute("UPDATE notas SET recibo_json = ? WHERE id = ? AND recibo_json = '{}'", (recibo_json, nota_id))
 
+    def trocar_recibo(self, nota_id: int, antigo: str, novo: str) -> bool:
+        """Troca um recibo já gravado só se ele ainda é o lido (C3b: a linha sem par cadastrada a partir da nota).
+        Falso se outro cadastro o trocou antes."""
+        cursor = self._c.execute(
+            "UPDATE notas SET recibo_json = ? WHERE id = ? AND recibo_json = ? AND recibo_json <> '{}'",
+            (novo, nota_id, antigo),
+        )
+        return cursor.rowcount == 1
+
     def lancar_custo(self, cnpj: str, lanc: LancamentoCusto) -> None:
         self._c.execute(
             "INSERT INTO custos (cnpj, item_id, nota_id, data, quantidade, custo_unitario, credito_unitario,"

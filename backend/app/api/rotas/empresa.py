@@ -26,6 +26,7 @@ from app.api.dependencias import (
     Cfg,
     Dados,
     EspacoId,
+    Motores,
     SessaoCookie,
     Token,
     abrir_estado,
@@ -99,10 +100,19 @@ CATALOGO: respostas.Respostas = {
     **respostas.ESTADO,
     **respostas.SO_MODO_REAL,
     **respostas.PAPEL,
-    409: {"description": "Código do fornecedor já em outro item, limite de itens, ou nada a mudar."},
+    404: {
+        "description": "Empresa ou item não encontrado, espaço de avaliação inexistente ou expirado "
+        "(/problemas/espaco-inexistente), ou (com `daNota`) nota deste fornecedor ou linha sem par que não existe."
+    },
+    409: {
+        "description": "Código do fornecedor já em outro item, limite de itens, nada a mudar, ou (com `daNota`) linha "
+        "já cadastrada ou nota que mudou durante o cadastro."
+    },
     422: {
         "description": "NCM fora dos dados abertos, NCM com Imposto Seletivo, classificação que não vale para a "
-        "NCM, CNPJ do fornecedor com dígito errado (na empresa da conta), ou entrada fora do contrato."
+        "NCM, CNPJ do fornecedor com dígito errado (na empresa da conta), entrada fora do contrato, ou (com "
+        "`daNota`) linha que não é de código sem cadastro, de recibo anterior à C3b, repetida na nota, ou com "
+        "código, NCM ou unidade diferentes."
     },
 }
 ARQUIVAR: respostas.Respostas = {
@@ -263,18 +273,20 @@ async def excluir_empresa(
 async def criar_item(
     cfg: Cfg,
     da: Dados,
+    motores: Motores,
     req: ItemNovoRequisicao,
     token: Token = None,
     espaco: EspacoId = None,
     sessao: SessaoCookie = None,
 ) -> ItemResposta:
     """Um item novo, com a classificação escolhida entre as válidas para a NCM (P3) e o primeiro preço de venda.
-    Itens com Imposto Seletivo ainda não entram (ADR 0017)."""
+    Itens com Imposto Seletivo ainda não entram (ADR 0017). Com `daNota`, o item nasce de uma linha sem par de uma
+    nota já importada, e o custo dela entra no histórico (C3b)."""
     so_no_modo_real(cfg)
     estado = await asyncio.to_thread(abrir_estado, cfg, espaco, sessao)
     exigir_permissao_para_mudar(cfg, token, estado)
     estado.exigir_empresa(req.cnpj)
-    return await cadastro.criar_item(da, estado.repositorio, req, estado.na_empresa_propria, agora_utc())
+    return await cadastro.criar_item(da, motores, estado.repositorio, req, estado.na_empresa_propria, agora_utc())
 
 
 @rotas.patch("/catalogo/{item_id}", response_model=ItemResposta, responses=CATALOGO)

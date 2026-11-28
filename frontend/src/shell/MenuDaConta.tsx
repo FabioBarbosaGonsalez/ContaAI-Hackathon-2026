@@ -1,5 +1,6 @@
-// O menu da conta na barra (C2b, etapa 9; ADR 0016, decisão 2 da C2b): um botão com o e-mail, que abre "Sua conta"
-// e "Sair". Os detalhes e as outras ações ficam na página /conta.
+// O menu da conta na barra (C2b, etapa 9; ADR 0016, decisão 2 da C2b): um botão com o e-mail, que abre "Sua conta",
+// as configurações da empresa (C3b, quando a conta tem empresa) e "Sair". Os detalhes e as outras ações ficam nas
+// páginas.
 //
 // - É um botão que mostra e esconde uma lista (aria-expanded e aria-controls), e não um role="menu": são só um link
 //   e um botão, e o Tab percorre os dois como em qualquer página. Esc fecha e devolve o foco ao botão; clicar fora
@@ -13,7 +14,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { useSessao } from '../sessao/contexto.tsx';
 import type { Conta } from '../sessao/conta.ts';
 import { Link, navegar } from './navegacao.tsx';
-import { ROTA_DA_CONTA } from './rotas.ts';
+import { ROTA_DA_CONTA, ROTA_DA_EMPRESA } from './rotas.ts';
 
 export const FRASE_SAIR_FALHOU = 'Não foi possível sair agora. A sessão pode continuar aberta: tente de novo.';
 
@@ -55,6 +56,13 @@ function Opcoes({ conta, aoNavegar }: { conta: Conta; aoNavegar?: () => void }) 
             {ROTA_DA_CONTA.nome}
           </Link>
         </li>
+        {conta.empresas.length > 0 && (
+          <li>
+            <Link para={ROTA_DA_EMPRESA.caminho} className="menu-conta__item" onClick={aoNavegar}>
+              {ROTA_DA_EMPRESA.nome}
+            </Link>
+          </li>
+        )}
         <li>
           <button type="button" className="menu-conta__item" disabled={saindo} onClick={() => void sair()}>
             {saindo ? 'Saindo…' : 'Sair'}

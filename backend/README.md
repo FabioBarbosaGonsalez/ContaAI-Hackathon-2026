@@ -15,7 +15,7 @@ FastAPI que orquestra os motores oficiais da Receita. Instruções no README da 
 | `app/api/registro.py` | Log de acesso sem dado pessoal (rota-modelo, sem o IP) e o erro não tratado sem a mensagem (ADR 0017, etapa 7) |
 | `app/contas/` | Contas (C1, ADR 0015): senha, segundo fator (TOTP), sessão e organização, num banco próprio (`contas.db`), e o comando de desbloqueio |
 | `app/cnpj.py` | CNPJ numérico e alfanumérico: formato e dígitos verificadores pelo cálculo do Serpro (ADR 0017) |
-| `app/cadastro.py` | Empresa própria (ADR 0017): referências dos motores, cadastro, configurações, catálogo e clientes B2B editáveis |
+| `app/cadastro.py` | Empresa própria (ADR 0017): referências dos motores, cadastro, configurações, catálogo e clientes B2B editáveis, e o item a partir de uma linha sem par da nota (revisão da C3b) |
 | `app/dados_da_conta.py` | O arquivo JSON dos dados da conta e das empresas, sem senha, segredo nem hash (LGPD, arts. 18 e 19; ADR 0017, etapa 7) |
 | `app/empresa.py` | Operação de cálculo de uma empresa cadastrada (data, local e premissas do cenário dela) |
 | `app/cenarios/` | Premissas, aviso de simulação e presets de 2027 com fonte |

@@ -15,6 +15,7 @@ from __future__ import annotations
 import secrets
 from dataclasses import dataclass
 from datetime import date, datetime
+from decimal import Decimal
 from pathlib import Path
 
 from app.classificacao.candidatos import classificacoes_da_ncm
@@ -35,16 +36,19 @@ from app.contrato import (
     ItemAlteracaoRequisicao,
     ItemArquivadoResposta,
     ItemDaCompraMensal,
+    ItemNotaSemPar,
     ItemNovoRequisicao,
     ItemResposta,
     MunicipioReferencia,
     MunicipiosResposta,
+    NfeImportarResposta,
     UfReferencia,
     UfsResposta,
 )
 from app.dados_demo import AtividadeSimples as AtividadeDoCadastro
 from app.dados_demo import Cenario, Cliente, ClienteB2B, CompraMensal, Empresa, ItemCatalogo, carregar_distribuidora
 from app.dados_demo import ItemCompraMensal as ItemDaCompraGravado
+from app.motores.cliente import ClienteMotores
 from app.motores.dados_abertos import DA, ROTA_ATIVIDADES_SN, DadosAbertos
 from app.nfe.consultas import (
     Conflito,
@@ -55,7 +59,15 @@ from app.nfe.consultas import (
     cliente_estado,
     resumo_empresa,
 )
-from app.persistencia.repositorio import EmpresaRegistro, Repositorio, Sessao
+from app.nfe.importacao import creditos_pelo_motor
+from app.persistencia.repositorio import (
+    EmpresaRegistro,
+    FonteCredito,
+    LancamentoCusto,
+    NotaRegistro,
+    Repositorio,
+    Sessao,
+)
 
 # Tetos de produto, não regra fiscal: só evitam que uma conta cresça sem limite no disco do servidor.
 EMPRESAS_POR_ORGANIZACAO = 10
@@ -300,15 +312,24 @@ async def configurar_empresa(
 
 
 async def criar_item(
-    da: DadosAbertos, repo: Repositorio, req: ItemNovoRequisicao, exigir_digito: bool, agora: datetime
+    da: DadosAbertos,
+    motores: ClienteMotores,
+    repo: Repositorio,
+    req: ItemNovoRequisicao,
+    exigir_digito: bool,
+    agora: datetime,
 ) -> ItemResposta:
     """O item com a classificação que o usuário escolheu entre as válidas para a NCM (P3). Itens sujeitos ao
     Imposto Seletivo ficam para depois: a classificação do IS e os litros por unidade não têm, por enquanto, uma
-    fonte oficial que o ContaAI consulte, e o ContaAI não inventa (ADR 0017)."""
+    fonte oficial que o ContaAI consulte, e o ContaAI não inventa (ADR 0017).
+
+    Com `daNota`, o item nasce de uma linha sem par de uma nota já importada (C3b): o custo daquela linha entra no
+    histórico, e a linha do recibo passa a citar o item (reimportar a nota devolve o recibo com o par)."""
     if exigir_digito and not cnpj_valido(req.cnpjFornecedor):
         raise Recusado("CNPJ do fornecedor inválido: confira os dígitos verificadores.")
     with repo.leitura() as s:
         reg = _empresa(s, req.cnpj)
+        origem = _linha_da_nota(s, req) if req.daNota is not None else None
     data = reg.cenario.data
     info = await da.ncm(req.ncm, data)
     if info is None:
@@ -331,6 +352,22 @@ async def criar_item(
         f"{escolhida.cClassTrib} ({escolhida.descricao}), válida para a NCM nos dados abertos do motor RR em "
         f"{data.isoformat()}."
     )
+    item = ItemCatalogo(
+        id=ID_PROVISORIO,
+        descricao=req.descricao,
+        ncm=req.ncm,
+        ncmDescricaoOficial=info.hierarquia() or req.ncm,
+        cst=escolhida.cst,
+        cClassTrib=escolhida.cClassTrib,
+        classificacaoFonte=fonte,
+        impostoSeletivo=None,
+        unidade=req.unidade,
+        cnpjFornecedor=req.cnpjFornecedor,
+        codigoFornecedor=req.codigoFornecedor,
+        precoVenda=req.precoVenda,
+        margemAlvoPct=req.margemAlvoPct,
+    )
+    custo = await _custo_da_nota(motores, reg, item, origem) if origem is not None else None
     with repo.escrita() as s:
         _empresa(s, req.cnpj)
         if s.contar_itens(req.cnpj) >= ITENS_POR_EMPRESA:
@@ -340,25 +377,110 @@ async def criar_item(
         item_id = f"item-{secrets.token_hex(6)}"
         while s.existe_item(req.cnpj, item_id):
             item_id = f"item-{secrets.token_hex(6)}"
-        item = ItemCatalogo(
-            id=item_id,
-            descricao=req.descricao,
-            ncm=req.ncm,
-            ncmDescricaoOficial=info.hierarquia() or req.ncm,
-            cst=escolhida.cst,
-            cClassTrib=escolhida.cClassTrib,
-            classificacaoFonte=fonte,
-            impostoSeletivo=None,
-            unidade=req.unidade,
-            cnpjFornecedor=req.cnpjFornecedor,
-            codigoFornecedor=req.codigoFornecedor,
-            precoVenda=req.precoVenda,
-            margemAlvoPct=req.margemAlvoPct,
-        )
+        item = item.model_copy(update={"id": item_id})
         s.inserir_item(req.cnpj, item)
         s.lancar_preco(req.cnpj, item.id, req.precoVenda, agora, "tela")
+        if origem is not None and custo is not None:
+            _lancar_par(s, req.cnpj, item.id, origem, custo)
         estado = _item_estado(s, req.cnpj, item)
     return ItemResposta(item=estado)
+
+
+ID_PROVISORIO = "item-provisorio"
+NOTA_MUDOU = "A nota mudou durante o cadastro (outro cadastro a partir dela ao mesmo tempo). Nada foi gravado."
+
+
+@dataclass(frozen=True)
+class _LinhaDaNota:
+    """A linha sem par de onde o item nasce, com o recibo lido (para conferir, na gravação, que ele não mudou)."""
+
+    nota: NotaRegistro
+    recibo: NfeImportarResposta
+    linha: ItemNotaSemPar
+
+
+@dataclass(frozen=True)
+class _CustoDaNota:
+    quantidade: Decimal
+    custo: Decimal
+    credito: Decimal | None
+    fonte: FonteCredito | None
+
+
+def _linha_da_nota(s: Sessao, req: ItemNovoRequisicao) -> _LinhaDaNota:
+    """Confere a linha antes dos motores. A nota é procurada pelo fornecedor do item: uma nota de outro fornecedor,
+    ou de outra empresa, responde como inexistente."""
+    par = req.daNota
+    if par is None:
+        raise ValueError("_linha_da_nota sem daNota")
+    nota = s.nota(req.cnpj, req.cnpjFornecedor, par.serie, par.numero)
+    if nota is None or nota.recibo_json == "{}":
+        raise NaoEncontrado("Nota não encontrada para este fornecedor, com esta série e este número.")
+    recibo = NfeImportarResposta.model_validate_json(nota.recibo_json)
+    linha = next((i for i in recibo.itensSemPar if i.nItem == par.nItem), None)
+    if linha is None:
+        raise NaoEncontrado("Esta nota não tem um item sem par com este número (nItem).")
+    if linha.itemCadastrado is not None:
+        raise Conflito("Este item da nota já foi cadastrado no catálogo.")
+    if linha.causa is None or linha.quantidade is None or linha.custoUnitario is None or linha.valorTotal is None:
+        raise Recusado(
+            "Esta nota foi importada antes de o ContaAI guardar o custo dos itens sem par. Cadastre o item sem a "
+            "nota: o custo entra com a próxima nota do fornecedor."
+        )
+    if linha.causa != "semCadastro":
+        motivo = f" {linha.motivo}" if linha.motivo else ""
+        raise Recusado(f"Só o item cujo código não está no catálogo se cadastra a partir da nota.{motivo}")
+    if sum(1 for i in recibo.itensSemPar if i.codigoFornecedor == linha.codigoFornecedor) > 1:
+        raise Recusado(
+            "O mesmo produto aparece mais de uma vez na nota: confira com o fornecedor e cadastre o item sem a nota."
+        )
+    if linha.codigoFornecedor != req.codigoFornecedor or linha.ncm != req.ncm:
+        raise Recusado("O código do fornecedor e a NCM precisam ser os da linha da nota.")
+    if linha.unidade != req.unidade:
+        raise Recusado(
+            f"A unidade da nota ({linha.unidade}) precisa ser a do item, e o cadastro aceita só UN ou KG: sem "
+            "conversão automática."
+        )
+    return _LinhaDaNota(nota, recibo, linha)
+
+
+async def _custo_da_nota(
+    motores: ClienteMotores, reg: EmpresaRegistro, item: ItemCatalogo, origem: _LinhaDaNota
+) -> _CustoDaNota:
+    """O custo da linha e o crédito: o da própria nota (grupo IBSCBS) ou, sem o grupo, o do motor RR na data da
+    nota, como na importação."""
+    linha = origem.linha
+    if linha.quantidade is None or linha.custoUnitario is None or linha.valorTotal is None:
+        raise ValueError("linha conferida em _linha_da_nota")
+    if linha.creditoCompraUnitario is not None:
+        return _CustoDaNota(linha.quantidade, linha.custoUnitario, linha.creditoCompraUnitario, "nfe")
+    data = origem.recibo.nota.dataEmissao.date()
+    (credito,) = await creditos_pelo_motor(motores, reg, data, [(item, linha.quantidade, linha.valorTotal)])
+    return _CustoDaNota(linha.quantidade, linha.custoUnitario, credito, "motor" if credito is not None else None)
+
+
+def _lancar_par(s: Sessao, cnpj: str, item_id: str, origem: _LinhaDaNota, custo: _CustoDaNota) -> None:
+    """Na mesma transação do item: o custo da linha e a linha do recibo marcada com o item. Se o recibo mudou desde a
+    leitura (outro cadastro a partir da mesma nota), nada é gravado."""
+    s.lancar_custo(
+        cnpj,
+        LancamentoCusto(
+            item_id=item_id,
+            nota_id=origem.nota.id,
+            data=origem.recibo.nota.dataEmissao,
+            quantidade=custo.quantidade,
+            custo_unitario=custo.custo,
+            credito_unitario=custo.credito,
+            fonte_credito=custo.fonte,
+        ),
+    )
+    linhas = [
+        i.model_copy(update={"itemCadastrado": item_id}) if i.nItem == origem.linha.nItem else i
+        for i in origem.recibo.itensSemPar
+    ]
+    novo = origem.recibo.model_copy(update={"itensSemPar": linhas})
+    if not s.trocar_recibo(origem.nota.id, origem.nota.recibo_json, novo.model_dump_json()):
+        raise Conflito(NOTA_MUDOU)
 
 
 def alterar_item(repo: Repositorio, item_id: str, req: ItemAlteracaoRequisicao, exigir_digito: bool) -> ItemResposta:

@@ -570,3 +570,14 @@
     padding-block: 24px 48px;
   }
 }
+
+/* O link ao lado dos dados da página (C3b): as configurações da empresa no Painel. */
+.pagina__acao {
+  margin-top: 4px;
+}
+
+/* O mesmo link dos cabeçalhos dos blocos (telas.css, .bloco__cabecalho a), e não o azul do navegador. */
+.pagina__acao a {
+  color: var(--texto);
+  font-weight: var(--peso-medio);
+}

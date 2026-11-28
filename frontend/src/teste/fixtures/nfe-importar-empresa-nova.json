@@ -31,21 +31,42 @@
       "codigoFornecedor": "AE-CRV-350",
       "ncm": "22030000",
       "descricaoNota": "Cerveja de malte, lata 350 ml",
-      "motivo": "Código do produto deste fornecedor sem cadastro no catálogo."
+      "motivo": "Código do produto deste fornecedor sem cadastro no catálogo.",
+      "causa": "semCadastro",
+      "unidade": "UN",
+      "quantidade": "1440",
+      "custoUnitario": "3.05",
+      "valorTotal": "4392.00",
+      "creditoCompraUnitario": "0.2715",
+      "itemCadastrado": null
     },
     {
       "nItem": 2,
       "codigoFornecedor": "AE-CHO-90",
       "ncm": "18063210",
       "descricaoNota": "Chocolate não recheado, barra 90 g",
-      "motivo": "Código do produto deste fornecedor sem cadastro no catálogo."
+      "motivo": "Código do produto deste fornecedor sem cadastro no catálogo.",
+      "causa": "semCadastro",
+      "unidade": "UN",
+      "quantidade": "800",
+      "custoUnitario": "4.10",
+      "valorTotal": "3280.00",
+      "creditoCompraUnitario": "0.3649",
+      "itemCadastrado": null
     },
     {
       "nItem": 3,
       "codigoFornecedor": "AE-BIS-140",
       "ncm": "19053100",
       "descricaoNota": "Biscoito doce, pacote 140 g",
-      "motivo": "Código do produto deste fornecedor sem cadastro no catálogo."
+      "motivo": "Código do produto deste fornecedor sem cadastro no catálogo.",
+      "causa": "semCadastro",
+      "unidade": "UN",
+      "quantidade": "2600",
+      "custoUnitario": "3.10",
+      "valorTotal": "8060.00",
+      "creditoCompraUnitario": "0.2759",
+      "itemCadastrado": null
     }
   ],
   "alertas": []

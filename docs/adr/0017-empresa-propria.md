@@ -1,9 +1,9 @@
 # ADR 0017: a empresa própria no backend, o CNPJ alfanumérico, o catálogo e os clientes editáveis (C3-B)
 
-- Status: aceito (etapas 1 a 10 da C3-B; as etapas 1 a 5 no PR #26, as 6 a 10 no PR #27)
+- Status: aceito (etapas 1 a 10 da C3-B; as etapas 1 a 5 no PR #26, as 6 a 10 no PR #27; revisão da C3b, o item a partir da nota, no fim)
 - Data: 2026-11-27
 - Etapa: C3-B do plano v2.1 (as telas vêm na C3a e na C3b)
-- Código: `backend/app/cnpj.py`, `backend/app/cadastro.py`, `backend/app/api/rotas/empresa.py`, `backend/app/persistencia/migracoes/0003_empresa_propria.sql`, `backend/app/persistencia/banco.py` (`migrar`), `backend/app/persistencia/repositorio.py`, `backend/app/motores/dados_abertos.py` (UF, município e atividade), `backend/app/empresa.py` (rótulos das premissas), `backend/app/contas/servico.py` (`vincular_empresa`), `backend/app/api/middlewares.py`, `frontend/src/dados/formatar.ts`, `frontend/src/api/rotas.ts`, `backend/app/dados_da_conta.py`, `backend/app/api/registro.py`, `backend/app/api/dependencias.py` (papéis), `backend/app/api/problemas.py` (o 500), `backend/tests/test_cnpj.py`, `test_migracao_0003.py`, `test_clientes_b2b.py`, `test_empresa_propria.py`, `test_empresa_golden.py`, `test_exclusao_e_dados.py`, `test_papeis.py`, `test_erro_interno.py` e `test_modo_mock.py`
+- Código: `backend/app/cnpj.py`, `backend/app/cadastro.py`, `backend/app/api/rotas/empresa.py`, `backend/app/persistencia/migracoes/0003_empresa_propria.sql`, `backend/app/persistencia/banco.py` (`migrar`), `backend/app/persistencia/repositorio.py` (`trocar_recibo`, C3b), `backend/app/nfe/importacao.py` (`creditos_pelo_motor` e as linhas sem par, C3b), `backend/app/motores/dados_abertos.py` (UF, município e atividade), `backend/app/empresa.py` (rótulos das premissas), `backend/app/contas/servico.py` (`vincular_empresa`), `backend/app/api/middlewares.py`, `frontend/src/dados/formatar.ts`, `frontend/src/api/rotas.ts`, `backend/app/dados_da_conta.py`, `backend/app/api/registro.py`, `backend/app/api/dependencias.py` (papéis), `backend/app/api/problemas.py` (o 500), `backend/tests/test_cnpj.py`, `test_migracao_0003.py`, `test_clientes_b2b.py`, `test_empresa_propria.py`, `test_empresa_golden.py`, `test_exclusao_e_dados.py`, `test_papeis.py`, `test_erro_interno.py`, `test_modo_mock.py` e `test_par_da_nota.py` (C3b)
 
 ## Contexto
 
@@ -378,3 +378,23 @@ O cliente B2B é o cliente empresa e a compra mensal dele: a venda que a compara
 **Consequências:**
 - a C3-B está fechada. As telas da C3a e da C3b usam as rotas daqui, com o que ficou anotado no [plano v2.1](../plano-v2.1.md) ("Para a C3a e a C3b");
 - uma rota nova precisa de lugar no inventário do mock, do limite por IP (etapa 9) e dos papéis (etapa 8).
+
+## Revisão da C3b: o item a partir da nota (2026-11-28)
+
+Ficou do 3b cadastrar o par de um item sem par a partir da nota. O mapa da C3b achou dois problemas no backend: o item sem par do recibo não trazia a unidade (`uCom`), que o item novo exige e que o casamento confere; e cadastrar o item depois não pegava o custo daquela nota, porque reimportar a mesma nota devolve o recibo antigo (`jaImportada`) e o XML não fica guardado. O usuário escolheu que o item nasça com o custo da nota (decisão b1, no [plano v2.1](../plano-v2.1.md), "C3b").
+
+**Decisão:**
+- **O recibo guarda o que o par precisa:** cada `ItemNotaSemPar` passa a ter a causa (`semCadastro`, `repetido`, `ncm`, `unidade` ou `monofasico`), a unidade (em maiúsculas, como o casamento compara), a quantidade, o custo, o valor (`vProd`) e o crédito do grupo IBSCBS da linha. Nos recibos anteriores, esses campos ficam vazios.
+- **`POST /catalogo/itens` aceita `daNota`** (série, número e nItem). A nota é procurada pelo fornecedor do item (`cnpjFornecedor`): uma nota de outro fornecedor, ou de outra empresa, responde como inexistente (404). Só a linha de código sem cadastro vira item, e o código, a NCM e a unidade precisam ser os da linha (422). Uma linha já cadastrada dá 409. Um código que aparece mais de uma vez na nota é recusado (422), como a importação faz com o item que já existe.
+- **O crédito:** o da nota, quando a linha tem o grupo IBSCBS; sem o grupo, o do motor RR sobre o custo, na data da nota e com as alíquotas do cenário da empresa (`creditos_pelo_motor`, a mesma função da importação agora). O motor recebe a classificação escolhida no cadastro do item.
+- **Uma transação:** o item, o preço, o custo e a linha do recibo marcada com o item (`itemCadastrado`). O recibo é trocado só se ainda é o lido (`Sessao.trocar_recibo`, uma troca conferida no próprio `UPDATE`); se outro cadastro a partir da mesma nota entrou no meio, nada é gravado (409).
+- **Sem custo anterior, não há alerta:** o custo da nota é o primeiro do item. O alerta vem com a nota seguinte do fornecedor, se a margem cair.
+- **`GET /notas`** conta, em `itensSemPar`, só as linhas que ainda não viraram item.
+- **A linha monofásica sem cadastro** diz agora a causa certa (`monofasico`); antes dizia "código sem cadastro", e cadastrar o item não faria a nota casar.
+
+**Consequências:**
+- `tests/test_par_da_nota.py` (18): o recibo novo, o custo da nota e o alerta na nota seguinte, o crédito pelo motor na data da nota, as recusas, a nota de outro fornecedor, a linha já cadastrada, a de outra causa, a monofásica, o código repetido, o recibo anterior à C3b, a troca do recibo (com o método trocado e direto no banco) e o espaço de avaliação. Backend com 715 testes e 97% de cobertura, 54 golden.
+- **Conferências no negativo:** sem a conferência da unidade e sem a troca conferida do recibo, um teste falha. A primeira versão do teste da troca trocava o próprio método e não pegava a falta da conferência; o teste direto no banco foi escrito por isso.
+- **No modo real, com os motores oficiais:** a linha guarda o crédito da nota (0,3649 por unidade na nota de exemplo); o item nasce com o custo de 3,50 e esse crédito; a nota seguinte (4,10) gera o alerta; a linha cadastrada não entra de novo; e, sem o grupo IBSCBS, o crédito vem do motor RR (0,3115).
+- Frases dos padrões novos (série e número da nota) em `mensagens.py`, o OpenAPI reexportado e os tipos da tela. No modo mock, a rota continua 501 (inventário da etapa 10), com o mesmo limite por IP e os mesmos papéis.
+- A tela usa `daNota` na etapa 8 da C3b (C3b2).

@@ -5,55 +5,38 @@
 // - Só o dono cadastra (ADR 0017, etapa 8). Até o seletor do 3c, uma empresa por conta: com uma, a página leva ao
 //   Painel (uma segunda ficaria invisível). O backend aceita até 10.
 // - As listas (UF, município e atividade) vêm dos motores oficiais, pela API (GET /referencias/...), com a fonte
-//   impressa. Nenhuma lista fica escrita na tela.
+//   impressa. Nenhuma lista fica escrita na tela. Os campos ficam em camposDaEmpresa.tsx, com as configurações (C3b).
 // - O CNPJ vai em maiúsculas e sem a pontuação, e o dígito é conferido antes do envio (regrasDeEntrada.ts). O
 //   backend confere tudo de novo, consulta os motores e tem a palavra final; a frase dele aparece no aviso.
 // - O envio é por fetch (SessaoConta.cadastrarEmpresa), e o <form> não tem action: a CSP tem form-action 'none'.
 // - Todo texto vindo da API é exibido como texto do React, nunca como HTML (docs/seguranca.md).
 
 import { useEffect, useRef, useState, type SubmitEvent } from 'react';
-import { chamar } from '../api/cliente.ts';
 import { ErroApi } from '../api/problema.ts';
 import { dataDoDocumento } from '../dados/formatar.ts';
-import { NOME_REGIME, type Regime } from '../dados/pedidos.ts';
-import { useRecurso, type EstadoRecurso } from '../dados/recurso.ts';
-import type { components } from '../api/esquema.gen.ts';
+import type { Regime } from '../dados/pedidos.ts';
+import type { EstadoRecurso } from '../dados/recurso.ts';
 import { useSessao } from '../sessao/contexto.tsx';
 import { useConta } from '../sessao/ganchos.ts';
 import { BotaoDemonstracao } from '../shell/demonstracao.tsx';
 import { Link, navegar } from '../shell/navegacao.tsx';
 import { Pagina } from '../shell/Pagina.tsx';
 import { INICIO_DO_APP, ROTA_DO_CADASTRO } from '../shell/rotas.ts';
-import { Carregando, FalhaNoBloco } from './comum.tsx';
-import { PortaDaConta } from './PortaDaConta.tsx';
 import {
-  AvisoDeFalha,
-  Campo,
-  CampoDeLista,
-  GrupoDeOpcoes,
-  falhaDe,
-  rotuloDoEnvio,
-  useEspera,
-  type Opcao,
-} from './formulario.tsx';
+  AJUDA_DO_REGIME,
+  CampoDaAtividade,
+  CamposDoLocal,
+  OPCOES_DE_REGIME,
+  useAtividades,
+  type Atividades,
+} from './camposDaEmpresa.tsx';
+import { PortaDaConta } from './PortaDaConta.tsx';
+import { AvisoDeFalha, Campo, GrupoDeOpcoes, falhaDe, rotuloDoEnvio, useEspera } from './formulario.tsx';
 import { conferirCnpj, conferirRazaoSocial, normalizarCnpj } from './regrasDeEntrada.ts';
 import './conta.css';
 import './empresa.css';
 import './publicas.css';
 import './telas.css';
-
-/**
- * Os dois regimes que o cadastro aceita. A definição é a do ADR 0003 (conferida na LC 214/2025, art. 41, §3º):
- * no tradicional, a CBS e o IBS ficam dentro do DAS; no híbrido, a empresa os paga por fora, no regime regular.
- */
-export const OPCOES_DE_REGIME: readonly (Opcao & { valor: Regime })[] = [
-  { valor: 'simples_tradicional', rotulo: NOME_REGIME.simples_tradicional, detalhe: 'A CBS e o IBS dentro do DAS.' },
-  {
-    valor: 'simples_hibrido',
-    rotulo: NOME_REGIME.simples_hibrido,
-    detalhe: 'A CBS e o IBS por fora do DAS, no regime regular (LC 214/2025, art. 41, §3º).',
-  },
-];
 
 interface Erros {
   cnpj: string | null;
@@ -65,18 +48,6 @@ interface Erros {
 }
 
 const SEM_ERROS: Erros = { cnpj: null, razaoSocial: null, regime: null, uf: null, municipio: null, atividade: null };
-
-type Atividades = components['schemas']['AtividadesResposta'];
-
-/** A lista de uma referência que não carregou: o nome do campo, a falha e o "Tentar de novo" (app-screens §11). */
-function FalhaDaLista({ rotulo, erro, aoTentar }: { rotulo: string; erro: unknown; aoTentar: () => void }) {
-  return (
-    <div className="campo campo--formulario">
-      <p className="campo__nome">{rotulo}</p>
-      <FalhaNoBloco erro={erro} aoTentar={aoTentar} />
-    </div>
-  );
-}
 
 function Formulario({ atividades }: { atividades: EstadoRecurso<Atividades> }) {
   const sessao = useSessao();
@@ -101,11 +72,6 @@ function Formulario({ atividades }: { atividades: EstadoRecurso<Atividades> }) {
   const limpar = (campo: keyof Erros) => {
     setErros((e) => (e[campo] === null ? e : { ...e, [campo]: null }));
   };
-
-  const ufs = useRecurso('referencias:ufs', (sinal) => chamar(api.GET('/referencias/ufs', { signal: sinal })));
-  const municipios = useRecurso(uf === '' ? null : `referencias:municipios:${uf}`, (sinal) =>
-    chamar(api.GET('/referencias/municipios', { params: { query: { uf } }, signal: sinal })),
-  );
 
   const enviar = async (evento: SubmitEvent<HTMLFormElement>) => {
     evento.preventDefault();
@@ -163,18 +129,6 @@ function Formulario({ atividades }: { atividades: EstadoRecurso<Atividades> }) {
     }
   };
 
-  const listaDeUfs = ufs.dados?.ufs ?? [];
-  const listaDeMunicipios = municipios.dados?.uf === uf ? municipios.dados.municipios : [];
-  const opcoesDeAtividade: Opcao[] = (atividades.dados?.atividades ?? []).map((a) => ({
-    valor: a.cAtivSN,
-    rotulo: a.descricao,
-    detalhe: (
-      <>
-        Código <span className="num">{a.cAtivSN}</span> · anexo {a.anexo} do Simples
-      </>
-    ),
-  }));
-
   return (
     <section className="passo">
       <form className="formulario" noValidate onSubmit={(e) => void enviar(e)}>
@@ -228,84 +182,35 @@ function Formulario({ atividades }: { atividades: EstadoRecurso<Atividades> }) {
             limpar('regime');
           }}
           erro={erros.regime}
-          ajuda="O ContaAI atende só empresas do Simples Nacional. O MEI e as empresas do lucro presumido ou do lucro real não são atendidos."
+          ajuda={AJUDA_DO_REGIME}
         />
-        {ufs.erro !== undefined && ufs.dados === undefined ? (
-          <FalhaDaLista rotulo="UF" erro={ufs.erro} aoTentar={ufs.recarregar} />
-        ) : (
-          <CampoDeLista
-            ref={refUf}
-            rotulo="UF"
-            name="uf"
-            value={uf}
-            disabled={ufs.dados === undefined}
-            erro={erros.uf}
-            ajuda={ufs.dados ? `Fonte: ${ufs.dados.fonte}` : 'Carregando as UFs…'}
-            onChange={(e) => {
-              setUf(e.target.value);
-              setMunicipio('');
-              limpar('uf');
-            }}
-          >
-            <option value="">Escolha a UF</option>
-            {listaDeUfs.map((u) => (
-              <option key={u.sigla} value={u.sigla}>
-                {u.sigla} · {u.nome}
-              </option>
-            ))}
-          </CampoDeLista>
-        )}
-        {municipios.erro !== undefined && listaDeMunicipios.length === 0 ? (
-          <FalhaDaLista rotulo="Município" erro={municipios.erro} aoTentar={municipios.recarregar} />
-        ) : (
-          <CampoDeLista
-            ref={refMunicipio}
-            rotulo="Município"
-            name="municipio"
-            value={municipio}
-            disabled={uf === '' || municipios.carregando}
-            erro={erros.municipio}
-            ajuda={
-              uf === ''
-                ? 'Escolha a UF primeiro.'
-                : municipios.carregando
-                  ? 'Carregando os municípios…'
-                  : municipios.dados
-                    ? `Fonte: ${municipios.dados.fonte}`
-                    : undefined
-            }
-            onChange={(e) => {
-              setMunicipio(e.target.value);
-              limpar('municipio');
-            }}
-          >
-            <option value="">Escolha o município</option>
-            {listaDeMunicipios.map((m) => (
-              <option key={m.codigo} value={String(m.codigo)}>
-                {m.nome}
-              </option>
-            ))}
-          </CampoDeLista>
-        )}
-        {atividades.erro !== undefined && atividades.dados === undefined ? (
-          <FalhaDaLista rotulo="Atividade no Simples" erro={atividades.erro} aoTentar={atividades.recarregar} />
-        ) : atividades.dados === undefined ? (
-          <Carregando linhas={3} />
-        ) : (
-          <GrupoDeOpcoes
-            ref={refAtividade}
-            legenda="Atividade no Simples"
-            nome="atividade"
-            opcoes={opcoesDeAtividade}
-            valor={atividade}
-            aoEscolher={(valor) => {
-              setAtividade(valor);
-              limpar('atividade');
-            }}
-            erro={erros.atividade}
-            ajuda={`As que o ContaAI calcula: admissíveis na NF-e, com anexo e sem o fator R. Fonte: ${atividades.dados.fonte}`}
-          />
-        )}
+        <CamposDoLocal
+          refUf={refUf}
+          refMunicipio={refMunicipio}
+          uf={uf}
+          municipio={municipio}
+          erroUf={erros.uf}
+          erroMunicipio={erros.municipio}
+          aoMudarUf={(valor) => {
+            setUf(valor);
+            setMunicipio('');
+            limpar('uf');
+          }}
+          aoMudarMunicipio={(valor) => {
+            setMunicipio(valor);
+            limpar('municipio');
+          }}
+        />
+        <CampoDaAtividade
+          refAtividade={refAtividade}
+          atividades={atividades}
+          valor={atividade}
+          erro={erros.atividade}
+          aoEscolher={(valor) => {
+            setAtividade(valor);
+            limpar('atividade');
+          }}
+        />
         <p>
           <button type="submit" className="botao-principal" disabled={enviando || espera.aguardando}>
             {rotuloDoEnvio(enviando, espera.restanteMs, 'Cadastrando…', 'Cadastrar a empresa')}
@@ -368,9 +273,7 @@ function ConteudoDoCadastro() {
   const cadastra =
     estado.tipo === 'conectada' && estado.conta.empresas.length === 0 && estado.conta.organizacao.papel === 'dono';
   // Pedida aqui, uma vez: o formulário usa a lista, e o quadro ao lado, a data do cenário.
-  const atividades = useRecurso(cadastra ? 'referencias:atividades' : null, (sinal) =>
-    chamar(sessao.api.GET('/referencias/atividades', { signal: sinal })),
-  );
+  const atividades = useAtividades(cadastra);
 
   // A página é da conta: quem estava vendo a demonstração volta aos dados dela (sem a faixa da demonstração).
   useEffect(() => {
