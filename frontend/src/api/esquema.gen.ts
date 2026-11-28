@@ -2499,7 +2499,7 @@ export interface components {
             descricaoNota: string;
             /**
              * Motivo
-             * @description Por que não casou (código sem cadastro, NCM ou unidade).
+             * @description Por que não casou, em português (código sem cadastro, item repetido, NCM, unidade ou tributação monofásica; o código da causa está em `causa`).
              */
             motivo?: string | null;
             /**

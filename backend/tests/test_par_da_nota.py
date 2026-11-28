@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 import re
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
@@ -16,9 +17,10 @@ from app.api import dependencias
 from app.api.rotas import contas as rotas_contas
 from app.config import configuracao
 from app.main import app
-from app.persistencia.repositorio import Sessao
+from app.persistencia.repositorio import Repositorio, Sessao
 from tests.test_contas import Relogio
 from tests.test_empresa_propria import (
+    FORNECEDOR,
     NUMERICO,
     cadastrar,
     com_conta,
@@ -243,3 +245,16 @@ def test_linha_monofasica_sem_cadastro_diz_a_causa_certa(real) -> None:
     assert chocolate["creditoCompraUnitario"] is None
     r = c.post("/catalogo/itens", json=corpo_item(daNota=da_nota()))
     assert r.status_code == 422 and "monofásica" in r.json()["detail"]
+
+
+def test_a_troca_do_recibo_confere_o_que_foi_lido(real) -> None:
+    """A troca só vale com o recibo lido: outro já trocado no meio, ou uma nota ainda sem recibo, ficam como estão."""
+    c, _ = conta_com_a_nota(real)
+    repo = Repositorio(dependencias.banco_da_organizacao(configuracao(), _organizacao(c)))
+    with repo.escrita() as s:
+        lida = s.nota(NUMERICO, FORNECEDOR, "1", "1001")
+        assert lida is not None
+        assert s.trocar_recibo(lida.id, '{"outro": 1}', '{"novo": 1}') is False
+        assert s.trocar_recibo(lida.id, lida.recibo_json, lida.recibo_json + " ") is True
+        sem_recibo = s.inserir_nota(NUMERICO, FORNECEDOR, "1", "1999", datetime.now(UTC), "0" * 64, datetime.now(UTC))
+        assert s.trocar_recibo(sem_recibo, "{}", '{"novo": 1}') is False

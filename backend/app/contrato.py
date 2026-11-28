@@ -535,7 +535,11 @@ class ItemNotaSemPar(_Modelo):
     codigoFornecedor: str
     ncm: str
     descricaoNota: str = Field(description="xProd da nota: texto do fornecedor, tratado como dado não confiável.")
-    motivo: str | None = Field(default=None, description="Por que não casou (código sem cadastro, NCM ou unidade).")
+    motivo: str | None = Field(
+        default=None,
+        description="Por que não casou, em português (código sem cadastro, item repetido, NCM, unidade ou tributação "
+        "monofásica; o código da causa está em `causa`).",
+    )
     causa: CausaSemPar | None = Field(
         default=None,
         description="semCadastro: o código deste fornecedor não está no catálogo (o único caso que se cadastra a "
