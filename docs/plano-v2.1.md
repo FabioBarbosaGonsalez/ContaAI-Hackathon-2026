@@ -40,6 +40,7 @@ Por isso entram três etapas de contas (C1 a C3) entre o 3b e o 3c. O 3c depende
 | C3-B, etapas 6 a 10: clientes B2B editáveis, o arquivo dos dados, excluir a empresa, os bancos órfãos, os logs sem dado pessoal, os papéis, o erro 500 com os cabeçalhos e o inventário do mock | PR #27, seções das etapas 6 a 10 no ADR 0017 |
 | C3a: a primeira vez, o cadastro da empresa e as telas com a empresa da conta | PR #28, ADR 0018 |
 | C3b, etapas 1 a 5: o item a partir da nota (backend), as configurações da empresa, excluir a empresa e baixar os dados | PR #29, seção da C3b no ADR 0018 e revisão no ADR 0017 |
+| C3b2, etapas 6a a 10: o fornecedor no catálogo e o recibo de uma nota gravada (backend); cadastrar, alterar e arquivar o item; o item a partir da nota; os clientes empresa | PR #30, seção da C3b2 no ADR 0018 e revisão da C3b2 no ADR 0017 |
 
 ## A ordem
 
@@ -48,7 +49,7 @@ Por isso entram três etapas de contas (C1 a C3) entre o 3b e o 3c. O 3c depende
 | 1 | **3b** (feito) | Telas de Notas e de Regime | `GET /notas` (feito) |
 | 2 | **C1** (feito) | Contas no backend | 3b |
 | 3 | **C2** (feito) | Telas de entrada | C1 |
-| 4 | **C3** (em andamento) | Dados da própria empresa | C1 e C2 |
+| 4 | **C3** (feito) | Dados da própria empresa | C1 e C2 |
 | 5 | **3c** | Contador, seletor de empresa e chat | C1 a C3 |
 | 6 | **E6** | Hospedagem, HTTPS, testes de ponta a ponta, vídeo e pitch | todas |
 
@@ -79,7 +80,7 @@ Cada etapa sai em um PR, ou em mais de um quando o backend vem antes da tela.
 - portão da skill com 0 FAIL e 0 WARN nas quatro telas da barra; crítica em `.taste-skill/app/critica-3b.md`;
 - Chrome com o build: 0 violações de CSP e 0 erros de JS no fluxo de importar e aplicar;
 - o que mudou: o Painel sem alerta (achado da medição na demonstração compartilhada) e o crédito por unidade na comparação, que só vai quando veio da nota;
-- ficou para depois: cadastrar o par de um item sem par (C3), oferecer as notas de exemplo na tela (C2; feito na C2c) e rever o recibo de uma nota antiga (rota nova, sem etapa).
+- ficou para depois: cadastrar o par de um item sem par (C3; feito na C3b2), oferecer as notas de exemplo na tela (C2; feito na C2c) e rever o recibo de uma nota antiga (rota nova, sem etapa; feito na C3b2).
 
 ## C1: contas no backend
 
@@ -643,8 +644,8 @@ Achados do mapa:
 - feito na C3b (etapa 5): a Privacidade, na seção dos direitos, leva a baixar os dados e a excluir a empresa. Feito na C3a: o que a empresa guarda e o que vai às calculadoras;
 - feito na C3a: as notas de exemplo saem fora da demonstração;
 - feito na C3a: o formulário converte o CNPJ para maiúsculas e tira a pontuação;
-- cadastrar o par de um item sem par a partir da nota (ficou do 3b), agora que o catálogo é editável. Feito na C3b (etapa 2): o backend (`daNota`); a tela entra na etapa 8;
-- a tela de clientes: criar, alterar e excluir, e o 409 do item em uso levando aos clientes da lista.
+- feito na C3b2 (etapa 8): cadastrar o par de um item sem par a partir da nota (ficou do 3b). Feito na C3b (etapa 2): o backend (`daNota`);
+- feito na C3b2 (etapas 7 e 9): a tela de clientes (criar, alterar e excluir) e o 409 do item em uso levando aos clientes.
 
 **Saída:** uma conta nova cadastra a empresa e os itens, importa duas notas do mesmo fornecedor e vê o alerta, sem tocar nos dados da demo. São duas notas porque o alerta só nasce quando a margem cai em relação a um custo anterior ([ADR 0008](adr/0008-nfe-historico-e-alertas.md); `app/nfe/importacao.py`). A frase antiga ("importa uma nota e vê o alerta") foi corrigida no mapa da C3b.
 
@@ -679,7 +680,7 @@ Achados do mapa:
 **Como fica:**
 - **uma empresa por conta, até o seletor do 3c:** sem o seletor, uma segunda empresa ficaria invisível. Com uma empresa, a página do cadastro leva ao Painel. O limite do backend (10) continua valendo;
 - **o dígito do CNPJ** é conferido também na tela, pelo cálculo do Serpro, com o exemplo do manual no teste. O backend confere de novo;
-- **depois do cadastro,** a tela vai ao Painel da empresa nova. Os itens e os clientes entram pela C3b; até lá, o Catálogo e o Painel dizem que o catálogo está vazio, sem prometer data;
+- **depois do cadastro,** a tela vai ao Painel da empresa nova. Os itens e os clientes entram pela C3b; até lá, o Catálogo e o Painel dizem que o catálogo está vazio, sem prometer data (desde a C3b2, os dois levam ao cadastro do item);
 - **o membro** (que só existe com os convites do 3c) vê que só o dono cadastra a empresa.
 
 **Feito na C3a** ([ADR 0018](adr/0018-telas-da-empresa-propria.md)):
@@ -707,11 +708,12 @@ Achados do mapa:
 | 3 | A página `/empresa` (configurações): razão social, regime, UF e município, atividade e as alíquotas do DAS | C3b1 | feita |
 | 4 | Excluir a empresa: a senha, o CNPJ digitado e o aviso de guardar as notas; a conta volta à primeira vez | C3b1 | feita |
 | 5 | Sua conta: baixar os dados; a Privacidade com os direitos novos | C3b1 | feita |
-| 6 | Catálogo: criar o item (NCM, classificação válida, unidade, fornecedor, preço e margem) | C3b2 | a fazer |
-| 7 | Catálogo: alterar e arquivar; o 409 do item em uso leva aos clientes | C3b2 | a fazer |
-| 8 | Notas: "Cadastrar este item" numa linha sem par, com o cadastro preenchido e o custo da nota | C3b2 | a fazer |
-| 9 | Clientes empresa em página própria: criar, alterar e excluir; a compra mensal com os itens ativos | C3b2 | a fazer |
-| 10 | Verificação, varredura, documentação, commit e PR, e os servidores abertos | cada PR | feita para a C3b1 |
+| 6a | Backend: o fornecedor de cada item no catálogo e o recibo de uma nota gravada (`GET /notas/{cnpj_emitente}/{serie}/{numero}`) | C3b2 | feita |
+| 6 | Catálogo: criar o item (NCM, classificação válida, unidade, fornecedor, preço e margem) | C3b2 | feita |
+| 7 | Catálogo: alterar e arquivar; o 409 do item em uso leva aos clientes | C3b2 | feita |
+| 8 | Notas: "Cadastrar este item" numa linha sem par, com o cadastro preenchido e o custo da nota | C3b2 | feita |
+| 9 | Clientes empresa em página própria: criar, alterar e excluir; a compra mensal com os itens ativos | C3b2 | feita |
+| 10 | Verificação, varredura, documentação, commit e PR, e os servidores abertos | cada PR | feita para a C3b1 e a C3b2 |
 
 **Decisões do usuário (2026-11-27):**
 - três PRs (C3b-B, C3b1 e C3b2). Para as etapas 1 a 5 o usuário pediu um PR só: o backend do par da nota (C3b-B) e as telas da C3b1 vão juntos, em commits separados;
@@ -742,7 +744,39 @@ Achados do mapa:
 - **a carga atual** (`cargaAtualPct`) não entra na tela de configurações: nenhuma tela a mostra, e o carrinho da tela não a envia (`dados.test.ts`). Um campo sem efeito confundiria;
 - **o `Content-Disposition` não precisa ir ao CORS** (`expose_headers`): o cookie da sessão só anda na mesma origem (`allow_credentials=False`), então o arquivo dos dados é sempre lido na mesma origem.
 
+**Decisões do usuário (2026-11-28), no mapa da C3b2:**
+- **A1:** o `GET /catalogo` traz o fornecedor de cada item (CNPJ e código), para a tela de alterar mostrar o atual;
+- **B1:** uma rota lê o recibo de uma nota gravada, e a lista das notas leva a ele. Cadastrar uma linha sem par não depende de guardar o XML;
+- um PR só para a C3b2 (etapas 6a a 10), com o backend num commit separado, antes das telas.
+
+**Achados no mapa da C3b2 (no código, antes de começar):**
+- **o catálogo não dizia o fornecedor do item** (A). O `PATCH` muda o fornecedor, mas a resposta não o trazia. Resolvido na etapa 6a;
+- **as linhas sem par de uma nota antiga** só apareciam importando o XML de novo (B). Resolvido na etapa 6a;
+- **o item novo aceita só UN e KG** (C), sem conversão. Na etapa 8, uma linha da nota em outra unidade não mostra "Cadastrar este item": mostra por quê. O mesmo vale para a linha de outra causa (`repetido`, `ncm`, `unidade`, `monofasico`), a de recibo anterior à C3b e o código que aparece mais de uma vez na nota, que a API recusa;
+- **arquivar não tem volta** (D): não há rota para desarquivar, o id do item nunca volta a ser usado, e o código do fornecedor fica livre para um item novo. Na etapa 7, a confirmação diz isso antes do clique.
+
+**Feito na etapa 6a** (revisão da C3b2 no [ADR 0017](adr/0017-empresa-propria.md)):
+- **o fornecedor no item** (`fornecedor`, com `cnpj` e `codigo`), no `GET /catalogo` e em toda resposta que traz o item;
+- **`GET /notas/{cnpj_emitente}/{serie}/{numero}?cnpj=`:** o recibo gravado e `importadaEm`, com os alertas no estado atual. As regras de acesso são as do `GET /notas` (404 para a nota de outra empresa, outro fornecedor ou outra conta), sem limite por IP (lê o banco) e servida pelo mock (`notas-recibos.json`, dos motores).
+
 **Saída das etapas 1 a 5, conferida no Chrome com a API real:** a conta muda os dados e as alíquotas da empresa, baixa os dados e exclui a empresa, e volta à primeira vez. Nas três larguras, sem violação da CSP, sem rolagem lateral e sem nada guardado no navegador.
+
+**Feito nas etapas 6 a 10 (C3b2,** seção da C3b2 no [ADR 0018](adr/0018-telas-da-empresa-propria.md)**):**
+- **cadastrar o item** pelo Catálogo, com a NCM da busca nos dados abertos e a classificação escolhida entre as válidas; a NCM com Imposto Seletivo fica fora, com o motivo;
+- **alterar e arquivar,** com o fornecedor à vista, só o que mudou no `PATCH`, a confirmação de que arquivar não tem volta e o 409 levando aos clientes;
+- **"Cadastrar este item"** nas linhas sem par que a API aceita (as outras dizem por quê), e **"Ver o recibo"** na lista das notas;
+- **os clientes empresa** em `/clientes`: criar, alterar e excluir, com a compra mensal dos itens ativos;
+- os caminhos: o Painel sem itens leva ao Catálogo, e o Regime, aos clientes.
+
+**Achados nas etapas 6 a 10:**
+- **a cerveja da nota de exemplo é "código sem cadastro",** mas a NCM tem Imposto Seletivo: o diálogo diz que o cadastro não aceita e desliga o envio;
+- **com só NCMs de IS na busca, o erro do envio não aparecia** (achado pelo teste);
+- **o achado do recibo depois do cadastro** e **o Painel sem itens** não contavam com o cadastro novo;
+- nas capturas: os botões largos demais nas linhas sem par, a NCM repetida no diálogo da nota, "R$" separado do valor no celular, o link do 409 no azul do navegador e o CNPJ do cliente alinhado à direita.
+
+**Saída da C3, conferida no Chrome com a API real:** a conta nova cadastra a empresa e os itens (um pelo Catálogo, outro a partir da nota 1001, com o custo dela), importa a nota 1002 do mesmo fornecedor e vê o alerta, sem tocar nos dados da demonstração. Também cadastra o cliente, vê o Regime com ele e recebe o 409 ao arquivar o item que ele compra. Nas três larguras, sem violação da CSP, sem rolagem lateral e sem nada guardado no navegador.
+
+**Fica para depois:** a regra "cadastre só a empresa que você representa" nos termos (pede versão nova e novo aceite); uma ação em lote para cadastrar vários itens sem par de uma nota.
 
 ## 3c: contador, seletor de empresa e chat
 

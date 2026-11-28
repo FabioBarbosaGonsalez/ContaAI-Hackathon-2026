@@ -99,7 +99,7 @@ Valores do cenário de demonstração (simulação de março de 2027, premissas 
   - a mesma nota de novo: "já importada", com o recibo da primeira vez (`jaImportada`);
   - alertas gerados;
   - desde a C2c, as três notas de exemplo para baixar (fictícias, de `data/demo/notas`), no bloco de importar.
-- **Dados:** `POST /nfe/importar` (o recibo) e, desde o PR 3b, `GET /notas?cnpj=` (as notas já importadas, da emissão mais recente para a mais antiga, com as contagens de itens e de alertas abertos).
+- **Dados:** `POST /nfe/importar` (o recibo) e, desde o PR 3b, `GET /notas?cnpj=` (as notas já importadas, da emissão mais recente para a mais antiga, com as contagens de itens e de alertas abertos). Desde a C3b2, `GET /notas/{cnpj_emitente}/{serie}/{numero}?cnpj=` devolve o recibo gravado de uma nota, sem o XML.
 
 ### Explicação (painel lateral)
 - **Pergunta:** por que este item paga isso?
@@ -165,5 +165,5 @@ Valores do cenário de demonstração (simulação de março de 2027, premissas 
   - tokens deste estilo em `frontend/src/estilo/tokens.css`, com o fundo `#f2f4f7` (a troca que a folha sugere para um livro-caixa) e `--borda-campo` `#8a8a8a` (3:1 na borda de campo, WCAG 1.4.11);
   - o shell sem barra lateral, com o rodapé do aviso legal e das versões dos motores;
   - as páginas ainda sem conteúdo, à espera do PR 3.
-- **Telas feitas:** Painel, Catálogo e explicação lateral no 3a ([ADR 0013](../../docs/adr/0013-telas-painel-e-catalogo.md)); Notas e Regime no 3b ([ADR 0014](../../docs/adr/0014-telas-notas-e-regime.md), crítica em `critica-3b.md`); a primeira vez e o cadastro da empresa (`/empresa/nova`) na C3a ([ADR 0018](../../docs/adr/0018-telas-da-empresa-propria.md), crítica em `critica-c3a.md`); as configurações da empresa (`/empresa`), a exclusão da empresa e baixar os dados em Sua conta na C3b, etapas 3 a 5 (seção da C3b no ADR 0018, crítica em `critica-c3b1.md`).
+- **Telas feitas:** Painel, Catálogo e explicação lateral no 3a ([ADR 0013](../../docs/adr/0013-telas-painel-e-catalogo.md)); Notas e Regime no 3b ([ADR 0014](../../docs/adr/0014-telas-notas-e-regime.md), crítica em `critica-3b.md`); a primeira vez e o cadastro da empresa (`/empresa/nova`) na C3a ([ADR 0018](../../docs/adr/0018-telas-da-empresa-propria.md), crítica em `critica-c3a.md`); as configurações da empresa (`/empresa`), a exclusão da empresa e baixar os dados em Sua conta na C3b, etapas 3 a 5 (seção da C3b no ADR 0018, crítica em `critica-c3b1.md`); cadastrar, alterar e arquivar o item, "Cadastrar este item" e "Ver o recibo" em Notas e os clientes empresa (`/clientes`) na C3b2 (seção da C3b2 no ADR 0018, crítica em `critica-c3b2.md`).
 - **Arquivos da skill:** `assets/app.css` e `assets/charts.js` não declaram licença e não são copiados para o repositório (público, MIT). O CSS e os SVG (a barra de margem contra o alvo e a régua) são escritos no projeto, seguindo as regras do capítulo. A skill entra como referência e como portão, rodando da pasta dela.

@@ -4,12 +4,17 @@
 // 1. o recibo da última importação, o maior bloco, que só aparece depois de importar: o achado (o custo que
 //    mudou e a margem que caiu), os alertas com "Aplicar", os itens casados, os itens sem par e as premissas;
 // 2. o envio do XML, com as notas de exemplo para baixar (C2c);
-// 3. as notas já importadas (GET /notas).
+// 3. as notas já importadas (GET /notas). "Ver o recibo" abre o recibo gravado de uma delas (GET
+//    /notas/{cnpj_emitente}/{serie}/{numero}, C3b2), sem enviar o XML de novo.
+//
+// Uma linha sem par de código sem cadastro vira item ali mesmo ("Cadastrar este item", C3b2): o cadastro vem com o
+// código, a NCM, a unidade e o fornecedor da linha, e o item nasce com o custo da nota. As linhas que a API recusaria
+// não têm o botão e dizem por quê (regrasDoCatalogo.ts, cadastravelDaNota).
 //
 // Todo texto da nota (nome do emitente, descrição do item) é do fornecedor: a tela o mostra como texto, nunca
 // como HTML (docs/seguranca.md). Nenhum número é refeito aqui: o recibo vem pronto do backend.
 
-import { useId, useRef, useState, type ChangeEvent } from 'react';
+import { useEffect, useId, useRef, useState, type ChangeEvent } from 'react';
 import { chamar } from '../api/cliente.ts';
 import { ErroApi } from '../api/problema.ts';
 import { ACEITA_NOTA, conferirArquivoDaNota } from '../api/upload.ts';
@@ -20,6 +25,8 @@ import {
   useEmpresaDaTela,
   useGravacao,
   useNotas,
+  useReciboDaNota,
+  type ChaveDaNota,
 } from '../dados/empresa.ts';
 import {
   cnpj as formatarCnpj,
@@ -33,11 +40,13 @@ import {
   TRACO,
 } from '../dados/formatar.ts';
 import { notasDeExemplo } from '../dados/notasDeExemplo.ts';
-import type { Alerta, Catalogo, NotaImportada, ReciboNota } from '../dados/pedidos.ts';
+import type { Alerta, Catalogo, ItemCatalogo, LinhaSemPar, NotaImportada, ReciboNota } from '../dados/pedidos.ts';
 import { useSessao } from '../sessao/contexto.tsx';
 import { ArquivoParaBaixar, Link } from '../shell/navegacao.tsx';
 import { Pagina } from '../shell/Pagina.tsx';
+import { CadastrarItem } from './CadastroDoItem.tsx';
 import { Bloco, BotaoGravar, Carregando, FalhaNoBloco, ListaDePremissas } from './comum.tsx';
+import { cadastravelDaNota, type OrigemDaNota } from './regrasDoCatalogo.ts';
 import './telas.css';
 
 type ItemCasado = ReciboNota['itensCasados'][number];
@@ -67,8 +76,17 @@ function fraseDoCusto(item: ItemCasado, nome: string, alerta: Alerta | undefined
 /** O achado do recibo: o custo que mudou, a margem que caiu abaixo do alvo e o que ficou igual. */
 export function achadoDoRecibo(recibo: ReciboNota, catalogo: Catalogo | undefined): string {
   const { itensCasados, alertas, nota } = recibo;
+  // Itens cadastrados depois, a partir desta nota (C3b2): o custo dela entrou com eles.
+  const cadastrados = recibo.itensSemPar.filter((i) => i.itemCadastrado).length;
+  const depois =
+    cadastrados === 0
+      ? null
+      : cadastrados === 1
+        ? 'Depois, um item foi cadastrado a partir desta nota, com o custo dela.'
+        : `Depois, ${inteiro(cadastrados)} itens foram cadastrados a partir desta nota, com o custo dela.`;
   if (itensCasados.length === 0) {
-    return `Nenhum item da nota ${nota.numero} casou com o catálogo: nenhum custo mudou.`;
+    const frase = `Nenhum item da nota ${nota.numero} casou com o catálogo: nenhum custo mudou.`;
+    return depois === null ? frase : `${frase} ${depois}`;
   }
   const mudaram = itensCasados.filter((i) => i.atualizaCusto && i.variacaoPct !== null && Number(i.variacaoPct) !== 0);
   const historico = itensCasados.filter((i) => !i.atualizaCusto);
@@ -92,6 +110,9 @@ export function achadoDoRecibo(recibo: ReciboNota, catalogo: Catalogo | undefine
     frases.push(`Nenhum custo mudou com a nota ${nota.numero}.`);
   } else if (iguais > 0) {
     frases.push(iguais === 1 ? 'O outro item ficou com o mesmo custo.' : `Os outros ${inteiro(iguais)} itens ficaram com o mesmo custo.`);
+  }
+  if (depois !== null) {
+    frases.push(depois);
   }
   if (historico.length > 0) {
     frases.push(
@@ -224,7 +245,77 @@ function TabelaCasados({ recibo, catalogo }: { recibo: ReciboNota; catalogo: Cat
   );
 }
 
-function SemPar({ recibo }: { recibo: ReciboNota }) {
+function LinhaSemParDaNota({
+  linha,
+  recibo,
+  catalogo,
+  aoCadastrar,
+}: {
+  linha: LinhaSemPar;
+  recibo: ReciboNota;
+  catalogo: Catalogo | undefined;
+  aoCadastrar: (origem: OrigemDaNota) => void;
+}) {
+  const gravacao = useGravacao();
+  const idMotivo = useId();
+  const cadastravel = cadastravelDaNota(linha, recibo.nota, recibo.itensSemPar);
+  let acao = null;
+  if (linha.itemCadastrado) {
+    const nome = catalogo?.itens.find((i) => i.id === linha.itemCadastrado)?.descricao;
+    acao = <span className="pendencia__feito">Cadastrado no catálogo{nome ? `: ${nome}` : ''}.</span>;
+  } else if (cadastravel.pode) {
+    const { origem } = cadastravel;
+    acao = (
+      <BotaoGravar
+        gravacao={gravacao}
+        ocupado={catalogo === undefined}
+        idMotivo={idMotivo}
+        onClick={() => {
+          aoCadastrar(origem);
+        }}
+      >
+        Cadastrar este item
+      </BotaoGravar>
+    );
+  } else if (cadastravel.motivo !== null) {
+    acao = <span className="texto-suave tabela__sub">{cadastravel.motivo}</span>;
+  }
+  return (
+    <li className="pendencia pendencia--com-acao">
+      <span className="pendencia__texto">
+        <span>{linha.descricaoNota}</span>
+        <span className="texto-suave tabela__sub">
+          código <span className="num">{linha.codigoFornecedor}</span> · NCM <span className="num">{ncm(linha.ncm)}</span>
+          {linha.unidade ? (
+            <>
+              {' '}
+              · <span className="num">{linha.unidade}</span>
+            </>
+          ) : null}
+          {linha.custoUnitario !== null && linha.custoUnitario !== undefined ? (
+            <>
+              {' '}
+              · custo <span className="num">{reaisPorUnidade(linha.custoUnitario)}</span>
+            </>
+          ) : null}
+        </span>
+        {!linha.itemCadastrado && <span className="pendencia__motivo">{linha.motivo ?? 'Sem par no catálogo.'}</span>}
+      </span>
+      {acao}
+    </li>
+  );
+}
+
+function SemPar({
+  recibo,
+  catalogo,
+  aoCadastrar,
+}: {
+  recibo: ReciboNota;
+  catalogo: Catalogo | undefined;
+  aoCadastrar: (origem: OrigemDaNota) => void;
+}) {
+  const faltam = recibo.itensSemPar.filter((i) => !i.itemCadastrado).length;
   return (
     <div className="recibo__secao">
       <h3>
@@ -232,18 +323,17 @@ function SemPar({ recibo }: { recibo: ReciboNota }) {
       </h3>
       <p className="texto-suave">
         Não mudaram custo. Um item casa quando o código do fornecedor, a NCM e a unidade batem com o cadastro.
+        {faltam > 0 ? ' Um código sem cadastro vira item daqui, com o custo desta nota.' : ''}
       </p>
       <ul className="lista">
         {recibo.itensSemPar.map((i) => (
-          <li key={`${i.codigoFornecedor}:${String(i.nItem)}`} className="pendencia">
-            <span className="pendencia__texto">
-              <span>{i.descricaoNota}</span>
-              <span className="texto-suave tabela__sub">
-                código <span className="num">{i.codigoFornecedor}</span> · NCM <span className="num">{ncm(i.ncm)}</span>
-              </span>
-              <span className="pendencia__motivo">{i.motivo ?? 'Sem par no catálogo.'}</span>
-            </span>
-          </li>
+          <LinhaSemParDaNota
+            key={`${i.codigoFornecedor}:${String(i.nItem)}`}
+            linha={i}
+            recibo={recibo}
+            catalogo={catalogo}
+            aoCadastrar={aoCadastrar}
+          />
         ))}
       </ul>
     </div>
@@ -256,9 +346,10 @@ interface PropsRecibo {
   /** Os ids dos alertas abertos agora, ou null sem a lista (aí quem decide é o backend, com 409). */
   abertos: ReadonlySet<string> | null;
   aoAplicado: () => void;
+  aoCadastrar: (origem: OrigemDaNota) => void;
 }
 
-function Recibo({ recibo, catalogo, abertos, aoAplicado }: PropsRecibo) {
+function Recibo({ recibo, catalogo, abertos, aoAplicado, aoCadastrar }: PropsRecibo) {
   const { nota } = recibo;
   return (
     <Bloco
@@ -320,7 +411,7 @@ function Recibo({ recibo, catalogo, abertos, aoAplicado }: PropsRecibo) {
           <TabelaCasados recibo={recibo} catalogo={catalogo} />
         </div>
       )}
-      {recibo.itensSemPar.length > 0 && <SemPar recibo={recibo} />}
+      {recibo.itensSemPar.length > 0 && <SemPar recibo={recibo} catalogo={catalogo} aoCadastrar={aoCadastrar} />}
       {recibo.premissas.length > 0 && (
         <div className="recibo__secao">
           <h3>Premissas</h3>
@@ -466,7 +557,17 @@ function Envio({ aoImportada }: { aoImportada: (recibo: ReciboNota) => void }) {
 // ---------------------------------------------------------------------------
 // Notas importadas
 
-function LinhaDaNota({ n }: { n: NotaImportada }) {
+/** A chave da nota no GET do recibo; sem série (só em recibos muito antigos), não há como pedi-lo. */
+export function chaveDaNota(nota: ReciboNota['nota']): ChaveDaNota | null {
+  return nota.serie ? { cnpjEmitente: nota.emitente.cnpj, serie: nota.serie, numero: nota.numero } : null;
+}
+
+function mesmaNota(a: ChaveDaNota | null, b: ChaveDaNota | null): boolean {
+  return a !== null && b !== null && a.cnpjEmitente === b.cnpjEmitente && a.serie === b.serie && a.numero === b.numero;
+}
+
+function LinhaDaNota({ n, aberta, aoAbrir }: { n: NotaImportada; aberta: boolean; aoAbrir: (chave: ChaveDaNota) => void }) {
+  const chave = chaveDaNota(n.nota);
   return (
     <tr>
       <th scope="row" className="tabela__item">
@@ -501,11 +602,37 @@ function LinhaDaNota({ n }: { n: NotaImportada }) {
           </span>
         )}
       </td>
+      <td className="tabela__acoes">
+        {aberta ? (
+          <span className="texto-suave">Recibo aberto</span>
+        ) : (
+          chave && (
+            <button
+              type="button"
+              className="botao-texto"
+              aria-label={`Ver o recibo da nota ${n.nota.numero}`}
+              onClick={() => {
+                aoAbrir(chave);
+              }}
+            >
+              Ver o recibo
+            </button>
+          )
+        )}
+      </td>
     </tr>
   );
 }
 
-function Importadas({ notas, erro, aoTentar }: { notas: NotaImportada[] | undefined; erro: unknown; aoTentar: () => void }) {
+interface PropsImportadas {
+  notas: NotaImportada[] | undefined;
+  erro: unknown;
+  aoTentar: () => void;
+  aberta: ChaveDaNota | null;
+  aoAbrir: (chave: ChaveDaNota) => void;
+}
+
+function Importadas({ notas, erro, aoTentar, aberta, aoAbrir }: PropsImportadas) {
   let corpo;
   if (erro !== undefined && notas === undefined) {
     corpo = <FalhaNoBloco erro={erro} aoTentar={aoTentar} />;
@@ -534,11 +661,19 @@ function Importadas({ notas, erro, aoTentar }: { notas: NotaImportada[] | undefi
               <th scope="col" className="num">
                 Alertas
               </th>
+              <th scope="col">
+                <span className="so-leitor">Recibo</span>
+              </th>
             </tr>
           </thead>
           <tbody>
             {notas.map((n) => (
-              <LinhaDaNota key={`${n.nota.emitente.cnpj}:${n.nota.serie ?? ''}:${n.nota.numero}`} n={n} />
+              <LinhaDaNota
+                key={`${n.nota.emitente.cnpj}:${n.nota.serie ?? ''}:${n.nota.numero}`}
+                n={n}
+                aberta={mesmaNota(aberta, chaveDaNota(n.nota))}
+                aoAbrir={aoAbrir}
+              />
             ))}
           </tbody>
         </table>
@@ -556,16 +691,85 @@ function Importadas({ notas, erro, aoTentar }: { notas: NotaImportada[] | undefi
   );
 }
 
+/**
+ * O recibo na tela: o da importação que acabou de acontecer (com o aviso de nota repetida, se veio), ou o gravado,
+ * lido da API, quando a pessoa abre uma nota da lista ou cadastra um item a partir dela.
+ */
+function ReciboAberto(props: {
+  chave: ChaveDaNota;
+  doEnvio: ReciboNota | null;
+  catalogo: Catalogo | undefined;
+  abertos: ReadonlySet<string> | null;
+  aoAplicado: () => void;
+  aoCadastrar: (origem: OrigemDaNota) => void;
+}) {
+  const { chave, doEnvio } = props;
+  const lido = useReciboDaNota(doEnvio === null ? chave : null);
+  const recibo = doEnvio ?? lido.dados?.recibo;
+  if (recibo === undefined) {
+    return (
+      <Bloco titulo={`Recibo da nota ${chave.numero}`} className="notas__recibo">
+        {lido.erro !== undefined ? <FalhaNoBloco erro={lido.erro} aoTentar={lido.recarregar} /> : <Carregando linhas={4} />}
+      </Bloco>
+    );
+  }
+  return (
+    <Recibo
+      recibo={recibo}
+      catalogo={props.catalogo}
+      abertos={props.abertos}
+      aoAplicado={props.aoAplicado}
+      aoCadastrar={props.aoCadastrar}
+    />
+  );
+}
+
+interface NotaAberta {
+  chave: ChaveDaNota;
+  /** O recibo da importação que acabou de acontecer; null, o gravado (lido da API). */
+  doEnvio: ReciboNota | null;
+  /** Muda a cada cadastro a partir do recibo: o recibo gravado é lido de novo. */
+  leitura: number;
+}
+
 export function Notas() {
   const catalogo = useCatalogo();
   const notas = useNotas();
   const alertas = useAlertasAbertos();
-  const [recibo, setRecibo] = useState<ReciboNota | null>(null);
+  const [aberta, setAberta] = useState<NotaAberta | null>(null);
+  const [origem, setOrigem] = useState<OrigemDaNota | null>(null);
+  const [salvo, setSalvo] = useState<string | null>(null);
+  const [irAoRecibo, setIrAoRecibo] = useState(0);
+  const refRecibo = useRef<HTMLDivElement>(null);
+
+  // Quem abre um recibo pela lista vai até ele (o recibo fica no alto da página).
+  useEffect(() => {
+    if (irAoRecibo > 0) {
+      refRecibo.current?.focus({ preventScroll: true });
+      // O jsdom dos testes não tem scrollIntoView; os navegadores têm.
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      refRecibo.current?.scrollIntoView?.({ block: 'start' });
+    }
+  }, [irAoRecibo]);
 
   const recarregar = () => {
     notas.recarregar();
     alertas.recarregar();
     catalogo.recarregar();
+  };
+
+  const abrir = (chave: ChaveDaNota, doEnvio: ReciboNota | null) => {
+    setSalvo(null);
+    setAberta((a) => ({ chave, doEnvio, leitura: (a?.leitura ?? 0) + 1 }));
+    setIrAoRecibo((n) => n + 1);
+  };
+
+  const cadastrado = (item: ItemCatalogo) => {
+    setOrigem(null);
+    setSalvo(`Item cadastrado: ${item.descricao}, com o custo desta nota.`);
+    // Depois do cadastro, o recibo é o gravado: a linha passa a citar o item.
+    setAberta((a) => (a === null ? a : { ...a, doEnvio: null, leitura: a.leitura + 1 }));
+    recarregar();
   };
 
   // Enquanto a lista recarrega, a anterior serve: um alerta só sai dela quando o preço é aplicado.
@@ -575,15 +779,52 @@ export function Notas() {
   return (
     <Pagina titulo="Notas" {...(empresa ? { subtitulo: empresa.razaoSocial } : {})}>
       <div className="grade">
-        {recibo !== null && <Recibo recibo={recibo} catalogo={catalogo.dados} abertos={abertos} aoAplicado={recarregar} />}
+        {aberta !== null && (
+          <div ref={refRecibo} tabIndex={-1} className="notas__aberta">
+            {salvo !== null && (
+              <p className="conta__salvo" role="status">
+                {salvo}
+              </p>
+            )}
+            <ReciboAberto
+              key={`${aberta.chave.cnpjEmitente}:${aberta.chave.serie}:${aberta.chave.numero}:${String(aberta.leitura)}`}
+              chave={aberta.chave}
+              doEnvio={aberta.doEnvio}
+              catalogo={catalogo.dados}
+              abertos={abertos}
+              aoAplicado={recarregar}
+              aoCadastrar={setOrigem}
+            />
+          </div>
+        )}
         <Envio
           aoImportada={(r) => {
-            setRecibo(r);
+            const chave = chaveDaNota(r.nota);
+            if (chave !== null) {
+              abrir(chave, r);
+            }
             recarregar();
           }}
         />
-        <Importadas notas={notas.dados?.notas} erro={notas.erro} aoTentar={notas.recarregar} />
+        <Importadas
+          notas={notas.dados?.notas}
+          erro={notas.erro}
+          aoTentar={notas.recarregar}
+          aberta={aberta?.chave ?? null}
+          aoAbrir={(chave) => {
+            abrir(chave, null);
+          }}
+        />
       </div>
+      <CadastrarItem
+        aberto={origem !== null}
+        catalogo={catalogo.dados}
+        origem={origem}
+        aoFechar={() => {
+          setOrigem(null);
+        }}
+        aoCadastrado={cadastrado}
+      />
     </Pagina>
   );
 }

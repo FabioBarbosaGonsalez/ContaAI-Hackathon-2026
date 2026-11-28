@@ -2,9 +2,10 @@
 //
 // A tabela é o catálogo calculado num regime, um lote de referência por item. A troca de regime refaz o
 // cálculo nos motores; nenhum número é refeito na tela. As ações de cada linha: explicar, alterar o preço
-// e, na linha que precisa, corrigir a classificação.
+// e, na linha que precisa, corrigir a classificação. Desde a C3b2: cadastrar o item e, em cada linha, alterar e
+// arquivar (CadastroDoItem.tsx).
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { catalogoVazio, useCalculo, useCatalogo, useGravacao } from '../dados/empresa.ts';
 import { inteiro, ncm, noMeioDaFrase, porcentagem, reais } from '../dados/formatar.ts';
 import {
@@ -21,6 +22,7 @@ import {
 } from '../dados/pedidos.ts';
 import { Pagina } from '../shell/Pagina.tsx';
 import { Bloco, Carregando, FalhaNoBloco, ListaDePremissas } from './comum.tsx';
+import { AlterarItem, CadastrarItem } from './CadastroDoItem.tsx';
 import { AlterarPreco, CorrigirClassificacao, type PedidoDeCorrecao } from './Dialogos.tsx';
 import { Explicacao, type PedidoDeExplicacao } from './Explicacao.tsx';
 import './telas.css';
@@ -87,10 +89,11 @@ interface PropsLinha {
   linha: ItemCalculado | undefined;
   aoExplicar: () => void;
   aoAlterarPreco: () => void;
+  aoAlterar: () => void;
   aoCorrigir: (() => void) | null;
 }
 
-function Linha({ item, linha, aoExplicar, aoAlterarPreco, aoCorrigir }: PropsLinha) {
+function Linha({ item, linha, aoExplicar, aoAlterarPreco, aoAlterar, aoCorrigir }: PropsLinha) {
   const margem = linha?.margemPct ?? null;
   const quebra = abaixoDoAlvo(margem, item.margemAlvoPct);
   const ok = linha !== undefined && calculado(linha);
@@ -137,6 +140,9 @@ function Linha({ item, linha, aoExplicar, aoAlterarPreco, aoCorrigir }: PropsLin
         <button type="button" className="botao-texto" onClick={aoAlterarPreco}>
           Preço
         </button>
+        <button type="button" className="botao-texto" onClick={aoAlterar}>
+          Alterar
+        </button>
       </td>
     </tr>
   );
@@ -147,6 +153,7 @@ function Tabela(props: {
   calculo: Carrinho;
   aoExplicar: (p: PedidoDeExplicacao) => void;
   aoAlterarPreco: (i: ItemCatalogo) => void;
+  aoAlterar: (i: ItemCatalogo) => void;
   aoCorrigir: (p: PedidoDeCorrecao) => void;
 }) {
   const { catalogo, calculo } = props;
@@ -199,6 +206,9 @@ function Tabela(props: {
                 aoAlterarPreco={() => {
                   props.aoAlterarPreco(item);
                 }}
+                aoAlterar={() => {
+                  props.aoAlterar(item);
+                }}
                 aoCorrigir={
                   linha && erro && precisaCorrigirClassificacao(linha)
                     ? () => {
@@ -249,6 +259,15 @@ export function Catalogo() {
   const [explicacao, setExplicacao] = useState<PedidoDeExplicacao | null>(null);
   const [preco, setPreco] = useState<ItemCatalogo | null>(null);
   const [correcao, setCorrecao] = useState<PedidoDeCorrecao | null>(null);
+  const [cadastrando, setCadastrando] = useState(false);
+  const [alterando, setAlterando] = useState<ItemCatalogo | null>(null);
+  const [salvo, setSalvo] = useState<string | null>(null);
+  const idMotivo = useId();
+
+  const depoisDeGravar = (frase: string) => {
+    setSalvo(frase);
+    catalogo.recarregar();
+  };
 
   const achado = calculo.dados && catalogo.dados ? achadoDoCatalogo(calculo.dados, catalogo.dados.loteReferencia) : null;
   // A empresa nova, sem itens (C3a): não há cálculo, e a frase de simulação é a descrição do cenário.
@@ -264,7 +283,21 @@ export function Catalogo() {
         <p>Nenhum item no catálogo ainda.</p>
         <p className="texto-suave">
           A tabela mostra a CBS e o IBS de cada item, a cada {inteiro(catalogo.dados.loteReferencia)} unidades, quando o
-          catálogo tiver itens.
+          catálogo tiver itens. Um item também se cadastra a partir de uma nota importada, com o custo dela.
+        </p>
+        <p>
+          <button
+            type="button"
+            className="botao-principal"
+            disabled={!gravacao.pode}
+            aria-describedby={gravacao.pode ? undefined : idMotivo}
+            onClick={() => {
+              setSalvo(null);
+              setCadastrando(true);
+            }}
+          >
+            Cadastrar o primeiro item
+          </button>
         </p>
       </div>
     );
@@ -279,6 +312,7 @@ export function Catalogo() {
         calculo={calculo.dados}
         aoExplicar={setExplicacao}
         aoAlterarPreco={setPreco}
+        aoAlterar={setAlterando}
         aoCorrigir={setCorrecao}
       />
     );
@@ -288,8 +322,29 @@ export function Catalogo() {
     <Pagina titulo="Catálogo" {...(subtitulo ? { subtitulo } : {})}>
       <div className="catalogo__topo">
         {achado !== null ? <p className="achado achado--linha">{achado}</p> : <span />}
-        {regime && !vazio && <Seletor regime={regime} aoTrocar={setEscolhido} />}
+        <div className="catalogo__comandos">
+          {regime && !vazio && <Seletor regime={regime} aoTrocar={setEscolhido} />}
+          {catalogo.dados && !vazio && (
+            <button
+              type="button"
+              className="botao-principal"
+              disabled={!gravacao.pode}
+              aria-describedby={gravacao.pode ? undefined : idMotivo}
+              onClick={() => {
+                setSalvo(null);
+                setCadastrando(true);
+              }}
+            >
+              Cadastrar item
+            </button>
+          )}
+        </div>
       </div>
+      {salvo !== null && (
+        <p className="conta__salvo catalogo__salvo" role="status">
+          {salvo}
+        </p>
+      )}
       <Bloco
         titulo="CBS e IBS por item"
         extra={
@@ -303,12 +358,45 @@ export function Catalogo() {
         }
       >
         {corpo}
-        {!gravacao.pode && !vazio && <p className="gravar__motivo catalogo__motivo">{gravacao.motivo}</p>}
+        {!gravacao.pode && catalogo.dados && (
+          <p id={idMotivo} className="gravar__motivo catalogo__motivo">
+            {gravacao.motivo}
+          </p>
+        )}
       </Bloco>
       {!vazio && (
         <Bloco titulo="Premissas do cálculo" className="catalogo__premissas">
           {calculo.dados === undefined ? <Carregando /> : <ListaDePremissas premissas={calculo.dados.premissas} compacta />}
         </Bloco>
+      )}
+      <CadastrarItem
+        aberto={cadastrando}
+        catalogo={catalogo.dados}
+        origem={null}
+        aoFechar={() => {
+          setCadastrando(false);
+        }}
+        aoCadastrado={(item) => {
+          setCadastrando(false);
+          depoisDeGravar(`Item cadastrado: ${item.descricao}.`);
+        }}
+      />
+      {catalogo.dados && (
+        <AlterarItem
+          item={alterando}
+          cnpj={catalogo.dados.empresa.cnpj}
+          aoFechar={() => {
+            setAlterando(null);
+          }}
+          aoAlterado={(item) => {
+            setAlterando(null);
+            depoisDeGravar(`Item salvo: ${item.descricao}.`);
+          }}
+          aoArquivado={(item) => {
+            setAlterando(null);
+            depoisDeGravar(`Item arquivado: ${item.descricao}. O histórico dele continua guardado.`);
+          }}
+        />
       )}
       <Explicacao
         pedido={explicacao}

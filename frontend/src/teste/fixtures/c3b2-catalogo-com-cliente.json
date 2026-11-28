@@ -1,0 +1,108 @@
+{
+  "empresa": {
+    "cnpj": "12ABC34501DE35",
+    "razaoSocial": "Mercearia Exemplo Ltda",
+    "regimeAtual": "simples_tradicional",
+    "uf": "RS",
+    "municipio": 4314902,
+    "municipioNome": "Porto Alegre",
+    "dataCenario": "2027-03-16"
+  },
+  "cenario": {
+    "descricao": "Simulação de março de 2027",
+    "operacao": {
+      "data": "2027-03-16",
+      "uf": "RS",
+      "municipio": 4314902,
+      "aliquotasNominais": {
+        "cbs": "8.8",
+        "ibsEstadual": "0.05",
+        "ibsMunicipal": "0.05",
+        "impostoSeletivoAdValorem": "10.0",
+        "fonte": "Simulação do ContaAI: entradas do exemplo oficial da calculadora RR"
+      },
+      "premissasDas": {
+        "anexo": "I",
+        "cAtivSN": "01",
+        "pCBSSN": "1.1612",
+        "pIBSSN": "0.0129",
+        "fonte": "Simulação do ContaAI: valores de exemplo do esquema do motor SN, até a empresa informar os da apuração dela"
+      }
+    },
+    "cargaAtualPct": null
+  },
+  "clientesB2B": [
+    {
+      "cnpj": "11222333000181",
+      "nome": "Mercado Exemplo Ltda",
+      "regime": "regime_regular",
+      "uf": "RS",
+      "municipio": 4314902,
+      "compraMensalDescricao": "Compra mensal informada no cadastro do cliente.",
+      "compraMensal": [
+        {
+          "itemId": "item-adb199628b0c",
+          "quantidade": "300"
+        }
+      ]
+    }
+  ],
+  "loteReferencia": 100,
+  "itens": [
+    {
+      "id": "item-adb199628b0c",
+      "descricao": "Chocolate ao leite 90 g",
+      "ncm": "18063210",
+      "nbs": null,
+      "cst": "000",
+      "cClassTrib": "000001",
+      "impostoSeletivo": null,
+      "unidade": "UN",
+      "fornecedor": {
+        "cnpj": "AB12CD34EF5602",
+        "codigo": "AE-CHO-90"
+      },
+      "ncmDescricaoOficial": "Chocolate e outras preparações alimentícias que contenham cacau - Não recheados - Chocolate",
+      "classificacaoFonte": "Escolhida no cadastro do item em 2026-11-28 (UTC), com a confirmação do usuário (P3): 000001 (Situações tributadas integralmente pelo IBS e CBS.), válida para a NCM nos dados abertos do motor RR em 2027-03-16.",
+      "margemAlvoPct": "20",
+      "precoVenda": "4.20",
+      "custoAtual": {
+        "data": "2027-03-15T09:00:00-03:00",
+        "notaNumero": "1001",
+        "custoUnitario": "3.50",
+        "creditoCompraUnitario": "0.3649",
+        "fonteCredito": "nfe"
+      },
+      "historicoCusto": [
+        {
+          "data": "2027-03-15T09:00:00-03:00",
+          "notaNumero": "1001",
+          "custoUnitario": "3.50",
+          "creditoCompraUnitario": "0.3649",
+          "fonteCredito": "nfe"
+        }
+      ]
+    },
+    {
+      "id": "item-0ae68750ca20",
+      "descricao": "Arroz tipo 1, pacote 5 kg",
+      "ncm": "10063021",
+      "nbs": null,
+      "cst": "200",
+      "cClassTrib": "200003",
+      "impostoSeletivo": null,
+      "unidade": "UN",
+      "fornecedor": {
+        "cnpj": "AB12CD34EF5602",
+        "codigo": "ARZ-5"
+      },
+      "ncmDescricaoOficial": "Arroz - Arroz semibranqueado ou branqueado, mesmo polido ou brunido (glaciado*) - Não parboilizado - Polido ou brunido",
+      "classificacaoFonte": "Escolhida no cadastro do item em 2026-11-28 (UTC), com a confirmação do usuário (P3): 200003 (Vendas de produtos destinados à alimentação humana (Anexo I)), válida para a NCM nos dados abertos do motor RR em 2027-03-16.",
+      "margemAlvoPct": "20",
+      "precoVenda": "27.90",
+      "custoAtual": null,
+      "historicoCusto": []
+    }
+  ],
+  "aviso": "Dados cadastrados pela sua empresa. Os resultados são simulações com as calculadoras oficiais: não são apuração fiscal e não substituem o contador."
+}

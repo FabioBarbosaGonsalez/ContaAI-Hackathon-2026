@@ -225,6 +225,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/notas/{cnpj_emitente}/{serie}/{numero}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Recibo Da Nota
+         * @description O recibo de uma nota já importada, sem enviar o XML de novo: as linhas sem par dela se cadastram a partir
+         *     daqui (POST /catalogo/itens com `daNota`). Não chama os motores nem grava.
+         */
+        get: operations["recibo_da_nota_notas__cnpj_emitente___serie___numero__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/contador/painel": {
         parameters: {
             query?: never;
@@ -2156,6 +2177,20 @@ export interface components {
             /** Aviso */
             aviso: string;
         };
+        /**
+         * FornecedorDoItem
+         * @description De quem a empresa compra o item. A nota casa com o item pelo CNPJ do emitente, o código (cProd), a NCM e a
+         *     unidade (ADR 0008).
+         */
+        FornecedorDoItem: {
+            /** Cnpj */
+            cnpj: string;
+            /**
+             * Codigo
+             * @description cProd do item na NF-e do fornecedor.
+             */
+            codigo: string;
+        };
         /** Fundamentacao */
         Fundamentacao: {
             /** Cclasstrib */
@@ -2312,6 +2347,8 @@ export interface components {
             impostoSeletivo?: components["schemas"]["ImpostoSeletivoEntrada-Output"] | null;
             /** Unidade */
             unidade: string;
+            /** @description O fornecedor e o código dele, os que o PATCH muda (C3b). */
+            fornecedor: components["schemas"]["FornecedorDoItem"];
             /** Ncmdescricaooficial */
             ncmDescricaoOficial: string;
             /** Classificacaofonte */
@@ -3263,6 +3300,20 @@ export interface components {
              * @default []
              */
             erros: components["schemas"]["ErroMotor"][];
+        };
+        /**
+         * ReciboDaNotaResposta
+         * @description O recibo de uma nota já importada, como foi gravado, sem a importar de novo (C3b). As linhas sem par que já
+         *     viraram item citam o item (`itemCadastrado`); os alertas trazem o estado atual (`aplicadoEm`).
+         */
+        ReciboDaNotaResposta: {
+            /**
+             * Importadaem
+             * Format: date-time
+             * @description Quando a nota entrou no sistema (UTC).
+             */
+            importadaEm: string;
+            recibo: components["schemas"]["NfeImportarResposta"];
         };
         /**
          * Regime
@@ -4665,6 +4716,93 @@ export interface operations {
                 };
             };
             /** @description Empresa ou alerta não encontrado, ou espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemaValidacao"];
+                };
+            };
+            /** @description Limite de requisições por minuto atingido (header Retry-After). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar). */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+        };
+    };
+    recibo_da_nota_notas__cnpj_emitente___serie___numero__get: {
+        parameters: {
+            query: {
+                /** @description CNPJ da empresa: 14 posições, sem pontos, barra nem traço. */
+                cnpj: string;
+            };
+            header?: {
+                /** @description Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada. */
+                "X-ContaAI-Espaco"?: string | null;
+            };
+            path: {
+                /** @description CNPJ do fornecedor que emitiu a nota. */
+                cnpj_emitente: string;
+                /** @description Série da nota (serie). */
+                serie: string;
+                /** @description Número da nota (nNF). */
+                numero: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReciboDaNotaResposta"];
+                };
+            };
+            /** @description Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Token da demo ausente ou errado (header X-ContaAI-Token). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problema"];
+                };
+            };
+            /** @description Empresa não encontrada, espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente), ou nota deste fornecedor com esta série e este número que a empresa não importou. */
             404: {
                 headers: {
                     [name: string]: unknown;

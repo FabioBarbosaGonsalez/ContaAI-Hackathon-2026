@@ -26,7 +26,9 @@ import {
   type ClienteB2B,
   type Comparacao,
 } from '../dados/pedidos.ts';
+import { Link } from '../shell/navegacao.tsx';
 import { Pagina } from '../shell/Pagina.tsx';
+import { ROTA_DOS_CLIENTES } from '../shell/rotas.ts';
 import { Bloco, Carregando, FalhaNoBloco, ListaDePremissas } from './comum.tsx';
 import './telas.css';
 
@@ -515,7 +517,10 @@ export function Regime() {
       <Bloco titulo="Comparação de regimes">
         <div className="vazio">
           <p>Nenhum cliente empresa cadastrado.</p>
-          <p className="texto-suave">A comparação usa a venda mensal a um cliente do regime regular.</p>
+          <p className="texto-suave">
+            A comparação usa a venda mensal a um cliente do regime regular.{' '}
+            <Link para={ROTA_DOS_CLIENTES.caminho}>Cadastrar um cliente</Link>
+          </p>
         </div>
       </Bloco>
     );
@@ -534,7 +539,11 @@ export function Regime() {
   const aviso = comparacao.dados?.avisoSimulacao ?? dados?.cenario.descricao;
   const subtitulo = [dados?.empresa.razaoSocial, aviso].filter(Boolean).join(' · ');
   return (
-    <Pagina titulo="Regime" {...(subtitulo ? { subtitulo } : {})}>
+    <Pagina
+      titulo="Regime"
+      {...(subtitulo ? { subtitulo } : {})}
+      {...(dados ? { acao: <Link para={ROTA_DOS_CLIENTES.caminho}>{ROTA_DOS_CLIENTES.nome}</Link> } : {})}
+    >
       {corpo}
     </Pagina>
   );

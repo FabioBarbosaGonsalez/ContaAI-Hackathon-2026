@@ -27,6 +27,7 @@ export const ROTAS_COM_ESPACO: ReadonlySet<ChaveRota> = new Set<ChaveRota>([
   'POST /clientes/{cnpj_cliente}/excluir',
   'GET /catalogo',
   'GET /notas',
+  'GET /notas/{cnpj_emitente}/{serie}/{numero}',
   'GET /contador/painel',
   'GET /espacos/atual',
   'GET /explicar/{item_id}',

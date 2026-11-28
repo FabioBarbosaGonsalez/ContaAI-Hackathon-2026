@@ -79,6 +79,7 @@ const ITEM: ItemCatalogo = {
   cClassTrib: '000001',
   impostoSeletivo: { cst: '200', cClassTrib: '200007', litrosPorUnidade: '0.35' },
   unidade: 'UN',
+  fornecedor: { cnpj: '71604258000156', codigo: 'AE-CRV-350' },
   ncmDescricaoOficial: 'Cervejas de malte.',
   classificacaoFonte: 'dados abertos',
   margemAlvoPct: '15',

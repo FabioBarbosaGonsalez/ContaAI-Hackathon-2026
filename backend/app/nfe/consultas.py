@@ -20,6 +20,7 @@ from app.contrato import (
     CorrigirClassificacaoResposta,
     EmpresaNoPainel,
     EmpresaResumo,
+    FornecedorDoItem,
     ItemCatalogoEstado,
     ItemCompraMensal,
     LancamentoCustoSaida,
@@ -28,6 +29,7 @@ from app.contrato import (
     NotasResposta,
     Operacao,
     PainelContadorResposta,
+    ReciboDaNotaResposta,
     Regime,
 )
 from app.dados_demo import ClienteB2B, ItemCatalogo
@@ -111,6 +113,7 @@ def _item_estado(s: Sessao, cnpj: str, cat: ItemCatalogo) -> ItemCatalogoEstado:
     historico = [_lancamento(s, cnpj, h) for h in s.historico_custo(cnpj, cat.id, HISTORICO_MAX)]
     return ItemCatalogoEstado(
         **item_base(cat).model_dump(),
+        fornecedor=FornecedorDoItem(cnpj=cat.cnpjFornecedor, codigo=cat.codigoFornecedor),
         ncmDescricaoOficial=cat.ncmDescricaoOficial,
         classificacaoFonte=cat.classificacaoFonte,
         margemAlvoPct=cat.margemAlvoPct,
@@ -154,6 +157,23 @@ def notas(repo: Repositorio, cnpj: str, limite: int, aviso: str = AVISO_DEMO) ->
             )
         )
     return NotasResposta(empresa=resumo_empresa(reg), notas=saida, aviso=aviso)
+
+
+def recibo_da_nota(repo: Repositorio, cnpj: str, cnpj_emitente: str, serie: str, numero: str) -> ReciboDaNotaResposta:
+    """O recibo gravado de uma nota da empresa (o de POST /nfe/importar), para cadastrar depois os itens sem par
+    (C3b). Os alertas vêm com o estado atual: um preço aplicado depois da importação aparece aplicado."""
+    with repo.leitura() as s:
+        _empresa(s, cnpj)
+        gravada = s.nota_gravada(cnpj, cnpj_emitente, serie, numero)
+        if gravada is None:
+            raise NaoEncontrado("Nota não encontrada para este fornecedor, com esta série e este número.")
+        recibo = NfeImportarResposta.model_validate_json(gravada.recibo_json)
+        atuais = [s.alerta(a.id) for a in recibo.alertas]
+    alertas = [
+        a.model_copy(update={"aplicadoEm": atual[1].aplicado_em}) if atual is not None else a
+        for a, atual in zip(recibo.alertas, atuais, strict=True)
+    ]
+    return ReciboDaNotaResposta(importadaEm=gravada.importada_em, recibo=recibo.model_copy(update={"alertas": alertas}))
 
 
 @dataclass(frozen=True)

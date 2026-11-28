@@ -1,0 +1,22 @@
+{
+  "item": {
+    "id": "item-0ae68750ca20",
+    "descricao": "Arroz tipo 1, pacote 5 kg",
+    "ncm": "10063021",
+    "nbs": null,
+    "cst": "200",
+    "cClassTrib": "200003",
+    "impostoSeletivo": null,
+    "unidade": "UN",
+    "fornecedor": {
+      "cnpj": "AB12CD34EF5602",
+      "codigo": "ARZ-5-NOVO"
+    },
+    "ncmDescricaoOficial": "Arroz - Arroz semibranqueado ou branqueado, mesmo polido ou brunido (glaciado*) - Não parboilizado - Polido ou brunido",
+    "classificacaoFonte": "Escolhida no cadastro do item em 2026-11-28 (UTC), com a confirmação do usuário (P3): 200003 (Vendas de produtos destinados à alimentação humana (Anexo I)), válida para a NCM nos dados abertos do motor RR em 2027-03-16.",
+    "margemAlvoPct": "18",
+    "precoVenda": "27.90",
+    "custoAtual": null,
+    "historicoCusto": []
+  }
+}

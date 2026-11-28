@@ -1590,6 +1590,157 @@
         }
       }
     },
+    "/notas/{cnpj_emitente}/{serie}/{numero}": {
+      "get": {
+        "tags": [
+          "notas"
+        ],
+        "summary": "Recibo Da Nota",
+        "description": "O recibo de uma nota já importada, sem enviar o XML de novo: as linhas sem par dela se cadastram a partir\ndaqui (POST /catalogo/itens com `daNota`). Não chama os motores nem grava.",
+        "operationId": "recibo_da_nota_notas__cnpj_emitente___serie___numero__get",
+        "parameters": [
+          {
+            "name": "cnpj_emitente",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-Z]{12}[0-9]{2}$",
+              "description": "CNPJ do fornecedor que emitiu a nota.",
+              "title": "Cnpj Emitente"
+            },
+            "description": "CNPJ do fornecedor que emitiu a nota."
+          },
+          {
+            "name": "serie",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]{1,3}$",
+              "description": "Série da nota (serie).",
+              "title": "Serie"
+            },
+            "description": "Série da nota (serie)."
+          },
+          {
+            "name": "numero",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,8}$",
+              "description": "Número da nota (nNF).",
+              "title": "Numero"
+            },
+            "description": "Número da nota (nNF)."
+          },
+          {
+            "name": "cnpj",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9A-Z]{12}[0-9]{2}$",
+              "description": "CNPJ da empresa: 14 posições, sem pontos, barra nem traço.",
+              "title": "Cnpj"
+            },
+            "description": "CNPJ da empresa: 14 posições, sem pontos, barra nem traço."
+          },
+          {
+            "name": "X-ContaAI-Espaco",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{32}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada.",
+              "title": "X-Contaai-Espaco"
+            },
+            "description": "Id de um espaço de avaliação (POST /espacos). Sem ele, vale a demonstração compartilhada."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReciboDaNotaResposta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token da demo ausente ou errado (header X-ContaAI-Token).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Empresa não encontrada, espaço de avaliação inexistente ou expirado (/problemas/espaco-inexistente), ou nota deste fornecedor com esta série e este número que a empresa não importou.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por minuto atingido (header Retry-After).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemaValidacao"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Host não autorizado (CONTAAI_HOSTS_PERMITIDOS, contra DNS rebinding).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno, sem a causa (o log do servidor guarda o tipo e o lugar).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problema"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/contador/painel": {
       "get": {
         "tags": [
@@ -8956,6 +9107,30 @@
         ],
         "title": "ExplicarResposta"
       },
+      "FornecedorDoItem": {
+        "properties": {
+          "cnpj": {
+            "type": "string",
+            "pattern": "^[0-9A-Z]{12}[0-9]{2}$",
+            "title": "Cnpj"
+          },
+          "codigo": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Codigo",
+            "description": "cProd do item na NF-e do fornecedor."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cnpj",
+          "codigo"
+        ],
+        "title": "FornecedorDoItem",
+        "description": "De quem a empresa compra o item. A nota casa com o item pelo CNPJ do emitente, o código (cProd), a NCM e a\nunidade (ADR 0008)."
+      },
       "Fundamentacao": {
         "properties": {
           "cClassTrib": {
@@ -9447,6 +9622,10 @@
             "minLength": 1,
             "title": "Unidade"
           },
+          "fornecedor": {
+            "$ref": "#/components/schemas/FornecedorDoItem",
+            "description": "O fornecedor e o código dele, os que o PATCH muda (C3b)."
+          },
           "ncmDescricaoOficial": {
             "type": "string",
             "title": "Ncmdescricaooficial"
@@ -9492,6 +9671,7 @@
           "cst",
           "cClassTrib",
           "unidade",
+          "fornecedor",
           "ncmDescricaoOficial",
           "classificacaoFonte",
           "margemAlvoPct",
@@ -11591,6 +11771,27 @@
         ],
         "title": "ProblemaMotor",
         "description": "Falha de um motor oficial: 422 /problemas/motor-recusou (com os erros do motor, ex.: VSN-015),\n502 /problemas/motor-resposta-invalida ou 503 /problemas/motor-indisponivel."
+      },
+      "ReciboDaNotaResposta": {
+        "properties": {
+          "importadaEm": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Importadaem",
+            "description": "Quando a nota entrou no sistema (UTC)."
+          },
+          "recibo": {
+            "$ref": "#/components/schemas/NfeImportarResposta"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "importadaEm",
+          "recibo"
+        ],
+        "title": "ReciboDaNotaResposta",
+        "description": "O recibo de uma nota já importada, como foi gravado, sem a importar de novo (C3b). As linhas sem par que já\nviraram item citam o item (`itemCadastrado`); os alertas trazem o estado atual (`aplicadoEm`)."
       },
       "Regime": {
         "type": "string",

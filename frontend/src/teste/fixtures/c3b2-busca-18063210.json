@@ -1,0 +1,23 @@
+{
+  "consulta": "18063210",
+  "candidatos": [
+    {
+      "ncm": "18063210",
+      "nbs": null,
+      "descricao": "Chocolate e outras preparações alimentícias que contenham cacau - Não recheados - Chocolate",
+      "tributadoPeloImpostoSeletivo": false,
+      "classificacoes": [
+        {
+          "cClassTrib": "000001",
+          "cst": "000",
+          "descricao": "Situações tributadas integralmente pelo IBS e CBS.",
+          "reducaoPct": "0.00",
+          "especificaDoProduto": false,
+          "fundamentacao": "LC 214/2025"
+        }
+      ]
+    }
+  ],
+  "aviso": "Candidatos para o usuário confirmar. A classificação fiscal é decisão do usuário ou do contador (P3).",
+  "fonte": "Índice local de NCM (GET /calculadora/dados-abertos/ncm/vigentes e /calculadora/dados-abertos/ncm (motor RR 1.7.2, banco V0073)); classificações validadas no motor RR na data 2027-03-16."
+}

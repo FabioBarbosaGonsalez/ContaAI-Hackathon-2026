@@ -1,0 +1,12 @@
+{
+  "type": "/problemas/item-em-uso",
+  "title": "Item na compra mensal de clientes",
+  "status": 409,
+  "detail": "O item está na compra mensal de clientes desta empresa. Tire-o da compra deles antes de arquivar.",
+  "clientes": [
+    {
+      "cnpj": "50291633000185",
+      "nome": "Mercado Bom Preço Ltda (fictício)"
+    }
+  ]
+}

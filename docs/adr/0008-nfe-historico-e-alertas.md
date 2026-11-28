@@ -125,6 +125,7 @@ Na conversa de mapeamento eu tinha citado 2.4.1: corrigido para 2.6.0, por causa
 | `GET /catalogo?cnpj=` | Itens com o preço e o custo atuais e o histórico (até 10). Não chama os motores: a margem sai do `POST /carrinho/calcular` com estes valores | não | não |
 | `GET /contador/painel` | Empresas com os alertas abertos, a mais urgente primeiro (D1) | não | não |
 | `GET /notas?cnpj=&limite=` | Notas importadas, da emissão mais recente para a mais antiga (desde a E5, ver a revisão no fim) | não | não |
+| `GET /notas/{cnpj_emitente}/{serie}/{numero}?cnpj=` | O recibo gravado de uma nota, sem o XML (desde a C3b2, ver a revisão no fim) | não | não |
 | `POST /demo/restaurar` | Volta o estado às sementes | sim | sim |
 
 - No modo mock, importar, alertas, catálogo e painel servem os mocks. Aplicar e restaurar respondem 501, porque o mock nunca finge uma gravação.
@@ -270,3 +271,5 @@ A migração `0001_inicial.sql` foi editada no pacote A (datas, `CHECK` e índic
 ## Revisão da C3b: as linhas sem par no recibo (2026-11-28)
 
 As linhas sem par do recibo passam a guardar a causa, a unidade, a quantidade, o custo, o valor e o crédito da nota, para o item ser cadastrado a partir dela com o custo dessa nota. A linha cadastrada passa a citar o item, e o `GET /notas` conta só as linhas sem par que ainda não viraram item. A linha monofásica sem cadastro diz agora a causa certa. Os detalhes estão na revisão da C3b no [ADR 0017](0017-empresa-propria.md).
+
+Na C3b2, o recibo de uma nota já importada passa a ser lido sem o XML (`GET /notas/{cnpj_emitente}/{serie}/{numero}`), com os alertas no estado atual. Os detalhes estão na revisão da C3b2 no ADR 0017.

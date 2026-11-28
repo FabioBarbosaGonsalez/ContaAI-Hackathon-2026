@@ -1,6 +1,6 @@
 # ADR 0018: as telas da empresa própria, a primeira vez e o cadastro da empresa (C3a)
 
-- Status: aceito (C3a; a C3b entra em seções do fim: as etapas 1 a 5 estão feitas, as 6 a 9 vêm na C3b2)
+- Status: aceito (C3a; a C3b entra em seções do fim: as etapas 1 a 5 e as 6 a 10, a C3b2)
 - Data: 2026-11-27
 - Etapa: C3a do [plano v2.1](../plano-v2.1.md), depois do backend da C3-B ([ADR 0017](0017-empresa-propria.md))
 - Código:
@@ -11,6 +11,7 @@
   - `frontend/src/shell/` (`rotas.ts` com `/empresa/nova`, `paginas.tsx` com a `PrimeiraVez`, `Shell.tsx`);
   - `frontend/src/telas/Painel.tsx`, `Catalogo.tsx`, `Notas.tsx`, `Dialogos.tsx`, `Explicacao.tsx` e `Privacidade.tsx`;
   - `frontend/src/api/cliente.ts` (o tempo limite que não depende da cópia da `Request`);
+  - C3b2, etapas 6 a 9: `frontend/src/telas/CadastroDoItem.tsx` (cadastrar, alterar e arquivar o item), `regrasDoCatalogo.ts`, `Clientes.tsx` e `/clientes` em `frontend/src/shell/`, `Notas.tsx` (o recibo lido e o item a partir da nota), `Catalogo.tsx`, `Regime.tsx`, `Painel.tsx`, `Dialogos.tsx` (`Molde` largo) e `frontend/src/dados/empresa.ts` (`useReciboDaNota`);
   - C3b, etapas 3 a 5: `frontend/src/telas/ConfiguracoesDaEmpresa.tsx`, `camposDaEmpresa.tsx` (os campos divididos com o cadastro), `Conta.tsx` (baixar os dados), `regrasDeEntrada.ts` (a alíquota do DAS e o CNPJ da confirmação), `frontend/src/sessao/conta.ts` (`excluirEmpresa`, `baixarDados`, `nomeDoArquivo`), `frontend/src/api/cliente.ts` (`chamarComCabecalhos`), `frontend/src/shell/` (`/empresa`, o menu da conta e a `acao` da `Pagina`) e `Painel.tsx`;
   - testes: `frontend/src/telas/empresa.test.tsx` e as fixtures `*-empresa-nova.json`, `empresa-cadastrada.json`, `erro-empresa-*.json`, `erro-nota-outro-destinatario.json` e `referencias-*.json`.
 
@@ -170,4 +171,34 @@ O mapa e as decisões estão no [plano v2.1](../plano-v2.1.md) ("C3b"). O backen
 - **Fixtures gravadas da API real** (motores oficiais, banco temporário, conta do domínio `.test`, CNPJ do exemplo do Serpro): `empresa-configurada.json`, `empresa-das-*.json`, `erro-empresa-municipio.json`, `erro-empresa-excluir-cnpj.json`, `erro-senha-errada.json` e `conta-dados.json`. `nfe-importar-empresa-nova.json` e `nfe-importar-sem-par.json` foram gravadas de novo com os campos novos das linhas sem par; fora esses campos, são iguais às de antes (conferido).
 - **Conferido no Chrome 158**, com o build no `vite preview` (a CSP real) e a API real atrás do proxy `/api`, por um roteiro do DevTools Protocol que cria a conta e a empresa pela própria página: o link do Painel e do menu, salvar os dados, as alíquotas e a volta à simulação, baixar os dados (um download só, com o nome e o conteúdo da API e sem a senha), excluir a empresa e a primeira vez depois. Sem violação da CSP, sem rolagem lateral em 1440, 768 e 390 px e sem nada no armazenamento do navegador.
 - **O portão da skill** (crítica em `.taste-skill/app/critica-c3b1.md`): o inspetor dá 0 FAIL; o único aviso é o aviso curto centrado das páginas da conta sem conta, o mesmo de antes. O lint dá 0 FAIL e os 6 avisos de antes.
-- **Fica para a C3b2:** criar, alterar e arquivar itens, o par a partir da nota na tela de Notas e os clientes. Até lá, a empresa nova ainda não chega ao alerta pela tela.
+- **Fica para a C3b2:** criar, alterar e arquivar itens, o par a partir da nota na tela de Notas e os clientes. Até lá, a empresa nova ainda não chega ao alerta pela tela. **Feito na C3b2** (seção abaixo).
+
+## C3b2, etapas 6 a 10: o catálogo, o item a partir da nota e os clientes empresa (2026-11-28)
+
+O backend entrou antes, na etapa 6a: o fornecedor de cada item no `GET /catalogo` e o recibo de uma nota gravada (`GET /notas/{cnpj_emitente}/{serie}/{numero}`), na revisão da C3b2 do [ADR 0017](0017-empresa-propria.md).
+
+**Decisão:**
+- **Cadastrar o item** (Catálogo, "Cadastrar item"; no catálogo vazio, "Cadastrar o primeiro item"): a descrição, a NCM pela busca nos dados abertos (`GET /busca/ncm`, pelo código ou pelo nome, na data do cenário), a classificação entre as válidas para ela, a unidade (UN ou KG), o CNPJ e o código do fornecedor, o preço e a margem-alvo. A tela não sugere classificação nem preço: a escolha é da pessoa (P3), e o backend aceita só uma das válidas.
+- **Imposto Seletivo:** a NCM com IS aparece fora da escolha, com o motivo (o backend recusa, ADR 0017). A partir da nota, o envio fica desligado.
+- **O dígito do CNPJ** do fornecedor e do cliente é conferido na tela só na empresa da conta, como no backend. Na demonstração, só o formato: os CNPJs fictícios têm o dígito errado de propósito.
+- **Alterar** (em cada linha) manda só o que mudou, com o CNPJ e o código do fornecedor juntos (`mudancasDoItem`). Os campos vêm com os valores do item, o fornecedor incluso. A NCM e a unidade não mudam.
+- **Arquivar** fica no fim do diálogo, numa seção própria: o que acontece (o histórico fica, os alertas abertos saem das listas, uma nota nova com o código vira item sem par), que não tem volta (não há rota de desarquivar; o código do fornecedor fica livre) e a confirmação que nomeia o item. O 409 do item em uso mostra a frase da API, os clientes (lidos do corpo com checagem própria) e o link para `/clientes`.
+- **"Cadastrar este item" (Notas):** só nas linhas que a API aceitaria (`cadastravelDaNota`, as mesmas recusas de `_linha_da_nota`). As outras dizem por quê: recibo anterior à C3b, código repetido na nota, unidade fora de UN e KG, nota sem série. A linha de outra causa (`repetido`, `ncm`, `unidade`, `monofasico`) mantém só o motivo da API. O diálogo vem com o código, a NCM, a unidade e o fornecedor da linha, que não mudam, e com a descrição do fornecedor, que pode ser trocada. O custo da nota aparece como referência; o item nasce com ele (decisão b1).
+- **O recibo na tela:** o da importação que acabou de acontecer, ou o gravado, lido da API (`useReciboDaNota`) quando a pessoa abre uma nota da lista ("Ver o recibo") ou cadastra um item a partir dela. Depois do cadastro, a linha cita o item, e o achado diz que um item foi cadastrado com o custo da nota.
+- **Clientes empresa** (`/clientes`, fora da barra, pelo Regime e pelo 409): a lista vem do `GET /catalogo`. Criar, alterar e excluir com a regra de gravação das outras telas. O regime do cliente é sempre o regular (a API recusa o do Simples), e a tela diz por quê. A compra mensal usa os itens ativos, cada um uma vez; sem itens, o cadastro fica desligado e leva ao Catálogo. Excluir confirma com o nome e diz que não fica histórico. O município aparece pelo nome (`GET /referencias/municipios`); no modo mock, que só lê, pelo código.
+- **Os caminhos:** o Painel da empresa sem itens leva ao Catálogo; o Regime sem clientes, a `/clientes`; o Regime com clientes tem o link abaixo do título.
+
+**Achados:**
+- **a cerveja da nota é "código sem cadastro",** mas a NCM dela tem Imposto Seletivo. Achado nas respostas gravadas: o botão aparece, e o diálogo diz que o cadastro não aceita e desliga o envio;
+- **com a busca feita e só NCMs com IS, o erro do envio não aparecia em lugar nenhum.** Achado pelo teste;
+- **o achado do recibo lido depois do cadastro** dizia só "nenhum custo mudou";
+- **o Painel da empresa sem itens** não levava ao cadastro que agora existe;
+- nas capturas: os botões "Cadastrar este item" largos demais, a NCM repetida no diálogo da nota, "R$" separado do valor no celular, o link do 409 no azul do navegador (como na C3b1), o CNPJ do cliente alinhado à direita e o botão do catálogo vazio longe da caixa vazia.
+
+**Consequências:**
+- **Testes:** tela com 589 (eram 556): `c3b2.test.tsx` (22) e `regrasDoCatalogo.test.ts` (11), com os limites lidos do contrato. Lint, tipos, build, `npm run seguranca`, `contrato:checar` e `npm audit` ok. Nenhuma dependência nova.
+- **Conferências no negativo:** sem o `daNota`, sem o fornecedor junto no `PATCH`, sem a unidade conferida na linha, com o cliente do Simples e sem o dígito exigido na conta, um teste falha em cada caso. Os arquivos voltaram depois de cada conferência.
+- **Fixtures gravadas da API real** (motores oficiais, banco temporário, conta do domínio `.test`, CNPJ do exemplo do Serpro, e a demonstração num espaço de avaliação, sem o id): `c3b2-*.json`.
+- **Conferido no Chrome**, no build com a CSP e a API real atrás do proxy `/api`, por um roteiro do DevTools Protocol: o item pelo Catálogo, a nota 1001 com o chocolate cadastrado a partir dela, a cerveja recusada na tela, **a nota 1002 do mesmo fornecedor e o alerta** (a saída da C3), o recibo pela lista, o cliente, o Regime com ele e o 409 do item em uso. Sem violação da CSP, sem exceção, sem rolagem lateral em 1440, 768 e 390 px, nada no armazenamento do navegador e a demonstração sem mudança.
+- **O portão da skill** (crítica em `.taste-skill/app/critica-c3b2.md`): o inspetor dá 0 FAIL; o único aviso é o espaço sob a tabela de `/clientes` com um cliente. O lint dá 0 FAIL e os 6 avisos de antes.
+- **A C3 está fechada.** Fica para depois: a regra "cadastre só a empresa que você representa" nos termos (decisão do usuário, pede versão nova e novo aceite).

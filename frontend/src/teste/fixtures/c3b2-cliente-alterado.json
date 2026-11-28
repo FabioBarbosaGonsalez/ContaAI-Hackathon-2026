@@ -1,0 +1,20 @@
+{
+  "cliente": {
+    "cnpj": "11222333000181",
+    "nome": "Mercado Exemplo Ltda",
+    "regime": "regime_regular",
+    "uf": "RS",
+    "municipio": 4314902,
+    "compraMensalDescricao": "Compra mensal informada no cadastro do cliente.",
+    "compraMensal": [
+      {
+        "itemId": "item-adb199628b0c",
+        "quantidade": "250"
+      },
+      {
+        "itemId": "item-0ae68750ca20",
+        "quantidade": "40"
+      }
+    ]
+  }
+}

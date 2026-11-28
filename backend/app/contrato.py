@@ -620,9 +620,18 @@ class LancamentoCustoSaida(_Modelo):
     fonteCredito: Literal["nfe", "motor"] | None
 
 
+class FornecedorDoItem(_Modelo):
+    """De quem a empresa compra o item. A nota casa com o item pelo CNPJ do emitente, o código (cProd), a NCM e a
+    unidade (ADR 0008)."""
+
+    cnpj: str = Field(pattern=PADRAO_CNPJ)
+    codigo: str = Field(min_length=1, max_length=60, description="cProd do item na NF-e do fornecedor.")
+
+
 class ItemCatalogoEstado(ItemBase):
     """O item com o estado atual: preço de venda e custo vêm do último lançamento de cada um."""
 
+    fornecedor: FornecedorDoItem = Field(description="O fornecedor e o código dele, os que o PATCH muda (C3b).")
     ncmDescricaoOficial: str
     classificacaoFonte: str
     margemAlvoPct: Porcentagem
@@ -715,6 +724,14 @@ class NotaImportada(_Modelo):
     itensSemPar: int = Field(ge=0, description="Itens sem par que ainda não foram cadastrados a partir da nota.")
     alertasGerados: int = Field(ge=0)
     alertasAbertos: int = Field(ge=0, description="Alertas desta nota ainda sem o preço sugerido aplicado.")
+
+
+class ReciboDaNotaResposta(_Modelo):
+    """O recibo de uma nota já importada, como foi gravado, sem a importar de novo (C3b). As linhas sem par que já
+    viraram item citam o item (`itemCadastrado`); os alertas trazem o estado atual (`aplicadoEm`)."""
+
+    importadaEm: datetime = Field(description="Quando a nota entrou no sistema (UTC).")
+    recibo: NfeImportarResposta
 
 
 class NotasResposta(_Modelo):

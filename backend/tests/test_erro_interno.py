@@ -28,6 +28,7 @@ SEM_LIMITE = {
     "GET /alertas",
     "GET /catalogo",
     "GET /notas",
+    "GET /notas/{cnpj_emitente}/{serie}/{numero}",
     "GET /contador/painel",
     "GET /conta",
     "GET /cenarios/presets",

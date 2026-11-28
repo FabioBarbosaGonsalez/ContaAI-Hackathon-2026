@@ -1363,3 +1363,148 @@ h3 {
     text-align: right;
   }
 }
+
+/* C3b2: o cadastro do item, o par da nota e os clientes empresa (ADR 0018, seção da C3b2). */
+
+/* Os formulários do catálogo e dos clientes: o diálogo mais largo, rolando por dentro (o navegador limita a altura). */
+.dialogo--largo {
+  width: min(640px, 100% - 32px);
+}
+
+.dialogo h3 {
+  margin: 0;
+  font-size: var(--tamanho-secao);
+  line-height: var(--altura-secao);
+}
+
+/* O seletor de regime e o botão de cadastrar, juntos à direita do achado. */
+.catalogo__comandos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espaco);
+}
+
+.catalogo__salvo {
+  margin-bottom: var(--espaco);
+}
+
+/* A linha sem par com a ação ao lado: o texto à esquerda, o botão (ou o motivo) à direita. */
+.pendencia--com-acao {
+  padding-block: 12px;
+}
+
+.pendencia--com-acao + .pendencia--com-acao {
+  border-top: 1px solid var(--regua);
+}
+
+.pendencia--com-acao > :last-child:not(.pendencia__texto) {
+  flex: 0 1 auto;
+  max-width: 280px;
+  text-align: right;
+}
+
+/* O valor e a moeda não se separam na quebra de linha. */
+.pendencia__texto .num {
+  white-space: nowrap;
+}
+
+/* Os links dentro dos diálogos: a tinta do texto, como nos blocos (nunca o azul do navegador). */
+.dialogo a {
+  color: var(--texto);
+}
+
+.pendencia__feito {
+  color: var(--selo-positivo-tinta);
+  font-size: var(--tamanho-pequeno);
+  line-height: var(--altura-pequeno);
+}
+
+.notas__aberta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco);
+  grid-column: 1 / -1;
+  outline: none;
+}
+
+/* A compra mensal: um item por linha, o nome à esquerda e a quantidade à direita. */
+.compra {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.compra legend {
+  margin-bottom: 4px;
+  font-weight: var(--peso-medio);
+}
+
+.compra__lista {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.compra__linha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px var(--espaco);
+  padding-block: 8px;
+}
+
+.compra__linha + .compra__linha {
+  border-top: 1px solid var(--regua);
+}
+
+.compra__item {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.compra__entrada {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.compra__entrada input {
+  width: 120px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--borda-campo);
+  border-radius: var(--raio-controle);
+  background: var(--superficie);
+  text-align: right;
+}
+
+.compra__entrada input[aria-invalid='true'] {
+  border-color: var(--negativo);
+}
+
+.clientes__compra {
+  max-width: 420px;
+}
+
+@media (max-width: 640px) {
+  .pendencia--com-acao {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pendencia--com-acao > :last-child:not(.pendencia__texto) {
+    flex: none;
+    text-align: left;
+  }
+
+  .compra__entrada input {
+    min-height: 44px;
+  }
+}

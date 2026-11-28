@@ -1,0 +1,36 @@
+{
+  "empresa": {
+    "cnpj": "12ABC34501DE35",
+    "razaoSocial": "Mercearia Exemplo Ltda",
+    "regimeAtual": "simples_tradicional",
+    "uf": "RS",
+    "municipio": 4314902,
+    "municipioNome": "Porto Alegre",
+    "dataCenario": "2027-03-16"
+  },
+  "notas": [
+    {
+      "nota": {
+        "serie": "1",
+        "numero": "1001",
+        "dataEmissao": "2027-03-15T09:00:00-03:00",
+        "emitente": {
+          "cnpj": "AB12CD34EF5602",
+          "nome": "Atacado Exemplo Ltda (fictício)"
+        },
+        "destinatario": {
+          "cnpj": "12ABC34501DE35",
+          "nome": "Distribuidora Serra Azul ME (fictícia)"
+        },
+        "homologacao": true,
+        "temGrupoIbsCbs": true
+      },
+      "importadaEm": "2026-11-28T03:59:24.765618Z",
+      "itensCasados": 0,
+      "itensSemPar": 3,
+      "alertasGerados": 0,
+      "alertasAbertos": 0
+    }
+  ],
+  "aviso": "Dados cadastrados pela sua empresa. Os resultados são simulações com as calculadoras oficiais: não são apuração fiscal e não substituem o contador."
+}

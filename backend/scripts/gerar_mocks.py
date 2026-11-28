@@ -676,7 +676,7 @@ CAMPOS_CASADO |= {"creditoCompraUnitario", "fonteCredito"}
 
 def producao_nfe(
     referencia: NfeImportarResposta,
-) -> tuple[NfeImportarResposta, AlertasResposta, Any, Any, Any]:
+) -> tuple[NfeImportarResposta, AlertasResposta, Any, Any, Any, Any]:
     import asyncio
     import tempfile
 
@@ -690,7 +690,7 @@ def producao_nfe(
     def relogio() -> datetime:
         return RELOGIO_MOCKS
 
-    async def rodar() -> tuple[NfeImportarResposta, AlertasResposta, Any, Any, Any]:
+    async def rodar() -> tuple[NfeImportarResposta, AlertasResposta, Any, Any, Any, Any]:
         with tempfile.TemporaryDirectory() as pasta:
             banco = Banco(Path(pasta) / "mocks.db")
             banco.migrar()
@@ -700,15 +700,22 @@ def producao_nfe(
                 await restaurar(repo, motores, relogio=relogio)
                 nota2 = (PASTA_DEMO / "notas" / "nfe-compra-2.xml").read_bytes()
                 importacao = await importar_nota(nota2, repo, motores, relogio)
+            notas = consultas.notas(repo, EMP.cnpj, 50)
+            # O recibo de cada nota da lista, na mesma ordem (GET /notas/{cnpj_emitente}/{serie}/{numero}).
+            recibos = [
+                consultas.recibo_da_nota(repo, EMP.cnpj, n.nota.emitente.cnpj, n.nota.serie or "", n.nota.numero)
+                for n in notas.notas
+            ]
             return (
                 importacao,
                 AlertasResposta(alertas=consultas.alertas(repo, None, None)),
                 consultas.catalogo(repo, EMP.cnpj),
                 consultas.painel(repo),
-                consultas.notas(repo, EMP.cnpj, 50),
+                notas,
+                recibos,
             )
 
-    importacao, alertas, catalogo, painel, notas = asyncio.run(rodar())
+    importacao, alertas, catalogo, painel, notas, recibos = asyncio.run(rodar())
     if [a.model_dump(include=CAMPOS_ALERTA) for a in importacao.alertas] != [
         a.model_dump(include=CAMPOS_ALERTA) for a in referencia.alertas
     ]:
@@ -717,7 +724,7 @@ def producao_nfe(
         c.model_dump(include=CAMPOS_CASADO) for c in referencia.itensCasados
     ]:
         raise Divergencia("itens casados da nota 2")
-    return importacao, alertas, catalogo, painel, notas
+    return importacao, alertas, catalogo, painel, notas, recibos
 
 
 # ---------------------------------------------------------------------------
@@ -871,6 +878,8 @@ def gravar(nome: str, conteudo: Any) -> None:
             return v.model_dump(mode="json", by_alias=True)
         if isinstance(v, dict):
             return {k: serializar(x) for k, x in v.items()}
+        if isinstance(v, list):
+            return [serializar(x) for x in v]
         return v
 
     (PASTA_MOCKS / nome).write_text(
@@ -902,7 +911,7 @@ def main() -> None:
         car, preco, expl = producao(
             atuais, {Regime.SIMPLES_TRADICIONAL: car_trad, Regime.SIMPLES_HIBRIDO: car_hib}, ref_preco
         )
-        nfe, alertas, catalogo, painel, notas = producao_nfe(importacao)
+        nfe, alertas, catalogo, painel, notas, recibos = producao_nfe(importacao)
 
         print("Mocks gravados em backend/app/mocks/:")
         gravar("carrinho.json", car)
@@ -913,6 +922,7 @@ def main() -> None:
         gravar("catalogo.json", catalogo)
         gravar("contador-painel.json", painel)
         gravar("notas.json", notas)
+        gravar("notas-recibos.json", recibos)
         gravar("busca-ncm.json", busca)
         gravar("explicar.json", expl)
         gravar("erros.json", erros(motores))

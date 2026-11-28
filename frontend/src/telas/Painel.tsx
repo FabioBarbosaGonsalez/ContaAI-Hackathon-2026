@@ -380,7 +380,7 @@ function PainelSemItens({ catalogo }: { catalogo: Catalogo }) {
           <p className="achado achado--linha">Nenhum item no catálogo ainda.</p>
           <p className="texto-suave">
             A margem de cada item contra o alvo e os alertas das notas de compra aparecem aqui quando o catálogo tiver
-            itens.
+            itens. <Link para="/catalogo">Cadastrar os itens no Catálogo</Link>
           </p>
         </div>
       </Bloco>

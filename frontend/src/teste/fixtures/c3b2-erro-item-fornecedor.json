@@ -1,0 +1,6 @@
+{
+  "type": "about:blank",
+  "title": "Unprocessable Entity",
+  "status": 422,
+  "detail": "CNPJ do fornecedor inválido: confira os dígitos verificadores."
+}
