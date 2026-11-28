@@ -2,6 +2,8 @@
 
 Tudo aqui é **fictício** (princípio P10). Empresas, CNPJs, preços, custos, margens e quantidades não representam empresas nem preços reais. Os CNPJs têm **dígito verificador propositalmente inválido**, então não podem coincidir com o de nenhuma empresa (um teste confere isso).
 
+**Fora desta pasta, nos testes.** A empresa da conta exige o dígito certo (ADR 0017), e por isso os testes e as fixtures da tela dessa parte usam CNPJs com dígito válido: o exemplo do manual do Serpro para o CNPJ alfanumérico (`12ABC34501DE35`), dois CNPJs numéricos de exemplo muito usados em documentação e testes de validação (`11222333000181` e `11444777000161`) e um alfanumérico montado para teste (`AB12CD34EF5602`). Não foram conferidos no cadastro da Receita, então podem coincidir com uma empresa real. Ficam só nos testes (`backend/tests`, `frontend/src/**/*.test.*` e `frontend/src/teste/fixtures`), sempre com razão social e e-mail fictícios, e nunca entram em `data/demo`, nos mocks da API ou nas telas.
+
 | Arquivo | O que é |
 |---|---|
 | `distribuidora.json` | Distribuidora Serra Azul ME (fictícia): Simples, anexo I, atividade 01 (revenda), em Porto Alegre (código IBGE 4314902). Traz as premissas do cenário de março de 2027 e o catálogo de 5 itens. |

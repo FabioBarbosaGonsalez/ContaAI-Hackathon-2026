@@ -110,6 +110,26 @@ export function mudancasDosDados(antes: Valores, depois: Valores): Configuracao 
   return corpo;
 }
 
+/**
+ * As alíquotas do DAS informadas são as do anexo da atividade de hoje: o motor do Simples as recebe pelo anexo
+ * (`aliquotasEfetivas.anexoI`, ADR 0001). Trocar para uma atividade de outro anexo não muda as alíquotas, e elas
+ * passariam a valer no anexo novo sem ninguém conferir. Devolve o aviso, ou null (simulação, mesmo anexo ou lista
+ * ainda carregando).
+ */
+export function avisoDaTrocaDeAnexo(empresa: Empresa, atividades: Atividades | undefined, escolhida: string): string | null {
+  if (empresa.premissasDasOrigem !== 'usuario' || escolhida === empresa.atividade.cAtivSN) {
+    return null;
+  }
+  const nova = atividades?.atividades.find((a) => a.cAtivSN === escolhida);
+  if (nova === undefined || nova.anexo === empresa.atividade.anexo) {
+    return null;
+  }
+  return (
+    `Esta atividade é do anexo ${nova.anexo}, e as alíquotas do DAS informadas são do anexo ${empresa.atividade.anexo}. ` +
+    'Elas continuam valendo depois de salvar: confira-as em “Alíquotas do Simples (DAS)”, ou volte aos valores da simulação.'
+  );
+}
+
 interface PropsGravacao {
   cnpj: string;
   aoSalvar: (empresa: Empresa, frase: string) => void;
@@ -147,8 +167,9 @@ function FormularioDosDados({ empresa, atividades, cnpj, aoSalvar }: PropsGravac
   const refUf = useRef<HTMLSelectElement>(null);
   const refMunicipio = useRef<HTMLSelectElement>(null);
   const refAtividade = useRef<HTMLInputElement>(null);
+  const trocaDeAnexo = avisoDaTrocaDeAnexo(empresa, atividades.dados, valores.atividade);
 
-  const mudar = (campo: keyof Valores, valor: string) => {
+  const mudar =(campo: keyof Valores, valor: string) => {
     setValores((v) => ({ ...v, [campo]: valor }));
     setAviso(null);
     if (campo in erros) {
@@ -264,6 +285,11 @@ function FormularioDosDados({ empresa, atividades, cnpj, aoSalvar }: PropsGravac
             mudar('atividade', valor);
           }}
         />
+        {trocaDeAnexo !== null && (
+          <p className="conta__aviso" role="note">
+            {trocaDeAnexo}
+          </p>
+        )}
         <p className="conta__acoes">
           <button type="submit" className="botao-principal" disabled={enviando || espera.aguardando}>
             {rotuloDoEnvio(enviando, espera.restanteMs, 'Salvando…', 'Salvar os dados')}

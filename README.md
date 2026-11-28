@@ -107,7 +107,7 @@ npx vite build && npm run seguranca             # build e checagem de segurança
 
 No GitHub, o workflow **Golden** sobe os motores e roda os testes de referência: à mão (Actions → Golden → Run workflow) e sozinho nos PRs que mexem nos motores, no cliente, nos geradores ou nos dados de demonstração.
 
-No Linux e no macOS, o [Makefile](Makefile) tem atalhos para os mesmos comandos: `make motores`, `make api`, `make real`, `make sementes`, `make test`, `make golden`, `make llm`, `make indice`, `make lint`, `make tela` e `make tela-checar`.
+No Linux e no macOS, o [Makefile](Makefile) tem atalhos para os mesmos comandos: `make motores`, `make parar`, `make api`, `make real`, `make sementes`, `make test`, `make lint`, `make tipos`, `make cobertura`, `make auditoria`, `make golden`, `make llm`, `make gravar-golden`, `make notas`, `make mocks`, `make indice`, `make openapi`, `make tela-instalar`, `make tela`, `make tela-checar` e `make tela-contrato`; a descrição de cada um está no próprio Makefile.
 
 ## Arquitetura (resumo)
 
@@ -136,7 +136,7 @@ No Linux e no macOS, o [Makefile](Makefile) tem atalhos para os mesmos comandos:
 ## Documentos
 
 - [Como contribuir](CONTRIBUTING.md): fluxo de branches, PRs e revisão
-- [Plano v2.1](docs/plano-v2.1.md): a ordem das etapas (3b, C1 e C2 feitas; C3, a empresa própria, em andamento; depois 3c e entrega), com as decisões do usuário
+- [Plano v2.1](docs/plano-v2.1.md): a ordem das etapas (3b, C1, C2 e C3 feitas; depois 3c e entrega), com as decisões do usuário
 - [ADR 0001](docs/adr/0001-lado-tradicional-do-simples.md): lado "Simples tradicional" da decisão de regime
 - [ADR 0002](docs/adr/0002-motores-em-containers.md): motores em containers, segurança e custos
 - [ADR 0003](docs/adr/0003-contrato-da-api.md): contrato da API, fórmulas de preço, margem e regimes, e achados da investigação

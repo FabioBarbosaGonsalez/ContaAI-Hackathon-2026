@@ -248,6 +248,22 @@ describe('a página "Configurações da empresa"', () => {
     expect(principal().getByLabelText<HTMLInputElement>('CBS no DAS (%)').value).toBe('1,1612');
   });
 
+  it('com as alíquotas do DAS informadas, trocar para uma atividade de outro anexo avisa; do mesmo anexo, não', async () => {
+    await montar('/empresa', { extra: (p) => (p.url.endsWith(`/empresas/${CNPJ}`) && p.method === 'GET' ? json(empresaDasInformado) : undefined) });
+    await formularioPronto();
+    fireEvent.click(principal().getByRole('radio', { name: /^Operações com os demais bens materiais, sem incidência/u }));
+    expect(principal().queryByText(/são do anexo I\./u)).toBeNull();
+    fireEvent.click(principal().getByRole('radio', { name: /^Venda de mercadorias industrializadas pelo contribuinte, com/u }));
+    expect(principal().getByText(/Esta atividade é do anexo II, e as alíquotas do DAS informadas são do anexo I\./u)).toBeTruthy();
+  });
+
+  it('com as alíquotas da simulação, trocar de anexo não avisa', async () => {
+    await montar('/empresa');
+    await formularioPronto();
+    fireEvent.click(principal().getByRole('radio', { name: /^Venda de mercadorias industrializadas pelo contribuinte, com/u }));
+    expect(principal().queryByText(/Esta atividade é do anexo/u)).toBeNull();
+  });
+
   it('o membro vê os dados, sem formulários e sem a exclusão', async () => {
     const { pedidos } = await montar('/empresa', { conta: MEMBRO });
     expect(await principal().findByText('Só o dono da organização muda as configurações e exclui a empresa.')).toBeTruthy();
